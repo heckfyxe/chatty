@@ -45,7 +45,8 @@ dependencies {
     implementation 'com.firebaseui:firebase-ui-auth:4.3.1'
 
     // Chat
-    implementation 'com.pusher:chatkit-android:1.1.1'
+    implementation 'com.sendbird.sdk:sendbird-android-sdk:3.0.88'
+    implementation 'com.github.stfalcon:chatkit:0.3.3'
 
     // Lifecycle
     implementation 'androidx.lifecycle:lifecycle-extensions:2.1.0-alpha02'

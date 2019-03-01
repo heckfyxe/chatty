@@ -7,7 +7,6 @@ import android.os.Bundle
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
-import android.widget.Toast
 import androidx.fragment.app.Fragment
 import androidx.navigation.fragment.findNavController
 import com.firebase.ui.auth.AuthUI
@@ -66,7 +65,7 @@ class AuthFragment : Fragment() {
             RC_AUTH -> {
                 val response = IdpResponse.fromResultIntent(data)
                 if (resultCode == Activity.RESULT_OK) {
-                    startMainActivity()
+                    startMainActivity(response!!.isNewUser)
                 } else {
                     if (response == null)
                         activity?.finish()
@@ -80,8 +79,10 @@ class AuthFragment : Fragment() {
         }
     }
 
-    private fun startMainActivity() {
-        Toast.makeText(context!!, R.string.successful, Toast.LENGTH_SHORT).show()
-        findNavController().navigate(R.id.action_authFragment_to_mainFragment)
+    private fun startMainActivity(isNewUser: Boolean = false) {
+        if (isNewUser)
+            TODO("Fill user data")
+        else
+            findNavController().navigate(R.id.action_authFragment_to_mainFragment)
     }
 }

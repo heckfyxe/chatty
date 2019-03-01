@@ -3,4 +3,7 @@
 
     <string name="no_connection">No connection</string>
     <string name="successful">Successful</string>
+    <string name="connection_error">Connection error</string>
+    <string name="sign_out">Sign out</string>
+    <string name="create_chat">Create chat</string>
 </resources>
