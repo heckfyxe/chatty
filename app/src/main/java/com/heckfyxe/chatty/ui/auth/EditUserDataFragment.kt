@@ -1,5 +1,6 @@
 package com.heckfyxe.chatty.ui.auth
 
+import android.graphics.drawable.Drawable
 import android.os.Bundle
 import android.view.LayoutInflater
 import android.view.View
@@ -11,6 +12,10 @@ import androidx.fragment.app.Fragment
 import androidx.lifecycle.Observer
 import androidx.navigation.fragment.findNavController
 import com.bumptech.glide.Glide
+import com.bumptech.glide.load.DataSource
+import com.bumptech.glide.load.engine.GlideException
+import com.bumptech.glide.request.RequestListener
+import com.bumptech.glide.request.target.Target
 import com.heckfyxe.chatty.R
 import kotlinx.android.synthetic.main.edit_user_data_fragment.*
 import org.koin.androidx.viewmodel.ext.android.viewModel
@@ -25,7 +30,28 @@ class EditUserDataFragment : Fragment() {
         model.currentUser.observe(this, Observer {
             Glide.with(this)
                 .load(it.profileUrl)
-                .into(circleImageView)
+                .listener(object: RequestListener<Drawable> {
+                    override fun onLoadFailed(
+                        e: GlideException?,
+                        model: Any?,
+                        target: Target<Drawable>?,
+                        isFirstResource: Boolean
+                    ): Boolean = false
+
+                    override fun onResourceReady(
+                        resource: Drawable?,
+                        model: Any?,
+                        target: Target<Drawable>?,
+                        dataSource: DataSource?,
+                        isFirstResource: Boolean
+                    ): Boolean {
+                        Glide.with(context!!)
+                            .load(resource)
+                            .circleCrop()
+                            .into(circleImageView)
+                        return false
+                    }
+                }).preload()
 
             nicknameEditText?.setText(it.nickname)
         })
@@ -45,11 +71,17 @@ class EditUserDataFragment : Fragment() {
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
 
+        Glide.with(context!!)
+            .asGif()
+            .load(R.drawable.spinner)
+            .circleCrop()
+            .into(circleImageView)
+
         nicknameEditText?.addTextChangedListener {
             nicknameOkButton?.isEnabled = !it.isNullOrBlank()
         }
 
-        nicknameEditText?.setOnEditorActionListener { v, actionId, event ->
+        nicknameEditText?.setOnEditorActionListener { _, actionId, _ ->
             if (actionId == EditorInfo.IME_ACTION_DONE) {
                 updateUserData()
                 return@setOnEditorActionListener true
