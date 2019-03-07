@@ -1,9 +1,9 @@
 apply plugin: 'com.android.application'
 
 apply plugin: 'kotlin-android'
+apply plugin: 'kotlin-android-extensions'
 apply plugin: 'kotlin-kapt'
 
-apply plugin: 'kotlin-android-extensions'
 apply plugin: 'com.google.gms.google-services'
 
 android {
@@ -46,9 +46,8 @@ dependencies {
     implementation 'com.sendbird.sdk:sendbird-android-sdk:3.0.88'
     implementation 'com.github.stfalcon:chatkit:0.3.3'
     // Lifecycle
-    implementation 'androidx.lifecycle:lifecycle-extensions:2.1.0-alpha02'
-    // Testing
     implementation 'androidx.lifecycle:lifecycle-viewmodel-ktx:2.0.0'
+    // Testing
     testImplementation 'junit:junit:4.12'
     androidTestImplementation 'androidx.test:runner:1.1.2-alpha01'
     androidTestImplementation 'androidx.test.espresso:espresso-core:3.1.2-alpha01'
