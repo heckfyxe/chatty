@@ -38,7 +38,7 @@
             android:hint="@string/nickname" />
     </com.google.android.material.textfield.TextInputLayout>
 
-    <me.zhanghai.android.materialprogressbar.MaterialProgressBar
+    <androidx.core.widget.ContentLoadingProgressBar
         android:id="@+id/nicknameCheckingProgressBar"
         android:layout_width="20dp"
         android:layout_height="20dp"
@@ -51,18 +51,14 @@
         app:layout_constraintStart_toEndOf="@+id/nicknameInputLayout"
         app:layout_constraintTop_toTopOf="@+id/nicknameInputLayout" />
 
-
-    <com.google.android.material.button.MaterialButton
+    <br.com.simplepass.loadingbutton.customViews.CircularProgressButton
         android:id="@+id/nicknameOkButton"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
+        android:layout_width="80dp"
+        android:layout_height="40dp"
+        style="@style/NicknameOkButtonStyle"
+        app:spinning_bar_padding="8dp"
+        app:spinning_bar_color="@color/colorAccent"
         android:enabled="false"
-        app:cornerRadius="10dp"
-        app:strokeWidth="2dp"
-        app:strokeColor="@color/colorAccent"
-        app:elevation="8dp"
-        style="@style/Widget.MaterialComponents.Button.TextButton"
-        android:textAppearance="?android:textAppearance"
         android:layout_marginStart="8dp"
         android:layout_marginTop="16dp"
         android:layout_marginEnd="8dp"
@@ -70,4 +66,5 @@
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintTop_toBottomOf="@+id/nicknameInputLayout" />
+
 </androidx.constraintlayout.widget.ConstraintLayout>

@@ -105,6 +105,7 @@ class EditUserDataFragment : Fragment() {
 
     private fun updateUserData() {
         if (!nicknameEditText?.text.isNullOrEmpty()) {
+            nicknameOkButton?.startAnimation()
             model.updateUserData(nicknameEditText.text.toString()) {
                 findNavController().navigate(R.id.action_editUserDataFragment_to_mainFragment)
             }
@@ -160,6 +161,12 @@ class EditUserDataFragment : Fragment() {
         outState.apply {
             putCharSequence(EXTRA_NICKNAME, nicknameEditText?.text)
         }
+    }
+
+    override fun onDestroy() {
+        super.onDestroy()
+
+        nicknameOkButton?.dispose()
     }
 
     companion object {
