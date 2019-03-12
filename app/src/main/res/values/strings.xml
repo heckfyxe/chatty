@@ -7,4 +7,6 @@
     <string name="sign_out">Sign out</string>
     <string name="create_chat">Create chat</string>
     <string name="nickname">Nickname</string>
+    <string name="allowed">Allowed</string>
+    <string name="the_nickname_is_already_taken">The nickname is already taken</string>
 </resources>
