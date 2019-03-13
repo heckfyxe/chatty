@@ -7,7 +7,6 @@ import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
 import android.view.inputmethod.EditorInfo
-import android.widget.Toast
 import androidx.core.view.isInvisible
 import androidx.core.view.isVisible
 import androidx.core.widget.addTextChangedListener
@@ -19,6 +18,7 @@ import com.bumptech.glide.load.DataSource
 import com.bumptech.glide.load.engine.GlideException
 import com.bumptech.glide.request.RequestListener
 import com.bumptech.glide.request.target.Target
+import com.google.android.material.snackbar.Snackbar
 import com.heckfyxe.chatty.R
 import kotlinx.android.synthetic.main.edit_user_data_fragment.*
 import kotlinx.coroutines.CoroutineScope
@@ -62,7 +62,11 @@ class EditUserDataFragment : Fragment() {
         })
 
         model.errors.observe(this, Observer {
-            Toast.makeText(context!!, it.localizedMessage, Toast.LENGTH_SHORT).show()
+            when (it.type) {
+                EditUserDataViewModel.ErrorType.CONNECT_USER -> showConnectUserError()
+                EditUserDataViewModel.ErrorType.UPDATE_USER_DATA -> TODO()
+                EditUserDataViewModel.ErrorType.CHECK_NICKNAME -> TODO()
+            }
         })
     }
 
@@ -145,6 +149,21 @@ class EditUserDataFragment : Fragment() {
                     return false
                 }
             }).preload()
+    }
+
+    private fun avatarLoadingFailed() {
+        Glide.with(this)
+            .load(R.drawable.error)
+            .into(circleImageView)
+    }
+
+    private fun showConnectUserError() {
+        avatarLoadingFailed()
+        Snackbar.make(editUserDataFragmentRoot, R.string.connection_error, Snackbar.LENGTH_INDEFINITE)
+            .setAction(R.string.retry) {
+                startAvatarLoadingAnimation()
+                model.connectUser()
+            }
     }
 
     override fun onViewStateRestored(savedInstanceState: Bundle?) {
