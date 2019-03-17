@@ -52,6 +52,21 @@
         app:layout_constraintStart_toEndOf="@+id/nicknameInputLayout"
         app:layout_constraintTop_toTopOf="@+id/nicknameInputLayout" />
 
+    <androidx.appcompat.widget.AppCompatTextView
+        android:id="@+id/nicknameCheckingErrorTextView"
+        android:layout_width="0dp"
+        android:layout_height="wrap_content"
+        android:text="@string/error"
+        android:visibility="gone"
+        android:textColor="@color/error"
+        android:textAppearance="?android:textAppearanceSmall"
+        android:layout_marginStart="8dp"
+        android:layout_marginEnd="8dp"
+        app:layout_constraintBottom_toBottomOf="@+id/nicknameInputLayout"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintStart_toStartOf="@+id/nicknameCheckingProgressBar"
+        app:layout_constraintTop_toTopOf="@+id/nicknameInputLayout" />
+
     <br.com.simplepass.loadingbutton.customViews.CircularProgressButton
         android:id="@+id/nicknameOkButton"
         android:layout_width="80dp"
@@ -59,6 +74,7 @@
         style="@style/NicknameOkButtonStyle"
         app:spinning_bar_padding="8dp"
         app:spinning_bar_color="@color/colorAccent"
+        app:initialCornerAngle="15dp"
         android:enabled="false"
         android:layout_marginStart="8dp"
         android:layout_marginTop="16dp"

@@ -89,7 +89,6 @@ class EditUserDataViewModel : ViewModel() {
                 errors.postValue(Error(ErrorType.UPDATE_USER_DATA))
             }
         }
-
     }
 
     override fun onCleared() {

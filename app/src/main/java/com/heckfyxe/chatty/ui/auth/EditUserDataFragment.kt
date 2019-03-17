@@ -7,7 +7,7 @@ import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
 import android.view.inputmethod.EditorInfo
-import androidx.core.view.isInvisible
+import androidx.core.view.isGone
 import androidx.core.view.isVisible
 import androidx.core.widget.addTextChangedListener
 import androidx.fragment.app.Fragment
@@ -43,7 +43,7 @@ class EditUserDataFragment : Fragment() {
     private fun observeViewModel() {
         model.checkedNicknameLiveData.observe(this, Observer {
             if (it.nickname == nicknameEditText?.text?.toString()) {
-                nicknameCheckingProgressBar?.isInvisible = true
+                hideNicknameChecking()
                 if (it.allowed) {
                     nicknameInputLayout?.isHelperTextEnabled = true
                     nicknameInputLayout?.helperText = getString(R.string.allowed)
@@ -64,8 +64,19 @@ class EditUserDataFragment : Fragment() {
         model.errors.observe(this, Observer {
             when (it.type) {
                 EditUserDataViewModel.ErrorType.CONNECT_USER -> showConnectUserError()
-                EditUserDataViewModel.ErrorType.UPDATE_USER_DATA -> TODO()
-                EditUserDataViewModel.ErrorType.CHECK_NICKNAME -> TODO()
+
+                EditUserDataViewModel.ErrorType.UPDATE_USER_DATA -> {
+                    nicknameOkButton?.revertAnimation {
+                    }
+                    nicknameOkButton?.isEnabled = true
+                    Snackbar.make(editUserDataFragmentRoot, R.string.data_updating_error, Snackbar.LENGTH_SHORT).show()
+                }
+
+                EditUserDataViewModel.ErrorType.CHECK_NICKNAME -> {
+                    if (it.extra?.get("nickname").toString() == nicknameEditText?.text.toString()) {
+                        showNicknameCheckingError()
+                    }
+                }
             }
         })
     }
@@ -82,7 +93,7 @@ class EditUserDataFragment : Fragment() {
 
         nicknameEditText?.addTextChangedListener {
             nicknameOkButton?.isEnabled = false
-            nicknameCheckingProgressBar?.isVisible = false
+            hideNicknameChecking()
             nicknameInputLayout?.apply {
                 isErrorEnabled = false
                 isHelperTextEnabled = false
@@ -90,7 +101,7 @@ class EditUserDataFragment : Fragment() {
 
             if (it.isNullOrBlank()) return@addTextChangedListener
 
-            nicknameCheckingProgressBar?.isVisible = true
+            showNicknameCheckingProgress()
             scope.launch { model.checkingNicknameChannel.send(it.toString()) }
         }
 
@@ -117,6 +128,7 @@ class EditUserDataFragment : Fragment() {
     }
 
     private fun startAvatarLoadingAnimation() {
+        circleImageView?.isVisible = true
         Glide.with(context!!)
             .asGif()
             .load(R.drawable.spinner)
@@ -151,10 +163,18 @@ class EditUserDataFragment : Fragment() {
             }).preload()
     }
 
+    private fun showNicknameCheckingProgress() {
+        nicknameCheckingProgressBar?.isVisible = true
+        nicknameCheckingErrorTextView?.isGone = true
+    }
+
+    private fun hideNicknameChecking() {
+        nicknameCheckingErrorTextView?.isGone = true
+        nicknameCheckingProgressBar?.isVisible = false
+    }
+
     private fun avatarLoadingFailed() {
-        Glide.with(this)
-            .load(R.drawable.error)
-            .into(circleImageView)
+        circleImageView?.isVisible = false
     }
 
     private fun showConnectUserError() {
@@ -163,7 +183,12 @@ class EditUserDataFragment : Fragment() {
             .setAction(R.string.retry) {
                 startAvatarLoadingAnimation()
                 model.connectUser()
-            }
+            }.show()
+    }
+
+    private fun showNicknameCheckingError() {
+        nicknameCheckingErrorTextView?.isVisible = true
+        nicknameCheckingProgressBar?.isVisible = false
     }
 
     override fun onViewStateRestored(savedInstanceState: Bundle?) {
@@ -180,12 +205,6 @@ class EditUserDataFragment : Fragment() {
         outState.apply {
             putCharSequence(EXTRA_NICKNAME, nicknameEditText?.text)
         }
-    }
-
-    override fun onDestroy() {
-        super.onDestroy()
-
-        nicknameOkButton?.dispose()
     }
 
     companion object {

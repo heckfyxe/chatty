@@ -20,6 +20,7 @@ allprojects {
     repositories {
         google()
         jcenter()
+        mavenCentral()
         maven { url "https://raw.githubusercontent.com/smilefam/SendBird-SDK-Android/master/" }
     }
 }
