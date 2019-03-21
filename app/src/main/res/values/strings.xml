@@ -12,4 +12,7 @@
     <string name="retry">Retry</string>
     <string name="error">Error!</string>
     <string name="data_updating_error">Data updating error</string>
+    <string name="enter_phone_number">Enter user phone number</string>
+    <string name="not_found">Not found</string>
+    <string name="new_dialog">New dialog</string>
 </resources>

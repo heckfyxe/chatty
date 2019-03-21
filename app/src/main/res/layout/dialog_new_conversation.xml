@@ -1,0 +1,84 @@
+<?xml version="1.0" encoding="utf-8"?>
+<androidx.constraintlayout.widget.ConstraintLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent">
+
+
+
+    <com.firebase.ui.auth.util.ui.BaselineTextInputLayout
+        android:id="@+id/userDataInputLayout"
+        android:layout_width="0dp"
+        android:layout_height="wrap_content"
+        style="@style/FirebaseUI.TextInputLayout.PhoneField"
+        android:hint="@string/enter_phone_number"
+        android:layout_marginStart="8dp"
+        android:layout_marginTop="8dp"
+        android:layout_marginEnd="8dp"
+        app:layout_constraintEnd_toStartOf="@+id/userDataCheckingProgressBar"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toTopOf="parent">
+
+        <com.google.android.material.textfield.TextInputEditText
+            android:id="@+id/userDataEditText"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            style="@style/FirebaseUI.TextInputEditText.PhoneField"
+            android:maxLength="@integer/nickname_max_length"
+            android:imeOptions="actionDone" />
+    </com.firebase.ui.auth.util.ui.BaselineTextInputLayout>
+
+    <ProgressBar
+        android:id="@+id/userDataCheckingProgressBar"
+        android:layout_width="20dp"
+        android:layout_height="20dp"
+        android:visibility="invisible"
+        android:layout_marginEnd="8dp"
+        app:layout_constraintBottom_toBottomOf="@+id/userDataInputLayout"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintTop_toTopOf="@+id/userDataInputLayout" />
+
+    <com.google.android.material.button.MaterialButton
+        android:id="@+id/okButton"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        style="@style/Widget.MaterialComponents.Button.TextButton"
+        android:textAppearance="?android:textAppearance"
+        android:layout_marginTop="24dp"
+        android:layout_marginEnd="16dp"
+        android:text="@android:string/ok"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintTop_toTopOf="@+id/barrier" />
+
+    <com.google.android.material.button.MaterialButton
+        android:id="@+id/cancelButton"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        style="@style/Widget.MaterialComponents.Button.TextButton"
+        android:textAppearance="?android:textAppearance"
+        android:text="@android:string/cancel"
+        android:layout_marginTop="24dp"
+        android:layout_marginEnd="16dp"
+        app:layout_constraintEnd_toStartOf="@+id/okButton"
+        app:layout_constraintTop_toTopOf="@+id/barrier" />
+
+    <androidx.appcompat.widget.AppCompatTextView
+        android:id="@+id/userDataCheckingResultTextView"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:textAppearance="?android:textAppearanceSmall"
+        android:layout_marginStart="8dp"
+        android:layout_marginTop="34dp"
+        android:layout_marginEnd="8dp"
+        app:layout_constraintEnd_toStartOf="@+id/cancelButton"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toTopOf="@+id/barrier" />
+
+    <androidx.constraintlayout.widget.Barrier
+        android:id="@+id/barrier"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        app:barrierDirection="bottom"
+        app:constraint_referenced_ids="userDataInputLayout,userDataCheckingProgressBar" />
+
+</androidx.constraintlayout.widget.ConstraintLayout>

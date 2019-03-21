@@ -7,8 +7,10 @@ import com.sendbird.android.GroupChannel
 import com.sendbird.android.SendBird
 import com.sendbird.android.SendBirdException
 import com.sendbird.android.User
+import org.koin.standalone.KoinComponent
+import org.koin.standalone.inject
 
-class MainViewModel : ViewModel() {
+class MainViewModel : ViewModel(), KoinComponent {
 
     val currentUser = MutableLiveData<User>()
 
@@ -16,10 +18,10 @@ class MainViewModel : ViewModel() {
 
     val chats = MutableLiveData<List<GroupChannel>>()
 
-    fun connectUser() {
-        val user = FirebaseAuth.getInstance().currentUser!!
+    val userId: String by inject("uid")
 
-        SendBird.connect(user.uid) { sendBirdUser, e ->
+    fun connectUser() {
+        SendBird.connect(userId) { sendBirdUser, e ->
             if (e != null) {
                 errors.postValue(e)
                 return@connect
