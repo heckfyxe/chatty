@@ -13,7 +13,7 @@ import kotlinx.coroutines.launch
 import org.koin.standalone.KoinComponent
 import org.koin.standalone.inject
 
-class NewConversationDialogViewModel: ViewModel(), KoinComponent {
+class NewDialogViewModel: ViewModel(), KoinComponent {
 
     private val scope = CoroutineScope(Dispatchers.IO)
     private val userDataCheckingChannel = Channel<String>(Channel.CONFLATED)

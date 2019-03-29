@@ -5,9 +5,9 @@ import com.stfalcon.chatkit.commons.models.IUser
 
 class User: IUser {
 
-    private val _id: String
-    private val _nickname: String
-    private val _avatar: String
+    private var _id: String
+    private var _nickname: String
+    private var _avatar: String?
 
     constructor(user: User): this(user.userId, user.nickname, user.profileUrl)
 
@@ -19,7 +19,19 @@ class User: IUser {
 
     override fun getId(): String = _id
 
+    fun setId(id: String) {
+        _id = id
+    }
+
     override fun getName(): String = _nickname
 
-    override fun getAvatar(): String = _avatar
+    fun setName(name: String) {
+        _nickname = name
+    }
+
+    override fun getAvatar(): String? = _avatar
+
+    fun setAvatar(avatarUrl: String?) {
+        _avatar = avatarUrl
+    }
 }

@@ -47,14 +47,15 @@ dependencies {
     implementation 'com.google.android.gms:play-services-auth:16.0.1'
     implementation 'com.google.firebase:firebase-auth:16.2.0'
     implementation 'com.firebaseui:firebase-ui-auth:4.3.1'
-    implementation 'com.google.firebase:firebase-firestore:18.1.0'
+    implementation 'com.google.firebase:firebase-firestore:18.2.0'
     // Chat
     implementation 'com.sendbird.sdk:sendbird-android-sdk:3.0.88'
     implementation 'com.github.stfalcon:chatkit:0.3.3'
     // Lifecycle
-    implementation 'androidx.lifecycle:lifecycle-extensions:2.1.0-alpha03'
+    implementation 'androidx.lifecycle:lifecycle-viewmodel-ktx:2.0.0'
     // Testing
     testImplementation 'junit:junit:4.12'
+    testImplementation "io.mockk:mockk:1.9"
     androidTestImplementation 'androidx.test:runner:1.1.2-alpha02'
     androidTestImplementation 'androidx.test.espresso:espresso-core:3.2.0-alpha02'
     // Layout

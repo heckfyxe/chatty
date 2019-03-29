@@ -3,7 +3,7 @@ package com.heckfyxe.chatty.model
 import com.sendbird.android.GroupChannel
 import com.stfalcon.chatkit.commons.models.IDialog
 
-class Dialog(private val channel: GroupChannel, private val currentUserId: String): IDialog<Message> {
+class Dialog(val channel: GroupChannel, private val currentUserId: String): IDialog<Message> {
 
     private var lastMessage: Message = Message(channel.lastMessage)
 
@@ -27,7 +27,7 @@ class Dialog(private val channel: GroupChannel, private val currentUserId: Strin
         User(it.userId, it.nickname, it.profileUrl)
     }
 
-    override fun getLastMessage(): Message = Message(channel.lastMessage)
+    override fun getLastMessage(): Message = lastMessage
 
     override fun getDialogName(): String {
         if (isPersonal()) {

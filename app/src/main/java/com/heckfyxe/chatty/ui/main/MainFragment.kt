@@ -7,13 +7,14 @@ import android.util.Log
 import android.view.*
 import android.widget.Toast
 import androidx.appcompat.app.AppCompatActivity
+import androidx.core.os.bundleOf
 import androidx.fragment.app.Fragment
 import androidx.lifecycle.Observer
 import androidx.navigation.fragment.findNavController
-import com.bumptech.glide.Glide
 import com.heckfyxe.chatty.R
 import com.heckfyxe.chatty.model.Dialog
-import com.sendbird.android.BaseChannel
+import com.heckfyxe.chatty.ui.message.MessageFragment
+import com.heckfyxe.chatty.util.GlideImageLoader
 import com.stfalcon.chatkit.dialogs.DialogsListAdapter
 import kotlinx.android.synthetic.main.main_fragment.*
 import org.koin.androidx.viewmodel.ext.android.viewModel
@@ -27,10 +28,9 @@ class MainFragment : Fragment() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
 
-        adapter = DialogsListAdapter { imageView, url, _ ->
-            Glide.with(imageView)
-                .load(url)
-                .into(imageView)
+        adapter = DialogsListAdapter(GlideImageLoader())
+        adapter.setOnDialogClickListener {
+            launchMessageFragment(it.channel.serialize())
         }
 
         connectToViewModel()
@@ -54,13 +54,6 @@ class MainFragment : Fragment() {
             R.id.mi_sign_out -> {
                 model.logOut {
                     findNavController().navigate(R.id.action_mainFragment_to_authFragment)
-                }
-                true
-            }
-            R.id.mi_create_chat -> {
-                NewConversationDialog().let {
-                    it.setTargetFragment(this@MainFragment, RC_CREATE_DIALOG)
-                    it.show(fragmentManager!!, null)
                 }
                 true
             }
@@ -95,24 +88,34 @@ class MainFragment : Fragment() {
         super.onViewCreated(view, savedInstanceState)
 
         dialogList?.setAdapter(adapter)
+
+        newMessageFAB?.setOnClickListener {
+            NewDialogDialog().let {
+                it.setTargetFragment(this@MainFragment, RC_CREATE_DIALOG)
+                it.show(fragmentManager!!, null)
+            }
+        }
     }
 
     override fun onActivityResult(requestCode: Int, resultCode: Int, data: Intent?) {
         when (requestCode) {
             RC_CREATE_DIALOG -> {
                 if (resultCode == Activity.RESULT_OK) {
-                    val channel = BaseChannel.buildFromSerializedData(
-                        data!!.getByteArrayExtra(NewConversationDialog.EXTRA_CHANNEL))
-                    channel.sendUserMessage("Hello") { _, e ->
-                        if (e != null) {
-                            throw Exception()
-                        }
+                    if (data?.hasExtra(NewDialogDialog.EXTRA_CHANNEL) == true) {
+                        launchMessageFragment(data.getByteArrayExtra(NewDialogDialog.EXTRA_CHANNEL))
+                    } else {
+                        Log.w("MainFragment", "Data doesn't have channel")
                     }
-                    model.loadChats()
                 }
             }
             else -> super.onActivityResult(requestCode, resultCode, data)
         }
+    }
+
+    private fun launchMessageFragment(serializedGroupChannel: ByteArray) {
+        findNavController().navigate(R.id.action_mainFragment_to_messageFragment, bundleOf(
+            MessageFragment.ARG_CHANNEL to serializedGroupChannel
+        ))
     }
 
     companion object {

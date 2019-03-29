@@ -11,12 +11,12 @@ import androidx.core.view.isVisible
 import androidx.fragment.app.DialogFragment
 import androidx.lifecycle.Observer
 import com.heckfyxe.chatty.R
-import kotlinx.android.synthetic.main.dialog_new_conversation.*
+import kotlinx.android.synthetic.main.dialog_new_dialog.*
 import org.koin.androidx.viewmodel.ext.android.viewModel
 
-class NewConversationDialog: DialogFragment() {
+class NewDialogDialog: DialogFragment() {
 
-    private val model: NewConversationDialogViewModel by viewModel()
+    private val model: NewDialogViewModel by viewModel()
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -45,7 +45,7 @@ class NewConversationDialog: DialogFragment() {
     }
 
     override fun onCreateView(inflater: LayoutInflater, container: ViewGroup?, savedInstanceState: Bundle?): View? {
-        return inflater.inflate(R.layout.dialog_new_conversation, container, false)
+        return inflater.inflate(R.layout.dialog_new_dialog, container, false)
     }
 
     override fun setupDialog(dialog: Dialog, style: Int) {
