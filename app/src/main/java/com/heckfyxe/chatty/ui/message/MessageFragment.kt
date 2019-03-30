@@ -9,7 +9,7 @@ import androidx.fragment.app.Fragment
 import androidx.lifecycle.Observer
 import com.heckfyxe.chatty.R
 import com.heckfyxe.chatty.model.Message
-import com.heckfyxe.chatty.util.GlideImageLoader
+import com.heckfyxe.chatty.util.GoneImageLoader
 import com.heckfyxe.chatty.util.loadCircleUserAvatar
 import com.sendbird.android.GroupChannel
 import com.stfalcon.chatkit.messages.MessagesListAdapter
@@ -29,22 +29,24 @@ class MessageFragment : Fragment() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
 
-        val channel = GroupChannel.buildFromSerializedData(arguments?.getByteArray(ARG_CHANNEL)) as GroupChannel
-        viewModel.init(channel)
+        if (!viewModel.isInitialized) {
+            val bytes = arguments?.getByteArray(ARG_CHANNEL)
+            val channel = GroupChannel.buildFromSerializedData(bytes) as GroupChannel
+            viewModel.init(channel)
+        }
 
         adapter = MessagesListAdapter(
             viewModel.userId,
-            GlideImageLoader()
+            GoneImageLoader()
         )
 
         observeViewModel()
     }
 
     private fun observeViewModel() {
-        viewModel.messages.observe(this, Observer {
-            it.forEach { message ->
-                adapter.upsert(message)
-            }
+        viewModel.messagesUpdatedLiveData.observe(this, Observer {
+            adapter.clear()
+            adapter.addToEnd(viewModel.messageList, false)
         })
 
         viewModel.interlocutor.observe(this, Observer {
@@ -71,6 +73,11 @@ class MessageFragment : Fragment() {
         adapter.setLoadMoreListener { page, totalItemsCount ->
             Log.i("MessageFragment", "page: $page, total: $totalItemsCount")
             viewModel.getPrevMessages()
+        }
+
+        messageTextInput?.setInputListener {
+            viewModel.sendMessage(it.toString()) { }
+            return@setInputListener true
         }
     }
 }

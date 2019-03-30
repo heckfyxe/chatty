@@ -34,11 +34,13 @@ class NewDialogDialog: DialogFragment() {
             if (it.data == userDataEditText?.text.toString()) {
                 userDataCheckingProgressBar?.isVisible = false
 
-                if (it.userId == null) {
-                    showNotFound()
-                } else {
-                    showSuccessful()
-                    createDialog(it.userId)
+                when (it.userId) {
+                    null -> showNotFound()
+                    model.userId -> showItsYourNumber()
+                    else -> {
+                        showSuccessful()
+                        createDialog(it.userId)
+                    }
                 }
             }
         })
@@ -78,7 +80,7 @@ class NewDialogDialog: DialogFragment() {
 
     private fun showNotFound() {
         userDataCheckingResultTextView?.apply {
-            setTextColor(resources.getColor(R.color.not_found))
+            setTextColor(resources.getColor(R.color.warning))
             text = resources.getText(R.string.not_found)
         }
     }
@@ -87,6 +89,13 @@ class NewDialogDialog: DialogFragment() {
         userDataCheckingResultTextView?.apply {
             setTextColor(resources.getColor(R.color.green))
             text = resources.getText(R.string.successful)
+        }
+    }
+
+    private fun showItsYourNumber() {
+        userDataCheckingResultTextView?.apply {
+            setTextColor(resources.getColor(R.color.warning))
+            text = getString(R.string.its_your)
         }
     }
 

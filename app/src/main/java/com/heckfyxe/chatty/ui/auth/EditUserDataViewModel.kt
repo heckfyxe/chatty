@@ -5,6 +5,8 @@ import androidx.lifecycle.ViewModel
 import com.google.firebase.auth.FirebaseAuth
 import com.google.firebase.firestore.CollectionReference
 import com.google.firebase.firestore.SetOptions
+import com.heckfyxe.chatty.koin.KOIN_USERS_FIRESTORE_COLLECTION
+import com.heckfyxe.chatty.koin.KOIN_USER_ID
 import com.sendbird.android.SendBird
 import com.sendbird.android.User
 import kotlinx.coroutines.CoroutineScope
@@ -21,14 +23,15 @@ class EditUserDataViewModel : ViewModel(), KoinComponent {
     val errors = MutableLiveData<Error>()
     val checkedNicknameLiveData = MutableLiveData<CheckedNickname>()
 
-    private val userId: String by inject("uid")
-    private val usersRef: CollectionReference by inject("users")
+    private val userId: String by inject(KOIN_USER_ID)
+    private val usersRef: CollectionReference by inject(KOIN_USERS_FIRESTORE_COLLECTION)
 
     private val job = Job()
     private val scope = CoroutineScope(Dispatchers.Default + job)
     val checkingNicknameChannel = Channel<String>(Channel.CONFLATED)
 
     fun init() {
+
         scope.launch {
             for (nickname in checkingNicknameChannel) {
                 usersRef

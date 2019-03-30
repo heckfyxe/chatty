@@ -3,6 +3,7 @@ package com.heckfyxe.chatty.ui.main
 import androidx.lifecycle.MutableLiveData
 import androidx.lifecycle.ViewModel
 import com.google.firebase.auth.FirebaseAuth
+import com.heckfyxe.chatty.koin.KOIN_USER_ID
 import com.sendbird.android.GroupChannel
 import com.sendbird.android.SendBird
 import com.sendbird.android.SendBirdException
@@ -18,7 +19,7 @@ class MainViewModel : ViewModel(), KoinComponent {
 
     val chats = MutableLiveData<List<GroupChannel>>()
 
-    val userId: String by inject("uid")
+    val userId: String by inject(KOIN_USER_ID)
 
     fun connectUser() {
         SendBird.connect(userId) { sendBirdUser, e ->

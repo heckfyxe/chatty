@@ -17,11 +17,14 @@ private val viewModelModule = module {
     viewModel { MessageViewModel() }
 }
 
+const val KOIN_USERS_FIRESTORE_COLLECTION = "users"
+const val KOIN_USER_ID = "uid"
+
 private val firebaseModule = module {
     single { FirebaseAuth.getInstance() }
     single { FirebaseFirestore.getInstance() }
-    factory("users") { get<FirebaseFirestore>().collection("users") }
-    factory("uid") { get<FirebaseAuth>().currentUser!!.uid }
+    factory(KOIN_USERS_FIRESTORE_COLLECTION) { get<FirebaseFirestore>().collection("users") }
+    factory(KOIN_USER_ID) { get<FirebaseAuth>().currentUser!!.uid }
 }
 
 val koinModule: List<Module> = listOf(viewModelModule, firebaseModule)

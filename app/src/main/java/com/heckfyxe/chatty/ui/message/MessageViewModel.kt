@@ -2,35 +2,47 @@ package com.heckfyxe.chatty.ui.message
 
 import androidx.lifecycle.MutableLiveData
 import androidx.lifecycle.ViewModel
+import com.heckfyxe.chatty.koin.KOIN_USER_ID
 import com.heckfyxe.chatty.model.Message
 import com.heckfyxe.chatty.model.User
 import com.sendbird.android.BaseChannel
-import com.sendbird.android.BaseMessage
 import com.sendbird.android.GroupChannel
 import org.koin.standalone.KoinComponent
 import org.koin.standalone.inject
+import java.util.*
 
 class MessageViewModel : ViewModel(), KoinComponent {
 
+    companion object {
+        private const val PREV_RESULT_SIZE = 20
+    }
+
     val errors = MutableLiveData<Exception>()
-    val messages = MutableLiveData<List<Message>>()
+    val messagesUpdatedLiveData = MutableLiveData<Boolean>()
     val interlocutor = MutableLiveData<User>()
 
     private lateinit var channel: GroupChannel
-    val userId: String by inject("uid")
+    val userId: String by inject(KOIN_USER_ID)
     private var lastMessageId: Long = 0
-    private var isInitialized = false
+    var isInitialized = false
+        private set
     private var isLoading = false
+    private var isHistoryEmpty = false
+
+    val messageList = LinkedList<Message>()
 
     fun init(channel: GroupChannel) {
         if (isInitialized)
             return
 
+        isInitialized = true
+
         this.channel = channel
 
         val lastMessage = channel.lastMessage
         lastMessageId = lastMessage.messageId
-        messages.postValue(listOf(lastMessage).withoutUserAvatar())
+        messageList.add(Message(lastMessage))
+        messagesUpdatedLiveData.postValue(true)
 
         if (channel.memberCount != 2) {
             throw Exception("Channel members count must be 2")
@@ -40,14 +52,16 @@ class MessageViewModel : ViewModel(), KoinComponent {
         this.interlocutor.postValue(User(interlocutor))
     }
 
-    fun sendMessage(text: String, success: (Message) -> Unit) {
+    fun sendMessage(text: String, success: () -> Unit) {
         channel.sendUserMessage(text) { message, e ->
             if (e != null) {
                 errors.postValue(e)
                 return@sendUserMessage
             }
 
-            success(Message(message))
+            messageList.addFirst(Message(message))
+            messagesUpdatedLiveData.postValue(true)
+            success()
         }
     }
 
@@ -57,9 +71,10 @@ class MessageViewModel : ViewModel(), KoinComponent {
 
         isLoading = true
         channel.getPreviousMessagesById(
-            channel.lastMessage.messageId,
-            false, 20,
-            false, BaseChannel.MessageTypeFilter.ALL, "") { loadedMessages, error ->
+            lastMessageId,
+            false, PREV_RESULT_SIZE,
+            true, BaseChannel.MessageTypeFilter.ALL, ""
+        ) { loadedMessages, error ->
 
             isLoading = false
 
@@ -68,18 +83,18 @@ class MessageViewModel : ViewModel(), KoinComponent {
                 return@getPreviousMessagesById
             }
 
+            if (loadedMessages.size < PREV_RESULT_SIZE)
+                isHistoryEmpty = true
+
             if (loadedMessages.isEmpty())
                 return@getPreviousMessagesById
 
+
             lastMessageId = loadedMessages.last().messageId
-            messages.postValue(loadedMessages.withoutUserAvatar())
+
+            val messages = loadedMessages.map { Message(it) }
+            messageList.addAll(messages)
+            messagesUpdatedLiveData.postValue(true)
         }
     }
 }
-
-fun List<BaseMessage>.withoutUserAvatar() =
-    map<BaseMessage, Message> {
-        val message = Message(it)
-        (message.user as User).avatar = null
-        message
-    }

@@ -15,4 +15,5 @@
     <string name="enter_phone_number">Enter user phone number</string>
     <string name="not_found">Not found</string>
     <string name="new_dialog">New dialog</string>
+    <string name="its_your">It\'s your</string>
 </resources>

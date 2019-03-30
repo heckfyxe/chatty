@@ -3,11 +3,14 @@ package com.heckfyxe.chatty.ui.main
 import androidx.lifecycle.MutableLiveData
 import androidx.lifecycle.ViewModel
 import com.google.firebase.firestore.CollectionReference
+import com.heckfyxe.chatty.koin.KOIN_USERS_FIRESTORE_COLLECTION
+import com.heckfyxe.chatty.koin.KOIN_USER_ID
 import com.sendbird.android.BaseChannel
 import com.sendbird.android.GroupChannel
 import com.sendbird.android.GroupChannelParams
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.Job
 import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.launch
 import org.koin.standalone.KoinComponent
@@ -15,13 +18,16 @@ import org.koin.standalone.inject
 
 class NewDialogViewModel: ViewModel(), KoinComponent {
 
-    private val scope = CoroutineScope(Dispatchers.IO)
+    private val job = Job()
+    private val scope = CoroutineScope(Dispatchers.IO + job)
     private val userDataCheckingChannel = Channel<String>(Channel.CONFLATED)
+
+    val userId: String by inject(KOIN_USER_ID)
 
     val errors = MutableLiveData<Exception>()
     val result = MutableLiveData<Result>()
 
-    private val usersRef: CollectionReference by inject("users")
+    private val usersRef: CollectionReference by inject(KOIN_USERS_FIRESTORE_COLLECTION)
 
     fun init() {
         scope.launch {
@@ -59,6 +65,13 @@ class NewDialogViewModel: ViewModel(), KoinComponent {
 
             success(channel)
         }
+    }
+
+    override fun onCleared() {
+        super.onCleared()
+
+        job.cancel()
+        userDataCheckingChannel.close()
     }
 
     class Result(val data: String, val userId: String?)
