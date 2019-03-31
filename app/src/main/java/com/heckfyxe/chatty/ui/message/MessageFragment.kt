@@ -12,6 +12,7 @@ import com.heckfyxe.chatty.model.Message
 import com.heckfyxe.chatty.util.GoneImageLoader
 import com.heckfyxe.chatty.util.loadCircleUserAvatar
 import com.sendbird.android.GroupChannel
+import com.stfalcon.chatkit.messages.MessageInput
 import com.stfalcon.chatkit.messages.MessagesListAdapter
 import kotlinx.android.synthetic.main.message_fragment.*
 import org.koin.androidx.viewmodel.ext.android.viewModel
@@ -71,7 +72,6 @@ class MessageFragment : Fragment() {
 
         messageList?.setAdapter(adapter)
         adapter.setLoadMoreListener { page, totalItemsCount ->
-            Log.i("MessageFragment", "page: $page, total: $totalItemsCount")
             viewModel.getPrevMessages()
         }
 
@@ -79,5 +79,15 @@ class MessageFragment : Fragment() {
             viewModel.sendMessage(it.toString()) { }
             return@setInputListener true
         }
+
+        messageTextInput?.setTypingListener(object : MessageInput.TypingListener {
+            override fun onStartTyping() {
+                viewModel.startTyping()
+            }
+
+            override fun onStopTyping() {
+                viewModel.endTyping()
+            }
+        })
     }
 }

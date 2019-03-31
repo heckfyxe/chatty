@@ -97,4 +97,12 @@ class MessageViewModel : ViewModel(), KoinComponent {
             messagesUpdatedLiveData.postValue(true)
         }
     }
+
+    fun startTyping() {
+        channel.startTyping()
+    }
+
+    fun endTyping() {
+        channel.endTyping()
+    }
 }
