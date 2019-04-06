@@ -12,7 +12,7 @@ fun BaseMessage.getSender(): Sender =
         else -> throw Exception("Unknown message type")
     }
 
-fun BaseMessage.getText() = when (this) {
+fun BaseMessage.getText(): String = when (this) {
     is UserMessage -> message
     is FileMessage -> name
     else -> ""

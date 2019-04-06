@@ -49,25 +49,34 @@ class DialogListRepository : KoinComponent {
     fun getUserById(id: String): com.heckfyxe.chatty.room.User = userDao.getUserById(id)
 
     fun refresh() {
-        GroupChannel.createMyGroupChannelListQuery().next { groups, e ->
+        GroupChannel.createMyGroupChannelListQuery().next { channels, e ->
             if (e != null) {
                 errors.postValue(e)
                 return@next
             }
 
-            val users = ArrayList<User>(groups.size)
-            val messages = ArrayList<Message>(groups.size)
-            val dialogs = ArrayList<Dialog>(groups.size)
+            val users = ArrayList<User>(channels.size)
+            val messages = ArrayList<Message>(channels.size)
+            val dialogs = ArrayList<Dialog>(channels.size)
 
-            groups.forEach {
-                it.lastMessage.apply {
+            channels.forEach { channel ->
+                channel.lastMessage.apply {
                     users.add(with(getSender()) {
                         User(userId, nickname, profileUrl)
                     })
                     messages.add(Message(messageId, createdAt, getSender().userId, getText()))
                 }
-                with(it) {
-                    dialogs.add(Dialog(url, lastMessage.messageId, name, unreadMessageCount, coverUrl))
+                with(channel) {
+                    val consider = members.single { it.userId != userId }
+                    dialogs.add(
+                        Dialog(
+                            url,
+                            lastMessage.messageId,
+                            consider.nickname,
+                            unreadMessageCount,
+                            consider.profileUrl
+                        )
+                    )
                 }
             }
 
