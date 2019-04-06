@@ -3,7 +3,7 @@ package com.heckfyxe.chatty.model
 import com.sendbird.android.User
 import com.stfalcon.chatkit.commons.models.IUser
 
-class User: IUser {
+class ChatUser : IUser {
 
     private var _id: String
     private var _nickname: String
@@ -19,19 +19,7 @@ class User: IUser {
 
     override fun getId(): String = _id
 
-    fun setId(id: String) {
-        _id = id
-    }
-
     override fun getName(): String = _nickname
 
-    fun setName(name: String) {
-        _nickname = name
-    }
-
     override fun getAvatar(): String? = _avatar
-
-    fun setAvatar(avatarUrl: String?) {
-        _avatar = avatarUrl
-    }
 }

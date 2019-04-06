@@ -30,6 +30,7 @@ ext {
     koin_version = '1.0.2'
     nav_version = '2.0.0'
     glide_version = '4.9.0'
+    room_version = '2.1.0-alpha06'
 }
 
 dependencies {
@@ -56,6 +57,7 @@ dependencies {
     // Testing
     testImplementation 'junit:junit:4.12'
     testImplementation "io.mockk:mockk:1.9"
+    androidTestImplementation "io.mockk:mockk-android:1.9"
     androidTestImplementation 'androidx.test:runner:1.1.2-alpha02'
     androidTestImplementation 'androidx.test.espresso:espresso-core:3.2.0-alpha02'
     // Layout
@@ -70,4 +72,8 @@ dependencies {
     // Glide
     implementation "com.github.bumptech.glide:glide:$glide_version"
     kapt "com.github.bumptech.glide:compiler:$glide_version"
+    // Room
+    implementation "androidx.room:room-runtime:$room_version"
+    kapt "androidx.room:room-compiler:$room_version"
+    implementation "androidx.room:room-ktx:$room_version"
 }

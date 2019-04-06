@@ -1,52 +1,66 @@
 package com.heckfyxe.chatty.ui.main
 
+import androidx.lifecycle.LiveData
 import androidx.lifecycle.MutableLiveData
+import androidx.lifecycle.Observer
+import androidx.lifecycle.Transformations
 import androidx.lifecycle.ViewModel
-import com.google.firebase.auth.FirebaseAuth
-import com.heckfyxe.chatty.koin.KOIN_USER_ID
-import com.sendbird.android.GroupChannel
-import com.sendbird.android.SendBird
-import com.sendbird.android.SendBirdException
+import com.heckfyxe.chatty.model.ChatDialog
+import com.heckfyxe.chatty.model.ChatMessage
+import com.heckfyxe.chatty.model.ChatUser
+import com.heckfyxe.chatty.repository.DialogListRepository
+import com.heckfyxe.chatty.room.Dialog
 import com.sendbird.android.User
+import kotlinx.coroutines.*
 import org.koin.standalone.KoinComponent
-import org.koin.standalone.inject
+import java.util.*
 
-class MainViewModel : ViewModel(), KoinComponent {
+class MainViewModel(private val repository: DialogListRepository) : ViewModel(), KoinComponent {
 
-    val currentUser = MutableLiveData<User>()
+    private val job = Job()
+    private val scope = CoroutineScope(job + Dispatchers.IO)
 
-    val errors = MutableLiveData<SendBirdException>()
+    val currentUser: LiveData<User> = Transformations.map(repository.currentUser) { it }
 
-    val chats = MutableLiveData<List<GroupChannel>>()
+    val errors: LiveData<Exception> = Transformations.map(repository.errors) { it }
 
-    val userId: String by inject(KOIN_USER_ID)
+    private val _chats = MutableLiveData<List<ChatDialog>>()
+    val chats: LiveData<List<ChatDialog>> = Transformations.map(_chats) { it }
 
-    fun connectUser() {
-        SendBird.connect(userId) { sendBirdUser, e ->
-            if (e != null) {
-                errors.postValue(e)
-                return@connect
-            }
-
-            currentUser.postValue(sendBirdUser)
+    private val observer = Observer<List<Dialog>> {
+        scope.launch {
+            val chatDialogs = it.map {
+                scope.async {
+                    val lastMessage = repository.getMessageById(it.lastMessageId)
+                    val messageSender = repository.getUserById(lastMessage.senderId)
+                    val user = with(messageSender) { ChatUser(id, name, avatarUrl) }
+                    val chatMessage = with(lastMessage) { ChatMessage(id, Date(time), user, text) }
+                    with(it) {
+                        ChatDialog(id, name, photoUrl, chatMessage, unreadCount)
+                    }
+                }
+            }.awaitAll()
+            _chats.postValue(chatDialogs)
         }
     }
 
-    fun loadChats() {
-        GroupChannel.createMyGroupChannelListQuery().next { groups, e ->
-            if (e != null) {
-                errors.postValue(e)
-                return@next
-            }
-
-            chats.postValue(groups)
-        }
+    init {
+        repository.chats.observeForever(observer)
     }
 
-    fun logOut(action: () -> Unit) {
-        SendBird.disconnect {
-            FirebaseAuth.getInstance().signOut()
-            action()
-        }
+    fun connectUser() = repository.connectUser()
+
+    fun getMessageById(id: Long) = repository.getMessageById(id)
+
+    fun loadChats() = repository.refresh()
+
+    fun logOut(action: () -> Unit) = repository.logOut(action)
+
+    override fun onCleared() {
+        super.onCleared()
+
+        job.cancel()
+        repository.clear()
+        repository.chats.removeObserver(observer)
     }
 }

@@ -12,25 +12,26 @@ import androidx.fragment.app.Fragment
 import androidx.lifecycle.Observer
 import androidx.navigation.fragment.findNavController
 import com.heckfyxe.chatty.R
-import com.heckfyxe.chatty.model.Dialog
+import com.heckfyxe.chatty.model.ChatDialog
 import com.heckfyxe.chatty.ui.message.MessageFragment
 import com.heckfyxe.chatty.util.GlideImageLoader
 import com.stfalcon.chatkit.dialogs.DialogsListAdapter
 import kotlinx.android.synthetic.main.main_fragment.*
 import org.koin.androidx.viewmodel.ext.android.viewModel
+import java.io.File
 
 class MainFragment : Fragment() {
 
     private val model: MainViewModel by viewModel()
 
-    private lateinit var adapter: DialogsListAdapter<Dialog>
+    private lateinit var adapter: DialogsListAdapter<ChatDialog>
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
 
         adapter = DialogsListAdapter(GlideImageLoader())
         adapter.setOnDialogClickListener {
-            launchMessageFragment(it.channel.serialize())
+            //            launchMessageFragment(it.serialize())
         }
 
         connectToViewModel()
@@ -71,8 +72,8 @@ class MainFragment : Fragment() {
         })
 
         model.chats.observe(this, Observer {
-            it.forEach { channel ->
-                adapter.upsertItem(Dialog(channel, model.userId))
+            it.forEach { dialog ->
+                adapter.upsertItem(dialog)
             }
         })
     }
@@ -113,6 +114,8 @@ class MainFragment : Fragment() {
     }
 
     private fun launchMessageFragment(serializedGroupChannel: ByteArray) {
+        val file = File(context!!.filesDir, "channel")
+        file.writeBytes(serializedGroupChannel)
         findNavController().navigate(R.id.action_mainFragment_to_messageFragment, bundleOf(
             MessageFragment.ARG_CHANNEL to serializedGroupChannel
         ))

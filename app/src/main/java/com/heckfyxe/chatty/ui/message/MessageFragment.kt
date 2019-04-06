@@ -8,7 +8,7 @@ import android.view.ViewGroup
 import androidx.fragment.app.Fragment
 import androidx.lifecycle.Observer
 import com.heckfyxe.chatty.R
-import com.heckfyxe.chatty.model.Message
+import com.heckfyxe.chatty.model.ChatMessage
 import com.heckfyxe.chatty.util.GoneImageLoader
 import com.heckfyxe.chatty.util.loadCircleUserAvatar
 import com.sendbird.android.GroupChannel
@@ -25,7 +25,7 @@ class MessageFragment : Fragment() {
 
     private val viewModel: MessageViewModel by viewModel()
 
-    private lateinit var adapter: MessagesListAdapter<Message>
+    private lateinit var adapter: MessagesListAdapter<ChatMessage>
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)

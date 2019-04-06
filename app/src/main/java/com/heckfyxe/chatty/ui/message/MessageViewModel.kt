@@ -3,8 +3,8 @@ package com.heckfyxe.chatty.ui.message
 import androidx.lifecycle.MutableLiveData
 import androidx.lifecycle.ViewModel
 import com.heckfyxe.chatty.koin.KOIN_USER_ID
-import com.heckfyxe.chatty.model.Message
-import com.heckfyxe.chatty.model.User
+import com.heckfyxe.chatty.model.ChatMessage
+import com.heckfyxe.chatty.model.ChatUser
 import com.sendbird.android.BaseChannel
 import com.sendbird.android.GroupChannel
 import org.koin.standalone.KoinComponent
@@ -19,7 +19,7 @@ class MessageViewModel : ViewModel(), KoinComponent {
 
     val errors = MutableLiveData<Exception>()
     val messagesUpdatedLiveData = MutableLiveData<Boolean>()
-    val interlocutor = MutableLiveData<User>()
+    val interlocutor = MutableLiveData<ChatUser>()
 
     private lateinit var channel: GroupChannel
     val userId: String by inject(KOIN_USER_ID)
@@ -29,7 +29,7 @@ class MessageViewModel : ViewModel(), KoinComponent {
     private var isLoading = false
     private var isHistoryEmpty = false
 
-    val messageList = LinkedList<Message>()
+    val messageList = LinkedList<ChatMessage>()
 
     fun init(channel: GroupChannel) {
         if (isInitialized)
@@ -41,7 +41,7 @@ class MessageViewModel : ViewModel(), KoinComponent {
 
         val lastMessage = channel.lastMessage
         lastMessageId = lastMessage.messageId
-        messageList.add(Message(lastMessage))
+        messageList.add(ChatMessage(lastMessage))
         messagesUpdatedLiveData.postValue(true)
 
         if (channel.memberCount != 2) {
@@ -49,7 +49,7 @@ class MessageViewModel : ViewModel(), KoinComponent {
         }
 
         val interlocutor = channel.members.single { it.userId != userId }
-        this.interlocutor.postValue(User(interlocutor))
+        this.interlocutor.postValue(ChatUser(interlocutor))
     }
 
     fun sendMessage(text: String, success: () -> Unit) {
@@ -59,7 +59,7 @@ class MessageViewModel : ViewModel(), KoinComponent {
                 return@sendUserMessage
             }
 
-            messageList.addFirst(Message(message))
+            messageList.addFirst(ChatMessage(message))
             messagesUpdatedLiveData.postValue(true)
             success()
         }
@@ -92,7 +92,7 @@ class MessageViewModel : ViewModel(), KoinComponent {
 
             lastMessageId = loadedMessages.last().messageId
 
-            val messages = loadedMessages.map { Message(it) }
+            val messages = loadedMessages.map { ChatMessage(it) }
             messageList.addAll(messages)
             messagesUpdatedLiveData.postValue(true)
         }
