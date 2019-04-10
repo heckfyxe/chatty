@@ -8,21 +8,21 @@ import androidx.lifecycle.ViewModel
 import com.heckfyxe.chatty.model.ChatDialog
 import com.heckfyxe.chatty.model.ChatMessage
 import com.heckfyxe.chatty.model.ChatUser
-import com.heckfyxe.chatty.repository.DialogListRepository
+import com.heckfyxe.chatty.repository.DialogRepository
 import com.heckfyxe.chatty.room.Dialog
 import com.sendbird.android.User
 import kotlinx.coroutines.*
 import org.koin.standalone.KoinComponent
 import java.util.*
 
-class MainViewModel(private val repository: DialogListRepository) : ViewModel(), KoinComponent {
+class MainViewModel(private val repository: DialogRepository) : ViewModel(), KoinComponent {
 
     private val job = Job()
     private val scope = CoroutineScope(job + Dispatchers.IO)
 
-    val currentUser: LiveData<User> = Transformations.map(repository.currentUser) { it }
+    val currentUser: LiveData<User> = repository.currentUser
 
-    val errors: LiveData<Exception> = Transformations.map(repository.errors) { it }
+    val errors: LiveData<Exception> = repository.errors
 
     private val _chats = MutableLiveData<List<ChatDialog>>()
     val chats: LiveData<List<ChatDialog>> = Transformations.map(_chats) { it }

@@ -11,6 +11,7 @@ import androidx.core.view.isVisible
 import androidx.fragment.app.DialogFragment
 import androidx.lifecycle.Observer
 import com.heckfyxe.chatty.R
+import com.heckfyxe.chatty.util.sendbird.saveOnDevice
 import kotlinx.android.synthetic.main.dialog_new_dialog.*
 import org.koin.androidx.viewmodel.ext.android.viewModel
 
@@ -105,14 +106,15 @@ class NewDialogDialog: DialogFragment() {
 
     private fun createDialog(userId: String) {
         model.createDialog(userId) {
+            it.saveOnDevice(context!!)
             targetFragment?.onActivityResult(targetRequestCode, Activity.RESULT_OK, Intent().apply {
-                putExtra(EXTRA_CHANNEL, it.serialize())
+                putExtra(EXTRA_CHANNEL_ID, it.url)
             })
             dismiss()
         }
     }
 
     companion object {
-        const val EXTRA_CHANNEL = "com.heckfyxe.chatty.ui.main.EXTRA_CHANNEL"
+        const val EXTRA_CHANNEL_ID = "com.heckfyxe.chatty.ui.main.EXTRA_CHANNEL_ID"
     }
 }

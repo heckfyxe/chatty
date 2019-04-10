@@ -32,7 +32,7 @@
                         android:id="@+id/dialogUserAvatar"
                         android:layout_width="50dp"
                         android:layout_height="50dp"
-                        android:padding="8dp"
+                        android:padding="1dp"
                         android:layout_alignParentStart="true"
                         android:layout_alignParentTop="true"
                         android:layout_alignParentBottom="true"
@@ -43,7 +43,7 @@
                         android:id="@+id/dialogUserNickname"
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
-                        android:layout_marginStart="16dp"
+                        android:layout_marginStart="8dp"
                         android:layout_toEndOf="@+id/dialogUserAvatar"
                         android:textSize="20sp"
                         tools:text="@tools:sample/first_names" />

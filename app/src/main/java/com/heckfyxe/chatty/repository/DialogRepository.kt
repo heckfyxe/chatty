@@ -1,5 +1,6 @@
 package com.heckfyxe.chatty.repository
 
+import android.content.Context
 import androidx.lifecycle.MutableLiveData
 import androidx.room.withTransaction
 import com.google.firebase.auth.FirebaseAuth
@@ -7,6 +8,7 @@ import com.heckfyxe.chatty.koin.KOIN_USER_ID
 import com.heckfyxe.chatty.room.*
 import com.heckfyxe.chatty.util.sendbird.getSender
 import com.heckfyxe.chatty.util.sendbird.getText
+import com.heckfyxe.chatty.util.sendbird.saveOnDevice
 import com.sendbird.android.GroupChannel
 import com.sendbird.android.SendBird
 import kotlinx.coroutines.CoroutineScope
@@ -16,7 +18,9 @@ import kotlinx.coroutines.launch
 import org.koin.standalone.KoinComponent
 import org.koin.standalone.inject
 
-class DialogListRepository : KoinComponent {
+class DialogRepository : KoinComponent {
+
+    private val context: Context by inject()
 
     private val database: AppDatabase by inject()
     private val dialogDao: DialogDao by inject()
@@ -55,30 +59,38 @@ class DialogListRepository : KoinComponent {
                 return@next
             }
 
-            val users = ArrayList<User>(channels.size)
+            val users = ArrayList<User>(channels.size + 1)
             val messages = ArrayList<Message>(channels.size)
             val dialogs = ArrayList<Dialog>(channels.size)
 
             channels.forEach { channel ->
+                channel.saveOnDevice(context)
+
                 channel.lastMessage.apply {
-                    users.add(with(getSender()) {
-                        User(userId, nickname, profileUrl)
-                    })
-                    messages.add(Message(messageId, createdAt, getSender().userId, getText()))
+                    messages.add(Message(messageId, channel.url, createdAt, getSender().userId, getText()))
                 }
                 with(channel) {
-                    val consider = members.single { it.userId != userId }
+                    val interlocutor = members.single { it.userId != userId }
+
+                    users.add(with(interlocutor) {
+                        User(userId, nickname, profileUrl)
+                    })
+
                     dialogs.add(
                         Dialog(
                             url,
                             lastMessage.messageId,
-                            consider.nickname,
+                            interlocutor.nickname,
                             unreadMessageCount,
-                            consider.profileUrl
+                            interlocutor.profileUrl
                         )
                     )
                 }
             }
+
+            users.add(with(SendBird.getCurrentUser()) {
+                User(userId, nickname, profileUrl)
+            })
 
             scope.launch {
                 database.withTransaction {

@@ -7,37 +7,34 @@ import android.view.View
 import android.view.ViewGroup
 import androidx.fragment.app.Fragment
 import androidx.lifecycle.Observer
+import androidx.navigation.fragment.navArgs
 import com.heckfyxe.chatty.R
+import com.heckfyxe.chatty.koin.KOIN_USER_ID
 import com.heckfyxe.chatty.model.ChatMessage
 import com.heckfyxe.chatty.util.GoneImageLoader
 import com.heckfyxe.chatty.util.loadCircleUserAvatar
-import com.sendbird.android.GroupChannel
 import com.stfalcon.chatkit.messages.MessageInput
 import com.stfalcon.chatkit.messages.MessagesListAdapter
 import kotlinx.android.synthetic.main.message_fragment.*
+import org.koin.android.ext.android.inject
 import org.koin.androidx.viewmodel.ext.android.viewModel
+import org.koin.core.parameter.parametersOf
 
 class MessageFragment : Fragment() {
 
-    companion object {
-        const val ARG_CHANNEL = "com.heckfyxe.chatty.ARG_CHANNEL"
-    }
+    private val userId: String by inject(KOIN_USER_ID)
 
-    private val viewModel: MessageViewModel by viewModel()
+    private val viewModel: MessageViewModel by viewModel { parametersOf(args.channelId) }
+
+    private val args: MessageFragmentArgs by navArgs()
 
     private lateinit var adapter: MessagesListAdapter<ChatMessage>
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
 
-        if (!viewModel.isInitialized) {
-            val bytes = arguments?.getByteArray(ARG_CHANNEL)
-            val channel = GroupChannel.buildFromSerializedData(bytes) as GroupChannel
-            viewModel.init(channel)
-        }
-
         adapter = MessagesListAdapter(
-            viewModel.userId,
+            userId,
             GoneImageLoader()
         )
 
@@ -45,9 +42,9 @@ class MessageFragment : Fragment() {
     }
 
     private fun observeViewModel() {
-        viewModel.messagesUpdatedLiveData.observe(this, Observer {
+        viewModel.messages.observe(this, Observer {
             adapter.clear()
-            adapter.addToEnd(viewModel.messageList, false)
+            adapter.addToEnd(it, false)
         })
 
         viewModel.interlocutor.observe(this, Observer {
@@ -71,12 +68,12 @@ class MessageFragment : Fragment() {
         super.onViewCreated(view, savedInstanceState)
 
         messageList?.setAdapter(adapter)
-        adapter.setLoadMoreListener { page, totalItemsCount ->
+        adapter.setLoadMoreListener { _, _ ->
             viewModel.getPrevMessages()
         }
 
         messageTextInput?.setInputListener {
-            viewModel.sendMessage(it.toString()) { }
+            viewModel.sendTextMessage(it.toString())
             return@setInputListener true
         }
 

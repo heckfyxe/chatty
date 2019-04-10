@@ -47,5 +47,9 @@
     <fragment
         android:id="@+id/messageFragment"
         android:name="com.heckfyxe.chatty.ui.message.MessageFragment"
-        android:label="MessageFragment" />
+        android:label="MessageFragment">
+        <argument
+            android:name="channelId"
+            app:argType="string" />
+    </fragment>
 </navigation>
