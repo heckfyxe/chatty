@@ -47,7 +47,7 @@ class MessageFragment : Fragment() {
             adapter.addToEnd(it, false)
         })
 
-        viewModel.interlocutor.observe(this, Observer {
+        viewModel.interlocutorLiveData.observe(this, Observer {
             dialogUserNickname?.text = it.name
             dialogUserAvatar?.loadCircleUserAvatar(it)
         })

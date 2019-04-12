@@ -1,19 +1,15 @@
 package com.heckfyxe.chatty.repository
 
 import androidx.lifecycle.MutableLiveData
+import androidx.room.withTransaction
 import com.heckfyxe.chatty.koin.KOIN_USER_ID
-import com.heckfyxe.chatty.room.Message
-import com.heckfyxe.chatty.room.MessageDao
-import com.heckfyxe.chatty.room.UserDao
+import com.heckfyxe.chatty.room.*
 import com.heckfyxe.chatty.util.sendbird.channelFromDevice
 import com.heckfyxe.chatty.util.sendbird.getSender
 import com.heckfyxe.chatty.util.sendbird.getText
 import com.sendbird.android.BaseChannel
 import com.sendbird.android.GroupChannel
-import kotlinx.coroutines.CoroutineScope
-import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.Job
-import kotlinx.coroutines.launch
+import kotlinx.coroutines.*
 import org.koin.standalone.KoinComponent
 import org.koin.standalone.get
 import org.koin.standalone.inject
@@ -27,19 +23,31 @@ class MessageRepository(channelId: String) : KoinComponent {
     private val job = Job()
     private val scope = CoroutineScope(job + Dispatchers.IO)
 
-    private val userId: String by inject(name = KOIN_USER_ID)
-
+    private val database: AppDatabase by inject()
+    private val dialogDao: DialogDao by inject()
     private val userDao: UserDao by inject()
     private val messageDao: MessageDao by inject()
 
     private val channel: GroupChannel = channelFromDevice(get(), channelId) as GroupChannel
 
+    private val userId: String by inject(name = KOIN_USER_ID)
+    val currentUser = scope.async { userDao.getUserById(userId) }
+
+    private val interlocutorId = channel.members.single { it.userId != userId }.userId
+    val interlocutor = scope.async { userDao.getUserById(interlocutorId) }
+
     val messages = messageDao.getMessagesLiveData(channel.url)
     val errors = MutableLiveData<Exception>()
-    val interlocutor = userDao.getUserLiveDataById(userId)
 
     private var isLoading = false
     private var isHistoryEmpty = false
+
+    init {
+        scope.launch {
+            currentUser.await()
+            interlocutor.await()
+        }
+    }
 
     fun getPrevMessages() {
         if (isLoading)
@@ -96,7 +104,14 @@ class MessageRepository(channelId: String) : KoinComponent {
             )
 
             scope.launch {
-                messageDao.insert(roomMessage)
+                val user = currentUser.await()
+                val dialog = with(channel) {
+                    Dialog(url, roomMessage.id, user.name, unreadMessageCount, user.avatarUrl)
+                }
+                database.withTransaction {
+                    messageDao.insert(roomMessage)
+                    dialogDao.insert(dialog)
+                }
             }
         }
     }
@@ -107,5 +122,9 @@ class MessageRepository(channelId: String) : KoinComponent {
 
     fun endTyping() {
         channel.endTyping()
+    }
+
+    fun clear() {
+        job.cancel()
     }
 }

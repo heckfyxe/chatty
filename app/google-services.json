@@ -23,6 +23,14 @@
           }
         },
         {
+          "client_id": "319390643574-3egucd5erc6u5e89pla7r7ae3m301qlp.apps.googleusercontent.com",
+          "client_type": 1,
+          "android_info": {
+            "package_name": "com.heckfyxe.chatty",
+            "certificate_hash": "89308ebabda05a8896d9f8c32fc76c6904e005fc"
+          }
+        },
+        {
           "client_id": "319390643574-ljk3ppsotse280s80d4vnjv4j9qkq32s.apps.googleusercontent.com",
           "client_type": 3
         }
@@ -33,20 +41,13 @@
         }
       ],
       "services": {
-        "analytics_service": {
-          "status": 1
-        },
         "appinvite_service": {
-          "status": 2,
           "other_platform_oauth_client": [
             {
               "client_id": "319390643574-ljk3ppsotse280s80d4vnjv4j9qkq32s.apps.googleusercontent.com",
               "client_type": 3
             }
           ]
-        },
-        "ads_service": {
-          "status": 2
         }
       }
     }
