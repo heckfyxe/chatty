@@ -15,6 +15,12 @@ interface DialogDao {
     @Insert(onConflict = OnConflictStrategy.REPLACE)
     fun insert(dialogs: List<Dialog>)
 
-    @Query("SELECT * FROM Dialog ")
+    @Query("SELECT * FROM Dialog ORDER BY lastMessageId DESC")
     fun getDialogsLiveData(): LiveData<List<Dialog>>
+
+    @Query("UPDATE dialog SET lastMessageId = :lastMessageId WHERE id = :dialogId")
+    fun updateDialogLastMessageId(dialogId: String, lastMessageId: Long)
+
+    @Query("SELECT notificationId FROM dialog WHERE id = :id LIMIT 1")
+    fun getNotificationIdByDialogId(id: String): Int?
 }

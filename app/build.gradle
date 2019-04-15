@@ -51,6 +51,7 @@ dependencies {
     implementation 'com.google.firebase:firebase-auth:16.2.1'
     implementation 'com.firebaseui:firebase-ui-auth:4.3.1'
     implementation 'com.google.firebase:firebase-firestore:18.2.0'
+    implementation 'com.google.firebase:firebase-messaging:17.6.0'
     // Chat
     implementation 'com.sendbird.sdk:sendbird-android-sdk:3.0.88'
     implementation 'com.github.stfalcon:chatkit:0.3.3'

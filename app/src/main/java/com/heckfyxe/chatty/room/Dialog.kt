@@ -1,14 +1,16 @@
 package com.heckfyxe.chatty.room
 
 import androidx.room.Entity
+import androidx.room.Index
 import androidx.room.PrimaryKey
 
-@Entity
+@Entity(indices = [Index(value = ["id"], unique = true)])
 data class Dialog(
-    @PrimaryKey
     var id: String,
     var lastMessageId: Long,
     var name: String,
     var unreadCount: Int,
-    var photoUrl: String
+    var photoUrl: String,
+    @PrimaryKey(autoGenerate = true)
+    var notificationId: Int = 0
 )

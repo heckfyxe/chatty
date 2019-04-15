@@ -50,7 +50,7 @@ class DialogRepository : KoinComponent {
 
     fun getMessageById(id: Long): Message = messageDao.getMessageById(id)
 
-    fun getUserById(id: String): com.heckfyxe.chatty.room.User = userDao.getUserById(id)
+    fun getUserById(id: String): User = userDao.getUserById(id)!!
 
     fun refresh() {
         GroupChannel.createMyGroupChannelListQuery().next { channels, e ->
@@ -64,6 +64,7 @@ class DialogRepository : KoinComponent {
             val dialogs = ArrayList<Dialog>(channels.size)
 
             channels.forEach { channel ->
+                channel.setPushPreference(true) { }
                 channel.saveOnDevice(context)
 
                 channel.lastMessage.apply {

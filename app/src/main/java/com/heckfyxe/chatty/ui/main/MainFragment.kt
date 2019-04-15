@@ -10,12 +10,15 @@ import androidx.appcompat.app.AppCompatActivity
 import androidx.fragment.app.Fragment
 import androidx.lifecycle.Observer
 import androidx.navigation.fragment.findNavController
+import com.google.firebase.iid.FirebaseInstanceId
 import com.heckfyxe.chatty.R
 import com.heckfyxe.chatty.model.ChatDialog
 import com.heckfyxe.chatty.util.GlideImageLoader
+import com.sendbird.android.SendBird
 import com.stfalcon.chatkit.dialogs.DialogsListAdapter
 import kotlinx.android.synthetic.main.main_fragment.*
 import org.koin.androidx.viewmodel.ext.android.viewModel
+
 
 class MainFragment : Fragment() {
 
@@ -44,7 +47,7 @@ class MainFragment : Fragment() {
     }
 
     override fun onCreateOptionsMenu(menu: Menu, inflater: MenuInflater) {
-        inflater.inflate(R.menu.fragment_main, menu)
+        inflater.inflate(com.heckfyxe.chatty.R.menu.fragment_main, menu)
     }
 
     override fun onOptionsItemSelected(item: MenuItem): Boolean =
@@ -61,17 +64,16 @@ class MainFragment : Fragment() {
     private fun connectToViewModel() {
         model.currentUser.observe(this, Observer {
             model.loadChats()
+            registerPushNotification()
         })
 
         model.errors.observe(this, Observer {
             Log.e("MainFragment", it.message, it.cause)
-            Toast.makeText(context!!, R.string.connection_error, Toast.LENGTH_SHORT).show()
+            Toast.makeText(context!!, com.heckfyxe.chatty.R.string.connection_error, Toast.LENGTH_SHORT).show()
         })
 
         model.chats.observe(this, Observer {
-            it.forEach { dialog ->
-                adapter.upsertItem(dialog)
-            }
+            adapter.setItems(it)
         })
     }
 
@@ -79,7 +81,7 @@ class MainFragment : Fragment() {
         inflater: LayoutInflater, container: ViewGroup?,
         savedInstanceState: Bundle?
     ): View {
-        return inflater.inflate(R.layout.main_fragment, container, false)
+        return inflater.inflate(com.heckfyxe.chatty.R.layout.main_fragment, container, false)
     }
 
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
@@ -107,6 +109,15 @@ class MainFragment : Fragment() {
                 }
             }
             else -> super.onActivityResult(requestCode, resultCode, data)
+        }
+    }
+
+    private fun registerPushNotification() {
+        FirebaseInstanceId.getInstance().instanceId.addOnSuccessListener(activity!!) { instanceIdResult ->
+            SendBird.registerPushTokenForCurrentUser(instanceIdResult.token) { status, e ->
+                if (e != null)
+                    Log.w("MainFragment", "registerPushNotification", e)
+            }
         }
     }
 

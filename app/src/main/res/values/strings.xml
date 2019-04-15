@@ -16,4 +16,5 @@
     <string name="not_found">Not found</string>
     <string name="new_dialog">New dialog</string>
     <string name="its_your">It\'s your</string>
+    <string name="default_notification_channel_id">com.heckfyxe.chatty.NOTIFICATION_CHANNEL_ID</string>
 </resources>

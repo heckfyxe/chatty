@@ -30,11 +30,11 @@ class MessageRepository(channelId: String) : KoinComponent {
 
     private val channel: GroupChannel = channelFromDevice(get(), channelId) as GroupChannel
 
-    private val userId: String by inject(name = KOIN_USER_ID)
-    val currentUser = scope.async { userDao.getUserById(userId) }
+    private val currentUserId: String by inject(name = KOIN_USER_ID)
+    val currentUser = loadUserByIdAsync(currentUserId)
 
-    private val interlocutorId = channel.members.single { it.userId != userId }.userId
-    val interlocutor = scope.async { userDao.getUserById(interlocutorId) }
+    private val interlocutorId = channel.members.single { it.userId != currentUserId }.userId
+    val interlocutor = loadUserByIdAsync(interlocutorId)
 
     val messages = messageDao.getMessagesLiveData(channel.url)
     val errors = MutableLiveData<Exception>()
@@ -47,6 +47,21 @@ class MessageRepository(channelId: String) : KoinComponent {
             currentUser.await()
             interlocutor.await()
         }
+    }
+
+    private fun loadUserByIdAsync(id: String): Deferred<User> = scope.async {
+        userDao.getUserById(id)?.let {
+            return@async it
+        }
+
+        val member = channel.members.single { it.userId == id }
+        val user = member.let {
+            User(it.userId, it.nickname, it.profileUrl)
+        }
+        scope.launch {
+            userDao.insert(user)
+        }
+        return@async user
     }
 
     fun getPrevMessages() {
@@ -104,13 +119,9 @@ class MessageRepository(channelId: String) : KoinComponent {
             )
 
             scope.launch {
-                val user = currentUser.await()
-                val dialog = with(channel) {
-                    Dialog(url, roomMessage.id, user.name, unreadMessageCount, user.avatarUrl)
-                }
                 database.withTransaction {
                     messageDao.insert(roomMessage)
-                    dialogDao.insert(dialog)
+                    dialogDao.updateDialogLastMessageId(channel.url, roomMessage.id)
                 }
             }
         }
