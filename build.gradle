@@ -23,6 +23,7 @@ allprojects {
         jcenter()
         mavenCentral()
         maven { url "https://raw.githubusercontent.com/smilefam/SendBird-SDK-Android/master/" }
+        maven { url "http://maven.affectiva.com" }
     }
 }
 
