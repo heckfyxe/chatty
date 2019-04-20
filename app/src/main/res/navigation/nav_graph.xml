@@ -40,9 +40,8 @@
         android:label="edit_user_data_fragment"
         tools:layout="@layout/edit_user_data_fragment" >
         <action
-            android:id="@+id/action_editUserDataFragment_to_mainFragment"
-            app:destination="@id/mainFragment"
-            app:popUpTo="@id/nav_graph" />
+            android:id="@+id/action_editUserDataFragment_to_contactFragment"
+            app:destination="@id/contactFragment" />
     </fragment>
     <fragment
         android:id="@+id/messageFragment"
@@ -51,5 +50,14 @@
         <argument
             android:name="channelId"
             app:argType="string" />
+    </fragment>
+    <fragment
+        android:id="@+id/contactFragment"
+        android:name="com.heckfyxe.chatty.ui.auth.ContactFragment"
+        android:label="contact_fragment"
+        tools:layout="@layout/contact_fragment">
+        <action
+            android:id="@+id/action_contactFragment_to_mainFragment"
+            app:destination="@id/mainFragment" />
     </fragment>
 </navigation>

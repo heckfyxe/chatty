@@ -35,9 +35,10 @@ class EditUserDataFragment : Fragment() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
 
-        model.init()
-        observeViewModel()
-        model.connectUser()
+//        model.init()
+//        observeViewModel()
+//        model.connectUser()
+        findNavController().navigate(R.id.action_editUserDataFragment_to_contactFragment)
     }
 
     private fun observeViewModel() {
@@ -122,7 +123,7 @@ class EditUserDataFragment : Fragment() {
         if (!nicknameEditText?.text.isNullOrEmpty()) {
             nicknameOkButton?.startAnimation()
             model.updateUserData(nicknameEditText.text.toString()) {
-                findNavController().navigate(R.id.action_editUserDataFragment_to_mainFragment)
+                findNavController().navigate(R.id.action_editUserDataFragment_to_contactFragment)
             }
         }
     }
