@@ -2,9 +2,11 @@ package com.heckfyxe.chatty.koin
 
 import com.google.firebase.auth.FirebaseAuth
 import com.google.firebase.firestore.FirebaseFirestore
+import com.heckfyxe.chatty.repository.ContactRepository
 import com.heckfyxe.chatty.repository.DialogRepository
 import com.heckfyxe.chatty.repository.MessageRepository
 import com.heckfyxe.chatty.room.AppDatabase
+import com.heckfyxe.chatty.ui.auth.ContactViewModel
 import com.heckfyxe.chatty.ui.auth.EditUserDataViewModel
 import com.heckfyxe.chatty.ui.main.MainViewModel
 import com.heckfyxe.chatty.ui.main.NewDialogViewModel
@@ -17,6 +19,7 @@ import org.koin.dsl.module.module
 private val repositoryModule = module {
     factory { DialogRepository() }
     factory { (channelId: String) -> MessageRepository(channelId) }
+    factory { ContactRepository() }
 }
 
 private val roomModule = module {
@@ -31,6 +34,7 @@ private val viewModelModule = module {
     viewModel { EditUserDataViewModel() }
     viewModel { NewDialogViewModel() }
     viewModel { (channelId: String) -> MessageViewModel(channelId) }
+    viewModel { ContactViewModel() }
 }
 
 const val KOIN_USERS_FIRESTORE_COLLECTION = "users"

@@ -1,15 +1,15 @@
 package com.heckfyxe.chatty.ui.auth
 
-import android.util.Log
+import androidx.lifecycle.MutableLiveData
 import androidx.lifecycle.ViewModel
 import com.google.firebase.firestore.CollectionReference
-import com.google.firebase.firestore.Query
 import com.heckfyxe.chatty.koin.KOIN_USERS_FIRESTORE_COLLECTION
 import com.heckfyxe.chatty.model.Contact
 import com.heckfyxe.chatty.repository.ContactRepository
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
+import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.launch
 import org.koin.standalone.KoinComponent
 import org.koin.standalone.inject
@@ -23,31 +23,63 @@ class ContactViewModel : ViewModel(), KoinComponent {
 
     private val usersRef: CollectionReference by inject(KOIN_USERS_FIRESTORE_COLLECTION)
 
-    fun getUsers() = scope.launch {
-        val contacts = repository.getContacts()
-        var query: Query? = null
-        contacts.forEach {
-            query = if (query != null)
-                query!!.whereEqualTo("phoneNumber", it.number)
-            else
-                usersRef.whereEqualTo("phoneNumber", it.number)
-        }
+    val contactsCountLiveData = MutableLiveData<Int>()
+    val contactsProgress = MutableLiveData<Int>()
 
-        query?.get()?.addOnCompleteListener {
-            if (!it.isSuccessful) {
-                Log.w("ContactViewModel", "isn't successful", it.exception)
-                return@addOnCompleteListener
-            }
+    private var contactsCount: Int = 0
+    private var loadedContactsCount: Int = 0
+    private val contactsList = mutableListOf<Contact>()
 
-            val users = it.result?.documents?.map { doc ->
-                Contact(doc.getString("phoneNumber")!!, doc.getString("nickname")!!)
+    private val channel = Channel<ContactStatus>()
+
+    val contacts = MutableLiveData<List<Contact>>()
+
+    init {
+        scope.launch {
+            for (contactStatus in channel) {
+                loadedContactsCount++
+
+                contactsProgress.postValue(loadedContactsCount)
+
+                if (contactStatus.has) {
+                    contactsList.add(contactStatus.contact)
+                }
+
+                if (loadedContactsCount == contactsCount) {
+                    contacts.postValue(contactsList)
+                }
             }
         }
     }
+
+    fun getUsers() = scope.launch {
+        val contacts = repository.getContacts()
+        contactsCount = contacts.size
+        contactsCountLiveData.postValue(contactsCount)
+        contacts.forEach {
+            checkPhoneNumber(it)
+        }
+    }
+
+    private fun checkPhoneNumber(contact: Contact) {
+        usersRef.whereEqualTo("phoneNumber", contact.number).get().addOnCompleteListener {
+            scope.launch {
+                if (!it.isSuccessful) {
+                    channel.send(ContactStatus(contact, false))
+                    return@launch
+                }
+
+                channel.send(ContactStatus(contact, it.result?.isEmpty != true))
+            }
+        }
+    }
+
+    data class ContactStatus(val contact: Contact, val has: Boolean)
 
     override fun onCleared() {
         super.onCleared()
 
         job.cancel()
+        channel.cancel()
     }
 }

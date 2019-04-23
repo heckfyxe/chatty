@@ -2,6 +2,7 @@ package com.heckfyxe.chatty.repository
 
 import android.content.Context
 import android.provider.ContactsContract
+import com.google.firebase.auth.FirebaseAuth
 import com.heckfyxe.chatty.model.Contact
 import io.michaelrocks.libphonenumber.android.NumberParseException
 import io.michaelrocks.libphonenumber.android.PhoneNumberUtil
@@ -12,6 +13,9 @@ import java.util.*
 class ContactRepository : KoinComponent {
 
     private val context: Context by inject()
+    private val auth: FirebaseAuth by inject()
+    private val user = auth.currentUser!!
+    private val userPhoneNumber = user.phoneNumber!!
 
     fun getContacts(): List<Contact> {
         val phones = context.contentResolver.query(
@@ -34,6 +38,10 @@ class ContactRepository : KoinComponent {
                     continue
                 phoneNumber = util.format(number, PhoneNumberUtil.PhoneNumberFormat.E164)
             } catch (e: NumberParseException) {
+                continue
+            }
+
+            if (util.isNumberMatch(userPhoneNumber, phoneNumber) == PhoneNumberUtil.MatchType.EXACT_MATCH) {
                 continue
             }
 
