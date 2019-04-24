@@ -11,11 +11,14 @@ import kotlinx.android.synthetic.main.item_contact.view.*
 
 class ContactsAdapter : RecyclerView.Adapter<ContactsAdapter.ViewHolder>() {
 
-    private val contactList = mutableListOf<Contact>()
+    private val contactList = mutableListOf<ContactViewModel.ContactWithId>()
 
-    class ContactDiff(private val oldList: List<Contact>, private val newList: List<Contact>) : DiffUtil.Callback() {
+    class ContactDiff(
+        private val oldList: List<ContactViewModel.ContactWithId>,
+        private val newList: List<ContactViewModel.ContactWithId>
+    ) : DiffUtil.Callback() {
         override fun areItemsTheSame(oldItemPosition: Int, newItemPosition: Int): Boolean =
-            oldList[oldItemPosition].number == newList[newItemPosition].number
+            oldList[oldItemPosition].uid == newList[newItemPosition].uid
 
         override fun getOldListSize(): Int = oldList.size
 
@@ -25,7 +28,7 @@ class ContactsAdapter : RecyclerView.Adapter<ContactsAdapter.ViewHolder>() {
             oldList[oldItemPosition] == newList[newItemPosition]
     }
 
-    fun update(list: List<Contact>) {
+    fun update(list: List<ContactViewModel.ContactWithId>) {
         val diff = DiffUtil.calculateDiff(ContactDiff(contactList, list))
         contactList.clear()
         contactList.addAll(list)
@@ -45,10 +48,12 @@ class ContactsAdapter : RecyclerView.Adapter<ContactsAdapter.ViewHolder>() {
     }
 
     class ViewHolder(itemView: View) : RecyclerView.ViewHolder(itemView) {
-        fun bind(contact: Contact) {
+        fun bind(contactWithId: ContactViewModel.ContactWithId) {
+            val contact = contactWithId.contact
             itemView.apply {
                 contactNumber.text = contact.number
                 contactName.text = contact.name
+                tag = contactWithId.uid
             }
         }
     }

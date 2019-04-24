@@ -28,11 +28,11 @@ class ContactViewModel : ViewModel(), KoinComponent {
 
     private var contactsCount: Int = 0
     private var loadedContactsCount: Int = 0
-    private val contactsList = mutableListOf<Contact>()
+    private val contactsList = mutableListOf<ContactWithId>()
 
     private val channel = Channel<ContactStatus>()
 
-    val contacts = MutableLiveData<List<Contact>>()
+    val contacts = MutableLiveData<List<ContactWithId>>()
 
     init {
         scope.launch {
@@ -62,19 +62,25 @@ class ContactViewModel : ViewModel(), KoinComponent {
     }
 
     private fun checkPhoneNumber(contact: Contact) {
-        usersRef.whereEqualTo("phoneNumber", contact.number).get().addOnCompleteListener {
+        usersRef.whereEqualTo("phoneNumber", contact.number)
+            .limit(1)
+            .get().addOnCompleteListener {
             scope.launch {
                 if (!it.isSuccessful) {
-                    channel.send(ContactStatus(contact, false))
+                    channel.send(ContactStatus(ContactWithId(contact = contact), false))
                     return@launch
                 }
 
-                channel.send(ContactStatus(contact, it.result?.isEmpty != true))
+                if (it.result?.isEmpty != true) {
+                    channel.send(ContactStatus(ContactWithId(it.result!!.first().id, contact), true))
+                } else {
+                    channel.send(ContactStatus(ContactWithId(contact = contact), false))
+                }
             }
         }
     }
 
-    data class ContactStatus(val contact: Contact, val has: Boolean)
+    data class ContactStatus(val contact: ContactWithId, val has: Boolean)
 
     override fun onCleared() {
         super.onCleared()
