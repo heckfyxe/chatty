@@ -82,9 +82,9 @@ class AuthFragment : Fragment() {
     }
 
     private fun startMainActivity(isNewUser: Boolean = false) {
-//        if (isNewUser)
+        if (isNewUser)
             findNavController().navigate(R.id.action_authFragment_to_editUserDataFragment)
-//        else
-//            findNavController().navigate(R.id.action_authFragment_to_mainFragment)
+        else
+            findNavController().navigate(R.id.action_authFragment_to_mainFragment)
     }
 }

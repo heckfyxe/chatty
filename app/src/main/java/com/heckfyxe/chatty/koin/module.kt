@@ -5,6 +5,7 @@ import com.google.firebase.firestore.FirebaseFirestore
 import com.heckfyxe.chatty.repository.ContactRepository
 import com.heckfyxe.chatty.repository.DialogRepository
 import com.heckfyxe.chatty.repository.MessageRepository
+import com.heckfyxe.chatty.repository.UserRepository
 import com.heckfyxe.chatty.room.AppDatabase
 import com.heckfyxe.chatty.ui.auth.ContactViewModel
 import com.heckfyxe.chatty.ui.auth.EditUserDataViewModel
@@ -20,6 +21,7 @@ private val repositoryModule = module {
     factory { DialogRepository() }
     factory { (channelId: String) -> MessageRepository(channelId) }
     factory { ContactRepository() }
+    factory { UserRepository() }
 }
 
 private val roomModule = module {

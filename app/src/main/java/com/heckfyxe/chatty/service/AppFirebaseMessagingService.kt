@@ -5,6 +5,7 @@ import android.app.NotificationManager
 import android.app.PendingIntent
 import android.content.Context
 import android.content.Intent
+import android.media.AudioAttributes
 import android.media.RingtoneManager
 import android.os.Build
 import androidx.core.app.NotificationCompat
@@ -73,9 +74,19 @@ class AppFirebaseMessagingService : FirebaseMessagingService(), KoinComponent {
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
             val notificationChannel = NotificationChannel(
                 notificationChannelId,
-                "Message channel",
-                NotificationManager.IMPORTANCE_DEFAULT
+                getString(R.string.message),
+                NotificationManager.IMPORTANCE_HIGH
             )
+            notificationChannel.apply {
+                enableVibration(true)
+                enableLights(true)
+                setSound(
+                    defaultSoundUri,
+                    AudioAttributes.Builder()
+                        .setUsage(AudioAttributes.USAGE_NOTIFICATION_COMMUNICATION_INSTANT)
+                        .build()
+                )
+            }
             notificationManager.createNotificationChannel(notificationChannel)
         }
 

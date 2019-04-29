@@ -41,7 +41,8 @@
         tools:layout="@layout/edit_user_data_fragment" >
         <action
             android:id="@+id/action_editUserDataFragment_to_contactFragment"
-            app:destination="@id/contactFragment" />
+            app:destination="@id/contactFragment"
+            app:enterAnim="@anim/nav_default_enter_anim" />
     </fragment>
     <fragment
         android:id="@+id/messageFragment"
@@ -58,6 +59,7 @@
         tools:layout="@layout/contact_fragment">
         <action
             android:id="@+id/action_contactFragment_to_mainFragment"
-            app:destination="@id/mainFragment" />
+            app:destination="@id/mainFragment"
+            app:popUpTo="@id/nav_graph" />
     </fragment>
 </navigation>

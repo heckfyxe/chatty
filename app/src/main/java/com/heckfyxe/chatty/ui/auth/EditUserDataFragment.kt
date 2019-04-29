@@ -35,10 +35,9 @@ class EditUserDataFragment : Fragment() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
 
-//        model.init()
-//        observeViewModel()
-//        model.connectUser()
-        findNavController().navigate(R.id.action_editUserDataFragment_to_contactFragment)
+        model.init()
+        observeViewModel()
+        model.connectUser()
     }
 
     private fun observeViewModel() {
@@ -114,8 +113,11 @@ class EditUserDataFragment : Fragment() {
             false
         }
 
-        nicknameOkButton?.setOnClickListener {
-            updateUserData()
+        nicknameOkButton?.apply {
+            saveInitialState()
+            setOnClickListener {
+                updateUserData()
+            }
         }
     }
 

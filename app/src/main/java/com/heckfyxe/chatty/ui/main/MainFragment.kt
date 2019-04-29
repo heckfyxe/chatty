@@ -42,7 +42,7 @@ class MainFragment : Fragment() {
     override fun onActivityCreated(savedInstanceState: Bundle?) {
         super.onActivityCreated(savedInstanceState)
 
-        (activity as AppCompatActivity).setSupportActionBar(toolbar)
+        (activity as? AppCompatActivity)?.setSupportActionBar(mainToolbar)
         setHasOptionsMenu(true)
     }
 
@@ -114,7 +114,7 @@ class MainFragment : Fragment() {
 
     private fun registerPushNotification() {
         FirebaseInstanceId.getInstance().instanceId.addOnSuccessListener(activity!!) { instanceIdResult ->
-            SendBird.registerPushTokenForCurrentUser(instanceIdResult.token) { status, e ->
+            SendBird.registerPushTokenForCurrentUser(instanceIdResult.token) { _, e ->
                 if (e != null)
                     Log.w("MainFragment", "registerPushNotification", e)
             }

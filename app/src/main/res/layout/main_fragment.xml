@@ -10,13 +10,14 @@
         android:layout_height="wrap_content">
 
         <androidx.appcompat.widget.Toolbar
-            android:id="@+id/toolbar"
+            android:id="@+id/mainToolbar"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:minHeight="?android:actionBarSize"
             app:title="@string/app_name"
             app:titleTextAppearance="?android:textAppearanceLarge"
-            app:titleTextColor="@color/white"/>
+            app:titleTextColor="@color/white"
+            app:layout_scrollFlags="scroll|enterAlways|snap" />
     </com.google.android.material.appbar.AppBarLayout>
 
     <com.stfalcon.chatkit.dialogs.DialogsList
