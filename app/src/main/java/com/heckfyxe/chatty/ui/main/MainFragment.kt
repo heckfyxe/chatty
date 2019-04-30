@@ -47,11 +47,15 @@ class MainFragment : Fragment() {
     }
 
     override fun onCreateOptionsMenu(menu: Menu, inflater: MenuInflater) {
-        inflater.inflate(com.heckfyxe.chatty.R.menu.fragment_main, menu)
+        inflater.inflate(R.menu.fragment_main, menu)
     }
 
     override fun onOptionsItemSelected(item: MenuItem): Boolean =
         when (item.itemId) {
+            R.id.mi_add_friends -> {
+                findNavController().navigate(R.id.action_mainFragment_to_contactFragment)
+                true
+            }
             R.id.mi_sign_out -> {
                 model.logOut {
                     findNavController().navigate(R.id.action_mainFragment_to_authFragment)
@@ -69,7 +73,7 @@ class MainFragment : Fragment() {
 
         model.errors.observe(this, Observer {
             Log.e("MainFragment", it.message, it.cause)
-            Toast.makeText(context!!, com.heckfyxe.chatty.R.string.connection_error, Toast.LENGTH_SHORT).show()
+            Toast.makeText(context!!, R.string.connection_error, Toast.LENGTH_SHORT).show()
         })
 
         model.chats.observe(this, Observer {
@@ -81,7 +85,7 @@ class MainFragment : Fragment() {
         inflater: LayoutInflater, container: ViewGroup?,
         savedInstanceState: Bundle?
     ): View {
-        return inflater.inflate(com.heckfyxe.chatty.R.layout.main_fragment, container, false)
+        return inflater.inflate(R.layout.main_fragment, container, false)
     }
 
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
