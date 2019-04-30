@@ -4,14 +4,18 @@ import androidx.lifecycle.MutableLiveData
 import androidx.lifecycle.ViewModel
 import com.google.firebase.firestore.CollectionReference
 import com.heckfyxe.chatty.koin.KOIN_USERS_FIRESTORE_COLLECTION
+import com.heckfyxe.chatty.model.CheckingContact
 import com.heckfyxe.chatty.model.Contact
 import com.heckfyxe.chatty.model.ContactWithId
 import com.heckfyxe.chatty.repository.ContactRepository
 import com.heckfyxe.chatty.repository.UserRepository
 import com.sendbird.android.SendBird
 import com.sendbird.android.User
-import kotlinx.coroutines.*
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.Job
 import kotlinx.coroutines.channels.Channel
+import kotlinx.coroutines.launch
 import org.koin.standalone.KoinComponent
 import org.koin.standalone.inject
 
@@ -42,7 +46,10 @@ class ContactViewModel : ViewModel(), KoinComponent {
     private val channelScope = CoroutineScope(channelJob)
     private val channel = Channel<ContactStatus>(Channel.UNLIMITED)
 
-    val contacts = MutableLiveData<List<ContactWithId>>()
+    private var isLoading = false
+    val isLoadingLiveData = MutableLiveData<Boolean>()
+
+    val contacts = MutableLiveData<List<CheckingContact>>()
 
     init {
         channelScope.launch {
@@ -56,26 +63,34 @@ class ContactViewModel : ViewModel(), KoinComponent {
                 }
 
                 if (loadedContactsCount == contactsCount) {
-                    contacts.postValue(contactsList)
+                    isLoading = false
+                    isLoadingLiveData.postValue(false)
+                    contacts.postValue(contactsList.map {
+                        val isChecked = checkedContactsIds.contains(it.uid)
+                        CheckingContact(it, isChecked)
+                    })
+                    prepareForGettingUsers()
                 }
             }
         }
     }
 
     fun getUsers() {
-        prepareForGettingUsers()
-        scope.launch {
-            val contacts = contactRepository.getContacts()
-            contactsCount = contacts.size
-            contactsCountLiveData.postValue(contactsCount)
-            contacts.forEach {
-                checkPhoneNumber(it)
+        if (!isLoading) {
+            isLoading = true
+            isLoadingLiveData.postValue(true)
+            scope.launch {
+                val contacts = contactRepository.getContacts()
+                contactsCount = contacts.size
+                contactsCountLiveData.postValue(contactsCount)
+                contacts.forEach {
+                    checkPhoneNumber(it)
+                }
             }
         }
     }
 
     private fun prepareForGettingUsers() {
-        job.cancelChildren()
         contactsCount = 0
         loadedContactsCount = 0
         contactsList.clear()
@@ -118,12 +133,17 @@ class ContactViewModel : ViewModel(), KoinComponent {
         }
     }
 
-    fun addCheckedContactId(id: String) {
-        checkedContactsIds.add(id)
-    }
-
-    fun removeUncheckedContactId(id: String) {
-        checkedContactsIds.remove(id)
+    fun addCheckingContact(checkingContact: CheckingContact) {
+        val uid = checkingContact.contactWithId.uid
+        if (checkingContact.isChecked) {
+            checkedContactsIds.add(uid)
+        } else {
+            checkedContactsIds.remove(uid)
+        }
+        val contactList = contacts.value?.toMutableList() ?: return
+        val index = contactList.indexOfFirst { it.contactWithId.uid == uid }
+        contactList[index] = checkingContact
+        contacts.postValue(contactList)
     }
 
     fun getCheckedContactsIds(): List<String> = checkedContactsIds.toList()

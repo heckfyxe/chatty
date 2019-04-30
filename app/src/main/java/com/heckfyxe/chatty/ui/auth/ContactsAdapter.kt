@@ -6,20 +6,20 @@ import android.view.ViewGroup
 import androidx.recyclerview.widget.DiffUtil
 import androidx.recyclerview.widget.RecyclerView
 import com.heckfyxe.chatty.R
-import com.heckfyxe.chatty.model.ContactWithId
+import com.heckfyxe.chatty.model.CheckingContact
 import kotlinx.android.synthetic.main.item_contact.view.*
 
-class ContactsAdapter(private val contactCheckAction: (String, Boolean) -> Unit) :
+class ContactsAdapter(private val contactCheckAction: (CheckingContact) -> Unit) :
     RecyclerView.Adapter<ContactsAdapter.ViewHolder>() {
 
-    private val contactList = mutableListOf<ContactWithId>()
+    private val contactList = mutableListOf<CheckingContact>()
 
     class ContactDiff(
-        private val oldList: List<ContactWithId>,
-        private val newList: List<ContactWithId>
+        private val oldList: List<CheckingContact>,
+        private val newList: List<CheckingContact>
     ) : DiffUtil.Callback() {
         override fun areItemsTheSame(oldItemPosition: Int, newItemPosition: Int): Boolean =
-            oldList[oldItemPosition].uid == newList[newItemPosition].uid
+            oldList[oldItemPosition].contactWithId.uid == newList[newItemPosition].contactWithId.uid
 
         override fun getOldListSize(): Int = oldList.size
 
@@ -29,7 +29,7 @@ class ContactsAdapter(private val contactCheckAction: (String, Boolean) -> Unit)
             oldList[oldItemPosition] == newList[newItemPosition]
     }
 
-    fun update(list: List<ContactWithId>) {
+    fun update(list: List<CheckingContact>) {
         val diff = DiffUtil.calculateDiff(ContactDiff(contactList, list))
         contactList.clear()
         contactList.addAll(list)
@@ -49,14 +49,18 @@ class ContactsAdapter(private val contactCheckAction: (String, Boolean) -> Unit)
     }
 
     class ViewHolder(itemView: View) : RecyclerView.ViewHolder(itemView) {
-        fun bind(contactWithId: ContactWithId, checkAction: (String, Boolean) -> Unit) {
+        fun bind(checkingContact: CheckingContact, checkAction: (CheckingContact) -> Unit) {
+            val contactWithId = checkingContact.contactWithId
             val contact = contactWithId.contact
             itemView.apply {
                 contactNumber.text = contact.number
                 contactName.text = contact.name
                 tag = contactWithId.uid
-                contactCheckBox?.setOnCheckedChangeListener { _, isChecked ->
-                    checkAction(contactWithId.uid, isChecked)
+                contactCheckBox?.apply {
+                    isChecked = checkingContact.isChecked
+                    setOnCheckedChangeListener { _, isChecked ->
+                        checkAction(CheckingContact(contactWithId, isChecked))
+                    }
                 }
             }
         }

@@ -17,7 +17,7 @@ import com.google.android.material.snackbar.Snackbar
 import com.heckfyxe.chatty.R
 import com.heckfyxe.chatty.util.sendbird.toRoomUser
 import kotlinx.android.synthetic.main.contact_fragment.*
-import org.koin.android.ext.android.inject
+import org.koin.androidx.viewmodel.ext.android.viewModel
 
 class ContactFragment : Fragment() {
 
@@ -25,19 +25,15 @@ class ContactFragment : Fragment() {
         private const val RC_READ_CONTACTS_PERMISSION = 0
     }
 
-    private val viewModel: ContactViewModel by inject()
+    private val viewModel: ContactViewModel by viewModel()
 
     private lateinit var contactsAdapter: ContactsAdapter
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
 
-        contactsAdapter = ContactsAdapter { id, isChecked ->
-            if (isChecked) {
-                viewModel.addCheckedContactId(id)
-            } else {
-                viewModel.removeUncheckedContactId(id)
-            }
+        contactsAdapter = ContactsAdapter { checkingContact ->
+            viewModel.addCheckingContact(checkingContact)
         }
 
         connectViewModel()
@@ -47,7 +43,8 @@ class ContactFragment : Fragment() {
                 Manifest.permission.READ_CONTACTS
             ) == PackageManager.PERMISSION_GRANTED
         ) {
-            startProcess()
+            if (savedInstanceState == null)
+                startProcess()
         } else {
             requestPermissions(arrayOf(Manifest.permission.READ_CONTACTS), RC_READ_CONTACTS_PERMISSION)
         }
@@ -84,8 +81,6 @@ class ContactFragment : Fragment() {
 
     private fun connectViewModel() {
         viewModel.contacts.observe(this, Observer {
-            contactsProgressBar?.isVisible = false
-            contactNextFAB?.isVisible = true
             contactsAdapter.update(it)
         })
 
@@ -101,6 +96,11 @@ class ContactFragment : Fragment() {
             viewModel.addUserToDatabase(users.map { it.toRoomUser() }) {
                 launchMainFragment()
             }
+        })
+
+        viewModel.isLoadingLiveData.observe(this, Observer {
+            contactsProgressBar?.isVisible = it
+            contactNextFAB?.isVisible = !it
         })
 
         viewModel.errors.observe(this, Observer {
@@ -132,7 +132,6 @@ class ContactFragment : Fragment() {
     }
 
     private fun startProcess() {
-        contactsProgressBar?.isVisible = true
         viewModel.getUsers()
     }
 
