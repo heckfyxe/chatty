@@ -26,7 +26,6 @@ class NewInterlocutorByUserDataDialog private constructor() : DialogFragment() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
 
-        model.init()
         observeViewModel()
     }
 

@@ -29,7 +29,7 @@ class NewInterlocutorByUserDataViewModel(private val userDataName: String) : Vie
 
     private val usersRef: CollectionReference by inject(KOIN_USERS_FIRESTORE_COLLECTION)
 
-    fun init() {
+    init {
         scope.launch {
             for (data in userDataCheckingChannel) {
                 usersRef
