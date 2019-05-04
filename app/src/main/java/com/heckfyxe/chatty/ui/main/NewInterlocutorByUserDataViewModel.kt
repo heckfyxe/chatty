@@ -16,7 +16,7 @@ import kotlinx.coroutines.launch
 import org.koin.standalone.KoinComponent
 import org.koin.standalone.inject
 
-class NewDialogViewModel: ViewModel(), KoinComponent {
+class NewInterlocutorByUserDataViewModel(private val userDataName: String) : ViewModel(), KoinComponent {
 
     private val job = Job()
     private val scope = CoroutineScope(Dispatchers.IO + job)
@@ -33,7 +33,7 @@ class NewDialogViewModel: ViewModel(), KoinComponent {
         scope.launch {
             for (data in userDataCheckingChannel) {
                 usersRef
-                    .whereEqualTo("phoneNumber", data)
+                    .whereEqualTo(userDataName, data)
                     .limit(1)
                     .get()
                     .addOnCompleteListener {
@@ -75,4 +75,5 @@ class NewDialogViewModel: ViewModel(), KoinComponent {
     }
 
     class Result(val data: String, val userId: String?)
+
 }

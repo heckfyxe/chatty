@@ -12,11 +12,17 @@
     <string name="retry">Retry</string>
     <string name="error">Error!</string>
     <string name="data_updating_error">Error. Please, try again</string>
-    <string name="enter_phone_number">Enter user phone number</string>
+    <string name="enter_phone_number">Enter interlocutor phone number</string>
+    <string name="enter_nickname">Enter interlocutor nickname</string>
     <string name="not_found">Not found</string>
     <string name="new_dialog">New dialog</string>
     <string name="its_your">It\'s your</string>
     <string name="default_notification_channel_id">com.heckfyxe.chatty.NOTIFICATION_CHANNEL_ID</string>
     <string name="add_friends">Add friends</string>
     <string name="message">Message</string>
+    <string-array name="new_dialog_methods">
+        <item>From friends</item>
+        <item>By phone number</item>
+        <item>By nickname</item>
+    </string-array>
 </resources>

@@ -6,6 +6,7 @@ import android.os.Bundle
 import android.util.Log
 import android.view.*
 import android.widget.Toast
+import androidx.appcompat.app.AlertDialog
 import androidx.appcompat.app.AppCompatActivity
 import androidx.fragment.app.Fragment
 import androidx.lifecycle.Observer
@@ -93,26 +94,56 @@ class MainFragment : Fragment() {
 
         dialogList?.setAdapter(adapter)
 
-        newMessageFAB?.setOnClickListener {
-            NewDialogDialog().let {
-                it.setTargetFragment(this@MainFragment, RC_CREATE_DIALOG)
-                it.show(fragmentManager!!, null)
-            }
-        }
+        newMessageFAB?.setOnClickListener { showNewInterlocutorDialog() }
     }
 
     override fun onActivityResult(requestCode: Int, resultCode: Int, data: Intent?) {
         when (requestCode) {
             RC_CREATE_DIALOG -> {
                 if (resultCode == Activity.RESULT_OK) {
-                    if (data?.hasExtra(NewDialogDialog.EXTRA_CHANNEL_ID) == true) {
-                        launchMessageFragment(data.getStringExtra(NewDialogDialog.EXTRA_CHANNEL_ID))
+                    if (data?.hasExtra(NewInterlocutorByUserDataDialog.EXTRA_CHANNEL_ID) == true) {
+                        launchMessageFragment(data.getStringExtra(NewInterlocutorByUserDataDialog.EXTRA_CHANNEL_ID))
                     } else {
                         Log.w("MainFragment", "Data doesn't have channel")
                     }
                 }
             }
             else -> super.onActivityResult(requestCode, resultCode, data)
+        }
+    }
+
+    private fun showNewInterlocutorDialog() {
+        AlertDialog.Builder(context!!)
+            .setItems(R.array.new_dialog_methods) { _, position ->
+                when (position) {
+                    0 -> { // From friends
+
+                    }
+                    1 -> showNewInterlocutorByPhoneNumberDialog() // By phone number
+
+                    2 -> showNewInterlocutorByNicknameDialog() // By nickname
+                }
+            }
+            .create()
+            .show()
+    }
+
+    private fun showNewInterlocutorFromFriends() {
+
+    }
+
+    private fun showNewInterlocutorByPhoneNumberDialog() =
+        showNewInterlocutorByUserData(NewInterlocutorByUserDataDialog.UserDataType.PHONE_NUMBER)
+
+
+    private fun showNewInterlocutorByNicknameDialog() =
+        showNewInterlocutorByUserData(NewInterlocutorByUserDataDialog.UserDataType.NICKNAME)
+
+
+    private fun showNewInterlocutorByUserData(userDataType: NewInterlocutorByUserDataDialog.UserDataType) {
+        NewInterlocutorByUserDataDialog.newInstance(userDataType).let {
+            it.setTargetFragment(this@MainFragment, RC_CREATE_DIALOG)
+            it.show(fragmentManager!!, null)
         }
     }
 

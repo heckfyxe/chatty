@@ -4,20 +4,24 @@ import android.app.Activity
 import android.app.Dialog
 import android.content.Intent
 import android.os.Bundle
+import android.text.InputType
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
+import android.view.Window
+import androidx.core.os.bundleOf
 import androidx.core.view.isVisible
 import androidx.fragment.app.DialogFragment
 import androidx.lifecycle.Observer
 import com.heckfyxe.chatty.R
 import com.heckfyxe.chatty.util.sendbird.saveOnDevice
-import kotlinx.android.synthetic.main.dialog_new_dialog.*
+import kotlinx.android.synthetic.main.new_interlocutor_by_user_data_dialog.*
 import org.koin.androidx.viewmodel.ext.android.viewModel
+import org.koin.core.parameter.parametersOf
 
-class NewDialogDialog: DialogFragment() {
+class NewInterlocutorByUserDataDialog private constructor() : DialogFragment() {
 
-    private val model: NewDialogViewModel by viewModel()
+    private val model: NewInterlocutorByUserDataViewModel by viewModel { parametersOf(getDataType().typeName) }
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -48,13 +52,13 @@ class NewDialogDialog: DialogFragment() {
     }
 
     override fun onCreateView(inflater: LayoutInflater, container: ViewGroup?, savedInstanceState: Bundle?): View? {
-        return inflater.inflate(R.layout.dialog_new_dialog, container, false)
+        return inflater.inflate(R.layout.new_interlocutor_by_user_data_dialog, container, false)
     }
 
     override fun setupDialog(dialog: Dialog, style: Int) {
         super.setupDialog(dialog, style)
 
-        dialog.setTitle(R.string.new_dialog)
+        dialog.requestWindowFeature(Window.FEATURE_NO_TITLE)
     }
 
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
@@ -70,6 +74,24 @@ class NewDialogDialog: DialogFragment() {
         cancelButton?.setOnClickListener {
             dismiss()
         }
+
+
+
+        userDataInputLayout?.hint = getString(
+            when (getDataType()) {
+                UserDataType.PHONE_NUMBER -> R.string.enter_phone_number
+                UserDataType.NICKNAME -> R.string.enter_nickname
+            }
+        )
+
+        if (getDataType() == UserDataType.PHONE_NUMBER) {
+            userDataEditText?.inputType = InputType.TYPE_CLASS_PHONE
+        }
+    }
+
+    private fun getDataType(): UserDataType {
+        val type = requireArguments().getString(ARG_USER_DATA_TYPE)
+        return UserDataType.valueOf(type!!)
     }
 
     private fun showError() {
@@ -114,7 +136,18 @@ class NewDialogDialog: DialogFragment() {
         }
     }
 
+    enum class UserDataType(val typeName: String) {
+        PHONE_NUMBER("phoneNumber"), NICKNAME("nickname");
+    }
+
     companion object {
         const val EXTRA_CHANNEL_ID = "com.heckfyxe.chatty.ui.main.EXTRA_CHANNEL_ID"
+
+        private const val ARG_USER_DATA_TYPE = "com.heckfyxe.chatty.ui.main.ARG_USER_DATA_TYPE"
+
+        fun newInstance(type: UserDataType) =
+            NewInterlocutorByUserDataDialog().apply {
+                arguments = bundleOf(ARG_USER_DATA_TYPE to type.toString())
+            }
     }
 }

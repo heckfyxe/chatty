@@ -10,7 +10,7 @@ import com.heckfyxe.chatty.room.AppDatabase
 import com.heckfyxe.chatty.ui.auth.ContactViewModel
 import com.heckfyxe.chatty.ui.auth.EditUserDataViewModel
 import com.heckfyxe.chatty.ui.main.MainViewModel
-import com.heckfyxe.chatty.ui.main.NewDialogViewModel
+import com.heckfyxe.chatty.ui.main.NewInterlocutorByUserDataViewModel
 import com.heckfyxe.chatty.ui.message.MessageViewModel
 import org.koin.android.ext.koin.androidApplication
 import org.koin.androidx.viewmodel.ext.koin.viewModel
@@ -34,7 +34,7 @@ private val roomModule = module {
 private val viewModelModule = module {
     viewModel { MainViewModel(get()) }
     viewModel { EditUserDataViewModel() }
-    viewModel { NewDialogViewModel() }
+    viewModel { (userDataName: String) -> NewInterlocutorByUserDataViewModel(userDataName) }
     viewModel { (channelId: String) -> MessageViewModel(channelId) }
     viewModel { ContactViewModel() }
 }

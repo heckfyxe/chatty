@@ -9,6 +9,14 @@ apply plugin: 'com.google.gms.google-services'
 apply plugin: "androidx.navigation.safeargs.kotlin"
 
 android {
+    signingConfigs {
+        release {
+            storeFile file('/home/heckfyxe/keystore.jks')
+            storePassword '89656417179007'
+            keyAlias = 'key0'
+            keyPassword '8965641717900700'
+        }
+    }
     compileSdkVersion 28
     defaultConfig {
         applicationId "com.heckfyxe.chatty"
@@ -23,6 +31,7 @@ android {
         release {
             minifyEnabled true
             proguardFiles getDefaultProguardFile('proguard-android-optimize.txt'), 'proguard-rules.pro'
+            signingConfig signingConfigs.release
         }
         debug {
             minifyEnabled false

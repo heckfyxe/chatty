@@ -50,8 +50,6 @@ class MainViewModel(private val repository: DialogRepository) : ViewModel(), Koi
 
     fun connectUser() = repository.connectUser()
 
-    fun getMessageById(id: Long) = repository.getMessageById(id)
-
     fun loadChats() = repository.refresh()
 
     fun logOut(action: () -> Unit) = repository.logOut(action)
