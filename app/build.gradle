@@ -76,6 +76,8 @@ dependencies {
     implementation 'com.github.stfalcon:chatkit:0.3.3'
     // Lifecycle
     implementation "androidx.lifecycle:lifecycle-extensions:$lifecycle_version"
+    implementation 'androidx.lifecycle:lifecycle-extensions:2.0.0'
+    implementation 'androidx.lifecycle:lifecycle-viewmodel-ktx:2.0.0'
     kapt "androidx.lifecycle:lifecycle-compiler:$lifecycle_version"
     // Testing
     testImplementation 'junit:junit:4.12'

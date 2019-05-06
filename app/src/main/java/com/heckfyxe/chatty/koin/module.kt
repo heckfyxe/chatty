@@ -9,6 +9,7 @@ import com.heckfyxe.chatty.repository.UserRepository
 import com.heckfyxe.chatty.room.AppDatabase
 import com.heckfyxe.chatty.ui.auth.ContactViewModel
 import com.heckfyxe.chatty.ui.auth.EditUserDataViewModel
+import com.heckfyxe.chatty.ui.main.FriendsViewModel
 import com.heckfyxe.chatty.ui.main.MainViewModel
 import com.heckfyxe.chatty.ui.main.NewInterlocutorByUserDataViewModel
 import com.heckfyxe.chatty.ui.message.MessageViewModel
@@ -37,6 +38,7 @@ private val viewModelModule = module {
     viewModel { (userDataName: String) -> NewInterlocutorByUserDataViewModel(userDataName) }
     viewModel { (channelId: String) -> MessageViewModel(channelId) }
     viewModel { ContactViewModel() }
+    viewModel { FriendsViewModel() }
 }
 
 const val KOIN_USERS_FIRESTORE_COLLECTION = "users"

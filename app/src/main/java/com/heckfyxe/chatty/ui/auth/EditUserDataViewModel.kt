@@ -13,16 +13,18 @@ import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.channels.Channel
+import kotlinx.coroutines.channels.SendChannel
 import kotlinx.coroutines.launch
 import org.koin.standalone.KoinComponent
+import org.koin.standalone.get
 import org.koin.standalone.inject
-import java.io.File
 
 class EditUserDataViewModel : ViewModel(), KoinComponent {
     val currentUser = MutableLiveData<User>()
     val errors = MutableLiveData<Error>()
     val checkedNicknameLiveData = MutableLiveData<CheckedNickname>()
 
+    private val currentUserPhoneNumber = get<FirebaseAuth>().currentUser!!.phoneNumber!!
     private val userId: String by inject(KOIN_USER_ID)
     private val usersRef: CollectionReference by inject(KOIN_USERS_FIRESTORE_COLLECTION)
 
@@ -62,16 +64,40 @@ class EditUserDataViewModel : ViewModel(), KoinComponent {
         }
     }
 
-    fun updateUserData(nickname: String, avatar: File, onSuccess: () -> Unit) {
+//    fun updateUserData(nickname: String, avatar: File, onSuccess: () -> Unit) {
+//        usersRef.document(userId).set(mapOf("nickname" to nickname), SetOptions.merge()).addOnCompleteListener {
+//            if (it.isSuccessful) {
+//                SendBird.updateCurrentUserInfoWithProfileImage(nickname, avatar) { e ->
+//                    if (e != null) {
+//                        errors.postValue(Error(ErrorType.UPDATE_USER_DATA))
+//                        return@updateCurrentUserInfoWithProfileImage
+//                    }
+//
+//                    onSuccess()
+//                }
+//            } else {
+//                errors.postValue(Error(ErrorType.UPDATE_USER_DATA))
+//            }
+//        }
+//    }
+
+    fun updateUserData(nickname: String, onSuccess: () -> Unit) {
         usersRef.document(userId).set(mapOf("nickname" to nickname), SetOptions.merge()).addOnCompleteListener {
             if (it.isSuccessful) {
-                SendBird.updateCurrentUserInfoWithProfileImage(nickname, avatar) { e ->
-                    if (e != null) {
-                        errors.postValue(Error(ErrorType.UPDATE_USER_DATA))
-                        return@updateCurrentUserInfoWithProfileImage
-                    }
+                val currentUser = SendBird.getCurrentUser()
+                val channel = Channel<Boolean>(2)
+                scope.launch {
+                    updatePhoneNumber(currentUser, channel)
+                    updateNickname(currentUser, nickname, channel)
 
-                    onSuccess()
+                    var isSuccessful = true
+                    repeat(2) {
+                        isSuccessful = isSuccessful && channel.receive()
+                    }
+                    channel.close()
+
+                    if (isSuccessful)
+                        onSuccess()
                 }
             } else {
                 errors.postValue(Error(ErrorType.UPDATE_USER_DATA))
@@ -79,20 +105,29 @@ class EditUserDataViewModel : ViewModel(), KoinComponent {
         }
     }
 
-    fun updateUserData(nickname: String, onSuccess: () -> Unit) {
-        usersRef.document(userId).set(mapOf("nickname" to nickname), SetOptions.merge()).addOnCompleteListener {
-            if (it.isSuccessful) {
-                val currentUser = SendBird.getCurrentUser()
-                SendBird.updateCurrentUserInfo(nickname, currentUser.profileUrl) { e ->
-                    if (e != null) {
-                        errors.postValue(Error(ErrorType.UPDATE_USER_DATA))
-                        return@updateCurrentUserInfo
-                    }
-
-                    onSuccess()
+    private suspend fun updatePhoneNumber(currentUser: User, channel: SendChannel<Boolean>) {
+        currentUser.createMetaData(mapOf("phoneNumber" to currentUserPhoneNumber)) { _, e ->
+            scope.launch {
+                if (e != null) {
+                    errors.postValue(Error(ErrorType.UPDATE_USER_DATA))
+                    channel.send(false)
+                    return@launch
                 }
-            } else {
-                errors.postValue(Error(ErrorType.UPDATE_USER_DATA))
+                channel.send(true)
+            }
+        }
+    }
+
+    private suspend fun updateNickname(currentUser: User, nickname: String, channel: SendChannel<Boolean>) {
+        SendBird.updateCurrentUserInfo(nickname, currentUser.profileUrl) { e ->
+            scope.launch {
+                if (e != null) {
+                    errors.postValue(Error(ErrorType.UPDATE_USER_DATA))
+                    channel.send(false)
+                    return@launch
+                }
+
+                channel.send(true)
             }
         }
     }

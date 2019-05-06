@@ -116,9 +116,7 @@ class MainFragment : Fragment() {
         AlertDialog.Builder(context!!)
             .setItems(R.array.new_dialog_methods) { _, position ->
                 when (position) {
-                    0 -> { // From friends
-
-                    }
+                    0 -> showNewInterlocutorFromFriends() // From friends
                     1 -> showNewInterlocutorByPhoneNumberDialog() // By phone number
 
                     2 -> showNewInterlocutorByNicknameDialog() // By nickname
@@ -129,7 +127,7 @@ class MainFragment : Fragment() {
     }
 
     private fun showNewInterlocutorFromFriends() {
-
+        findNavController().navigate(R.id.action_mainFragment_to_friendsFragment)
     }
 
     private fun showNewInterlocutorByPhoneNumberDialog() =
