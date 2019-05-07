@@ -86,6 +86,9 @@ class ContactFragment : Fragment() {
 
         viewModel.contactsCountLiveData.observe(this, Observer {
             contactsProgressBar?.max = it
+            if (it == 0) {
+                launchMainFragment()
+            }
         })
 
         viewModel.contactsProgress.observe(this, Observer {
@@ -93,8 +96,12 @@ class ContactFragment : Fragment() {
         })
 
         viewModel.friends.observe(this, Observer { users ->
-            viewModel.addUserToDatabase(users.map { it.toRoomUser() }) {
+            if (users.isEmpty()) {
                 launchMainFragment()
+            } else {
+                viewModel.addUserToDatabase(users.map { it.toRoomUser() }) {
+                    launchMainFragment()
+                }
             }
         })
 

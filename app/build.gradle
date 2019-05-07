@@ -38,9 +38,6 @@ android {
             proguardFiles 'proguard-rules.pro'
         }
     }
-//    packagingOptions {
-//        exclude 'META-INF/atomicfu.kotlin_module'
-//    }
 }
 
 ext {
@@ -65,12 +62,12 @@ dependencies {
     implementation 'androidx.legacy:legacy-support-v4:1.0.0'
     implementation 'com.google.android.material:material:1.0.0'
     // GMS + Firebase
-    implementation 'com.google.firebase:firebase-core:16.0.8'
+    implementation 'com.google.firebase:firebase-core:16.0.9'
     implementation 'com.google.android.gms:play-services-auth:16.0.1'
-    implementation 'com.google.firebase:firebase-auth:16.2.1'
+    implementation 'com.google.firebase:firebase-auth:17.0.0'
     implementation 'com.firebaseui:firebase-ui-auth:4.3.1'
-    implementation 'com.google.firebase:firebase-firestore:18.2.0'
-    implementation 'com.google.firebase:firebase-messaging:17.6.0'
+    implementation 'com.google.firebase:firebase-firestore:19.0.0'
+    implementation 'com.google.firebase:firebase-messaging:18.0.0'
     // Chat
     implementation 'com.sendbird.sdk:sendbird-android-sdk:3.0.88'
     implementation 'com.github.stfalcon:chatkit:0.3.3'
@@ -100,7 +97,7 @@ dependencies {
     kapt "androidx.room:room-compiler:$room_version"
     implementation "androidx.room:room-ktx:$room_version"
     // Affectiva Emotion SDK
-//    implementation 'com.affectiva.android:affdexsdk:3.2'
+    implementation 'com.affectiva.android:affdexsdk:3.2'
     // Lib for work with phone numbers
     implementation 'io.michaelrocks:libphonenumber-android:8.10.7'
 }
