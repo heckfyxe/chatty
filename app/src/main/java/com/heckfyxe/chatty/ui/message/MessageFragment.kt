@@ -1,14 +1,18 @@
 package com.heckfyxe.chatty.ui.message
 
+import android.Manifest
+import android.content.pm.PackageManager
 import android.os.Bundle
 import android.util.Log
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
+import androidx.core.content.ContextCompat
 import androidx.fragment.app.Fragment
 import androidx.lifecycle.Observer
 import androidx.navigation.fragment.navArgs
 import com.heckfyxe.chatty.R
+import com.heckfyxe.chatty.emotion.EmotionRecognition
 import com.heckfyxe.chatty.koin.KOIN_USER_ID
 import com.heckfyxe.chatty.model.ChatMessage
 import com.heckfyxe.chatty.util.GoneImageLoader
@@ -30,6 +34,10 @@ class MessageFragment : Fragment() {
 
     private lateinit var adapter: MessagesListAdapter<ChatMessage>
 
+    private var isCameraAccepted = false
+
+    private var emotionRecognition: EmotionRecognition = EmotionRecognition.getInstance()
+
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
 
@@ -39,6 +47,9 @@ class MessageFragment : Fragment() {
         )
 
         observeViewModel()
+
+        isCameraAccepted = ContextCompat.checkSelfPermission(context!!, Manifest.permission.CAMERA) ==
+                PackageManager.PERMISSION_GRANTED
     }
 
     private fun observeViewModel() {
@@ -50,6 +61,10 @@ class MessageFragment : Fragment() {
         viewModel.interlocutorLiveData.observe(this, Observer {
             dialogUserNickname?.text = it.name
             dialogUserAvatar?.loadCircleUserAvatar(it)
+        })
+
+        viewModel.interlocutorEmotions.observe(this, Observer {
+            interlocutorEmotion?.text = it
         })
 
         viewModel.errors.observe(this, Observer {
@@ -86,5 +101,19 @@ class MessageFragment : Fragment() {
                 viewModel.endTyping()
             }
         })
+    }
+
+    override fun onStart() {
+        super.onStart()
+
+        if (isCameraAccepted && !emotionRecognition.isRunning())
+            emotionRecognition.start()
+    }
+
+    override fun onStop() {
+        super.onStop()
+
+        if (isCameraAccepted && emotionRecognition.isRunning())
+            emotionRecognition.stop()
     }
 }

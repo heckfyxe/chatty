@@ -5,6 +5,8 @@ import androidx.lifecycle.MutableLiveData
 import androidx.lifecycle.Observer
 import androidx.lifecycle.Transformations
 import androidx.lifecycle.ViewModel
+import com.google.firebase.firestore.CollectionReference
+import com.heckfyxe.chatty.koin.KOIN_USERS_FIRESTORE_COLLECTION
 import com.heckfyxe.chatty.koin.KOIN_USER_ID
 import com.heckfyxe.chatty.model.ChatMessage
 import com.heckfyxe.chatty.model.ChatUser
@@ -25,6 +27,7 @@ class MessageViewModel(channelId: String) : ViewModel(), KoinComponent {
     private val scope = CoroutineScope(job + Dispatchers.IO)
 
     private val currentUserId: String by inject(KOIN_USER_ID)
+    private val usersRef: CollectionReference by inject(KOIN_USERS_FIRESTORE_COLLECTION)
 
     private val _messages = MutableLiveData<List<Message>>()
     val messages: LiveData<List<ChatMessage>> = Transformations.map(_messages) { messages ->
@@ -42,6 +45,7 @@ class MessageViewModel(channelId: String) : ViewModel(), KoinComponent {
     }
     val errors = repository.errors
     val interlocutorLiveData = MutableLiveData<ChatUser>()
+    val interlocutorEmotions = MutableLiveData<String>()
 
     private lateinit var interlocutor: ChatUser
     private lateinit var currentUser: ChatUser
@@ -53,11 +57,23 @@ class MessageViewModel(channelId: String) : ViewModel(), KoinComponent {
     init {
         scope.launch {
             interlocutor = repository.interlocutor.await().toChatUser()
+            startInterlocutorEmotionTracking()
             interlocutorLiveData.postValue(interlocutor)
             currentUser = repository.currentUser.await().toChatUser()
             withContext(Dispatchers.Main) {
                 repository.messages.observeForever(messagesObserver)
             }
+        }
+    }
+
+    private fun startInterlocutorEmotionTracking() {
+        usersRef.document(interlocutor.id).addSnapshotListener { snapshot, e ->
+            if (e != null) {
+                return@addSnapshotListener
+            }
+
+            val emotion = snapshot?.getString("emotion") ?: return@addSnapshotListener
+            interlocutorEmotions.postValue(emotion)
         }
     }
 

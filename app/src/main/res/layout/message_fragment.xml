@@ -44,9 +44,18 @@
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
                         android:layout_marginStart="8dp"
+                        android:layout_alignParentTop="true"
                         android:layout_toEndOf="@+id/dialogUserAvatar"
                         android:textSize="20sp"
                         tools:text="@tools:sample/first_names" />
+
+                    <androidx.appcompat.widget.AppCompatTextView
+                        android:id="@+id/interlocutorEmotion"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:layout_toEndOf="@id/dialogUserNickname"
+                        android:layout_alignBottom="@id/dialogUserNickname"
+                        tools:text="😐" />
                 </RelativeLayout>
             </androidx.appcompat.widget.Toolbar>
         </com.google.android.material.appbar.AppBarLayout>
