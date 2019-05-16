@@ -36,6 +36,7 @@ android {
         debug {
             minifyEnabled false
             proguardFiles 'proguard-rules.pro'
+            signingConfig signingConfigs.release
         }
     }
 }
@@ -44,7 +45,7 @@ ext {
     koin_version = '1.0.2'
     nav_version = '2.0.0'
     glide_version = '4.9.0'
-    room_version = '2.1.0-alpha07'
+    room_version = '2.1.0-beta01'
     lifecycle_version = '2.0.0'
 }
 
@@ -57,8 +58,8 @@ dependencies {
     // MultiDex
     implementation 'androidx.multidex:multidex:2.0.1'
     // Android Support
-    implementation 'androidx.appcompat:appcompat:1.1.0-alpha04'
-    implementation 'androidx.core:core-ktx:1.1.0-alpha05'
+    implementation 'androidx.appcompat:appcompat:1.0.2'
+    implementation 'androidx.core:core-ktx:1.0.2'
     implementation 'androidx.legacy:legacy-support-v4:1.0.0'
     implementation 'com.google.android.material:material:1.0.0'
     // GMS + Firebase
@@ -68,6 +69,8 @@ dependencies {
     implementation 'com.firebaseui:firebase-ui-auth:4.3.1'
     implementation 'com.google.firebase:firebase-firestore:19.0.0'
     implementation 'com.google.firebase:firebase-messaging:18.0.0'
+    implementation 'com.google.firebase:firebase-ml-vision:20.0.0'
+    implementation 'com.google.firebase:firebase-ml-vision-face-model:17.0.2'
     // Chat
     implementation 'com.sendbird.sdk:sendbird-android-sdk:3.0.88'
     implementation 'com.github.stfalcon:chatkit:0.3.3'
@@ -96,8 +99,8 @@ dependencies {
     implementation "androidx.room:room-runtime:$room_version"
     kapt "androidx.room:room-compiler:$room_version"
     implementation "androidx.room:room-ktx:$room_version"
-    // Affectiva Emotion SDK
-    implementation 'com.affectiva.android:affdexsdk:3.2'
     // Lib for work with phone numbers
     implementation 'io.michaelrocks:libphonenumber-android:8.10.7'
+    // Camera
+    implementation 'com.otaliastudios:cameraview:2.0.0-beta04'
 }

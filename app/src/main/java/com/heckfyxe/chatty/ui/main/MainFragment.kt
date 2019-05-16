@@ -16,8 +16,8 @@ import androidx.fragment.app.Fragment
 import androidx.lifecycle.Observer
 import androidx.navigation.fragment.findNavController
 import com.google.firebase.iid.FirebaseInstanceId
+import com.heckfyxe.chatty.EmotionDetector
 import com.heckfyxe.chatty.R
-import com.heckfyxe.chatty.emotion.EmotionRecognition
 import com.heckfyxe.chatty.model.ChatDialog
 import com.heckfyxe.chatty.util.GlideImageLoader
 import com.sendbird.android.SendBird
@@ -34,7 +34,7 @@ class MainFragment : Fragment() {
 
     private var isCameraAccepted = false
 
-    private var emotionRecognition: EmotionRecognition = EmotionRecognition.getInstance()
+    private lateinit var detector: EmotionDetector
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -62,6 +62,8 @@ class MainFragment : Fragment() {
 
         (activity as? AppCompatActivity)?.setSupportActionBar(mainToolbar)
         setHasOptionsMenu(true)
+
+        detector = activity as EmotionDetector
     }
 
     override fun onCreateOptionsMenu(menu: Menu, inflater: MenuInflater) {
@@ -137,7 +139,7 @@ class MainFragment : Fragment() {
                 val index = permissions.indexOf(Manifest.permission.CAMERA)
                 if (grantResults[index] == PackageManager.PERMISSION_GRANTED) {
                     isCameraAccepted = true
-                    emotionRecognition?.start()
+                    detector.start()
                 }
             }
         }
@@ -188,15 +190,8 @@ class MainFragment : Fragment() {
     override fun onStart() {
         super.onStart()
 
-        if (isCameraAccepted && !emotionRecognition.isRunning())
-            emotionRecognition.start()
-    }
-
-    override fun onStop() {
-        super.onStop()
-
-        if (isCameraAccepted && emotionRecognition.isRunning())
-            emotionRecognition.stop()
+        if (isCameraAccepted)
+            detector.start()
     }
 
     private fun launchMessageFragment(channelId: String) {

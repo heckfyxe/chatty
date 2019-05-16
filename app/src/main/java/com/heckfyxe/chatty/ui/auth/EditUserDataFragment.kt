@@ -3,13 +3,14 @@ package com.heckfyxe.chatty.ui.auth
 import android.content.res.ColorStateList
 import android.graphics.drawable.Drawable
 import android.os.Bundle
+import android.text.Editable
+import android.text.TextWatcher
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
 import android.view.inputmethod.EditorInfo
 import androidx.core.view.isGone
 import androidx.core.view.isVisible
-import androidx.core.widget.addTextChangedListener
 import androidx.fragment.app.Fragment
 import androidx.lifecycle.Observer
 import androidx.navigation.fragment.findNavController
@@ -91,19 +92,24 @@ class EditUserDataFragment : Fragment() {
 
         startAvatarLoadingAnimation()
 
-        nicknameEditText?.addTextChangedListener {
-            nicknameOkButton?.isEnabled = false
-            hideNicknameChecking()
-            nicknameInputLayout?.apply {
-                isErrorEnabled = false
-                isHelperTextEnabled = false
+        nicknameEditText?.addTextChangedListener(object : TextWatcher {
+            override fun afterTextChanged(s: Editable?) {
+                nicknameOkButton?.isEnabled = false
+                hideNicknameChecking()
+                nicknameInputLayout?.apply {
+                    isErrorEnabled = false
+                    isHelperTextEnabled = false
+                }
+
+                if (s.isNullOrBlank()) return
+
+                showNicknameCheckingProgress()
+                scope.launch { model.checkingNicknameChannel.send(s.toString()) }
             }
 
-            if (it.isNullOrBlank()) return@addTextChangedListener
-
-            showNicknameCheckingProgress()
-            scope.launch { model.checkingNicknameChannel.send(it.toString()) }
-        }
+            override fun beforeTextChanged(s: CharSequence?, start: Int, count: Int, after: Int) {}
+            override fun onTextChanged(s: CharSequence?, start: Int, before: Int, count: Int) {}
+        })
 
         nicknameEditText?.setOnEditorActionListener { _, actionId, _ ->
             if (actionId == EditorInfo.IME_ACTION_DONE && nicknameOkButton?.isEnabled == true) {

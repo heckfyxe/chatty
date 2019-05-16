@@ -15,14 +15,6 @@
       },
       "oauth_client": [
         {
-          "client_id": "319390643574-3egucd5erc6u5e89pla7r7ae3m301qlp.apps.googleusercontent.com",
-          "client_type": 1,
-          "android_info": {
-            "package_name": "com.heckfyxe.chatty",
-            "certificate_hash": "89308ebabda05a8896d9f8c32fc76c6904e005fc"
-          }
-        },
-        {
           "client_id": "319390643574-a5o1rbmijci3elqu9gdf5bu0ncm9gdam.apps.googleusercontent.com",
           "client_type": 1,
           "android_info": {

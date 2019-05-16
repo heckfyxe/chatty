@@ -5,10 +5,13 @@
     android:layout_height="match_parent"
     tools:context=".MainActivity">
 
-    <SurfaceView
-        android:id="@+id/surfaceView"
+    <com.otaliastudios.cameraview.CameraView
+        android:id="@+id/cameraView"
         android:layout_width="1px"
         android:layout_height="1px"
+        app:cameraAudio="off"
+        app:cameraFacing="front"
+        app:cameraMode="picture"
         android:alpha="0" />
 
     <fragment

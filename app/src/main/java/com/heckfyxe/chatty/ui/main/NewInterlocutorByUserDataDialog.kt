@@ -89,7 +89,7 @@ class NewInterlocutorByUserDataDialog private constructor() : DialogFragment() {
     }
 
     private fun getDataType(): UserDataType {
-        val type = requireArguments().getString(ARG_USER_DATA_TYPE)
+        val type = arguments?.getString(ARG_USER_DATA_TYPE)
         return UserDataType.valueOf(type!!)
     }
 
