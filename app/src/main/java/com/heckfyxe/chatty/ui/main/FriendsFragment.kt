@@ -4,6 +4,8 @@ import android.os.Bundle
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
+import androidx.core.view.isGone
+import androidx.core.view.isVisible
 import androidx.fragment.app.Fragment
 import androidx.lifecycle.Observer
 import androidx.navigation.fragment.findNavController
@@ -31,13 +33,19 @@ class FriendsFragment : Fragment() {
             }
         }
 
+        showProgressBar()
         viewModel.loadFriends()
         connectViewModel()
     }
 
     private fun connectViewModel() {
         viewModel.friends.observe(this, Observer {
-            friendsAdapter.update(it)
+            if (it.isEmpty()) {
+                showNoFriends()
+            } else {
+                hideAdditions()
+                friendsAdapter.update(it)
+            }
         })
 
         viewModel.errors.observe(this, Observer {
@@ -62,5 +70,20 @@ class FriendsFragment : Fragment() {
             layoutManager = LinearLayoutManager(context!!)
             adapter = friendsAdapter
         }
+    }
+
+    private fun showProgressBar() {
+        friendsProgressBar?.isVisible = true
+        noFriendsTextView?.isGone = true
+    }
+
+    private fun showNoFriends() {
+        friendsProgressBar?.isGone = true
+        noFriendsTextView?.isVisible = true
+    }
+
+    private fun hideAdditions() {
+        friendsProgressBar?.isGone = true
+        noFriendsTextView?.isGone = true
     }
 }

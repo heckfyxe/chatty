@@ -13,11 +13,13 @@ import androidx.navigation.fragment.findNavController
 import com.firebase.ui.auth.AuthUI
 import com.firebase.ui.auth.IdpResponse
 import com.google.android.material.snackbar.Snackbar
-import com.google.firebase.auth.FirebaseAuth
 import com.heckfyxe.chatty.R
+import com.heckfyxe.chatty.util.isAuthenticated
 
 
 class AuthFragment : Fragment() {
+
+    private lateinit var locale: String
 
     override fun onCreateView(
         inflater: LayoutInflater, container: ViewGroup?,
@@ -35,12 +37,15 @@ class AuthFragment : Fragment() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
 
-        if (FirebaseAuth.getInstance().currentUser != null) {
+        if (isAuthenticated()) {
             return
         }
 
-        val locale = ConfigurationCompat.getLocales(resources.configuration)[0].country
+        locale = ConfigurationCompat.getLocales(resources.configuration)[0].country
+        authPhoneByPhoneNumber()
+    }
 
+    private fun authPhoneByPhoneNumber() {
         AuthUI.getInstance()
             .createSignInIntentBuilder()
             .setAvailableProviders(
@@ -58,7 +63,7 @@ class AuthFragment : Fragment() {
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
 
-        if (FirebaseAuth.getInstance().currentUser != null)
+        if (isAuthenticated())
             startMainActivity()
     }
 
@@ -73,7 +78,11 @@ class AuthFragment : Fragment() {
                         activity?.finish()
                     else {
                         val view = activity?.findViewById<View>(android.R.id.content)
-                        Snackbar.make(view!!, R.string.no_connection, Snackbar.LENGTH_SHORT).show()
+                        Snackbar.make(view!!, R.string.no_connection, Snackbar.LENGTH_INDEFINITE)
+                            .setAction(R.string.retry) {
+                                authPhoneByPhoneNumber()
+                            }
+                            .show()
                     }
                 }
             }

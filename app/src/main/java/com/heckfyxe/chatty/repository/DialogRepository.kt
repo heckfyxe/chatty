@@ -11,10 +11,7 @@ import com.heckfyxe.chatty.util.sendbird.getText
 import com.heckfyxe.chatty.util.sendbird.saveOnDevice
 import com.sendbird.android.GroupChannel
 import com.sendbird.android.SendBird
-import kotlinx.coroutines.CoroutineScope
-import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.Job
-import kotlinx.coroutines.launch
+import kotlinx.coroutines.*
 import org.koin.standalone.KoinComponent
 import org.koin.standalone.inject
 
@@ -106,7 +103,12 @@ class DialogRepository : KoinComponent {
     fun logOut(action: () -> Unit) {
         SendBird.disconnect {
             auth.signOut()
-            action()
+            scope.launch {
+                database.clearAllTables()
+                withContext(Dispatchers.Main) {
+                    action()
+                }
+            }
         }
     }
 

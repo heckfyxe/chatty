@@ -1,17 +1,13 @@
 package com.heckfyxe.chatty.ui.main
 
-import android.Manifest
 import android.app.Activity
 import android.content.Intent
-import android.content.pm.PackageManager
 import android.os.Bundle
 import android.util.Log
 import android.view.*
 import android.widget.Toast
 import androidx.appcompat.app.AlertDialog
 import androidx.appcompat.app.AppCompatActivity
-import androidx.core.app.ActivityCompat
-import androidx.core.content.ContextCompat
 import androidx.fragment.app.Fragment
 import androidx.lifecycle.Observer
 import androidx.navigation.fragment.findNavController
@@ -20,6 +16,7 @@ import com.heckfyxe.chatty.EmotionDetector
 import com.heckfyxe.chatty.R
 import com.heckfyxe.chatty.model.ChatDialog
 import com.heckfyxe.chatty.util.GlideImageLoader
+import com.heckfyxe.chatty.util.setAuthenticated
 import com.sendbird.android.SendBird
 import com.stfalcon.chatkit.dialogs.DialogsListAdapter
 import kotlinx.android.synthetic.main.main_fragment.*
@@ -39,6 +36,8 @@ class MainFragment : Fragment() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
 
+        setAuthenticated()
+
         adapter = DialogsListAdapter(GlideImageLoader())
         adapter.setOnDialogClickListener {
             launchMessageFragment(it.id)
@@ -47,14 +46,6 @@ class MainFragment : Fragment() {
         connectToViewModel()
 
         model.connectUser()
-
-        if (ContextCompat.checkSelfPermission(context!!, Manifest.permission.CAMERA) ==
-            PackageManager.PERMISSION_GRANTED
-        ) {
-            isCameraAccepted = true
-        } else {
-            ActivityCompat.requestPermissions(activity!!, arrayOf(Manifest.permission.CAMERA), RC_CAMERA_PERMISSION)
-        }
     }
 
     override fun onActivityCreated(savedInstanceState: Bundle?) {
@@ -131,20 +122,6 @@ class MainFragment : Fragment() {
         }
     }
 
-    override fun onRequestPermissionsResult(requestCode: Int, permissions: Array<out String>, grantResults: IntArray) {
-        super.onRequestPermissionsResult(requestCode, permissions, grantResults)
-
-        when (requestCode) {
-            RC_CAMERA_PERMISSION -> {
-                val index = permissions.indexOf(Manifest.permission.CAMERA)
-                if (grantResults[index] == PackageManager.PERMISSION_GRANTED) {
-                    isCameraAccepted = true
-                    detector.start()
-                }
-            }
-        }
-    }
-
     private fun showNewInterlocutorDialog() {
         AlertDialog.Builder(context!!)
             .setItems(R.array.new_dialog_methods) { _, position ->
@@ -201,6 +178,5 @@ class MainFragment : Fragment() {
 
     companion object {
         private const val RC_CREATE_DIALOG = 0
-        private const val RC_CAMERA_PERMISSION = 1
     }
 }

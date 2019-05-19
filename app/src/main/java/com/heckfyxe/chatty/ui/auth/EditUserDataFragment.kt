@@ -9,6 +9,7 @@ import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
 import android.view.inputmethod.EditorInfo
+import androidx.core.content.ContextCompat
 import androidx.core.view.isGone
 import androidx.core.view.isVisible
 import androidx.fragment.app.Fragment
@@ -21,6 +22,7 @@ import com.bumptech.glide.request.RequestListener
 import com.bumptech.glide.request.target.Target
 import com.google.android.material.snackbar.Snackbar
 import com.heckfyxe.chatty.R
+import com.heckfyxe.chatty.util.setAuthenticated
 import kotlinx.android.synthetic.main.edit_user_data_fragment.*
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
@@ -48,7 +50,8 @@ class EditUserDataFragment : Fragment() {
                 if (it.allowed) {
                     nicknameInputLayout?.isHelperTextEnabled = true
                     nicknameInputLayout?.helperText = getString(R.string.allowed)
-                    nicknameInputLayout?.setHelperTextColor(ColorStateList.valueOf(resources.getColor(R.color.green)))
+                    val greenColor = ContextCompat.getColor(context!!, R.color.green)
+                    nicknameInputLayout?.setHelperTextColor(ColorStateList.valueOf(greenColor))
                     nicknameOkButton?.isEnabled = true
                 } else {
                     nicknameInputLayout?.isErrorEnabled = true
@@ -60,6 +63,7 @@ class EditUserDataFragment : Fragment() {
         model.currentUser.observe(this, Observer {
             startAvatarLoading(it.profileUrl)
             nicknameEditText?.setText(it.nickname)
+            nicknameEditText?.isEnabled = true
         })
 
         model.errors.observe(this, Observer {
@@ -131,6 +135,7 @@ class EditUserDataFragment : Fragment() {
         if (!nicknameEditText?.text.isNullOrEmpty()) {
             nicknameOkButton?.startAnimation()
             model.updateUserData(nicknameEditText.text.toString()) {
+                setAuthenticated()
                 findNavController().navigate(R.id.action_editUserDataFragment_to_contactFragment)
             }
         }
