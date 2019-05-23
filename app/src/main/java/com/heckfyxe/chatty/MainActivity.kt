@@ -26,7 +26,7 @@ class MainActivity : AppCompatActivity(), EmotionDetector {
     private val usersRef: CollectionReference by inject(KOIN_USERS_FIRESTORE_COLLECTION)
     private val uid: String by inject(KOIN_USER_ID)
 
-    private var isSmiling = false
+    private var emotion = ""
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -59,10 +59,10 @@ class MainActivity : AppCompatActivity(), EmotionDetector {
                 val faces = task.result
                 val face = faces?.singleOrNull() ?: return@addOnCompleteListener
                 Log.i("Smiling", face.smilingProbability.toString())
-                val smiling = face.smilingProbability > 0.5f
-                if (isSmiling != smiling) {
-                    isSmiling = smiling
-                    val emotion = if (isSmiling) "\uD83D\uDE04" else " "
+                val isSmiling = face.smilingProbability > 0.5f
+                val emotion = if (isSmiling) "\uD83D\uDE04" else " "
+                if (this.emotion != emotion) {
+                    this.emotion = emotion
                     usersRef.document(uid).set(mapOf("emotion" to emotion), SetOptions.merge())
                 }
             }

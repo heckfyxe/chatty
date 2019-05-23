@@ -35,6 +35,12 @@ class DialogRepository : KoinComponent {
     private val scope = CoroutineScope(job + Dispatchers.IO)
 
     fun connectUser() {
+        val user = SendBird.getCurrentUser()
+        if (user != null) {
+            currentUser.postValue(user)
+            return
+        }
+
         SendBird.connect(userId) { sendBirdUser, e ->
             if (e != null) {
                 errors.postValue(e)

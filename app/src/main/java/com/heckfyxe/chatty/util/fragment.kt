@@ -13,3 +13,7 @@ fun Fragment.isAuthenticated(): Boolean {
 fun Fragment.setAuthenticated() {
     activity?.getPreferences(Context.MODE_PRIVATE)?.edit()?.putBoolean(KEY_IS_AUTHENTICATED, true)?.apply()
 }
+
+fun Fragment.clearSharedPreferencesData() {
+    activity?.getPreferences(Context.MODE_PRIVATE)?.edit()?.clear()?.apply()
+}

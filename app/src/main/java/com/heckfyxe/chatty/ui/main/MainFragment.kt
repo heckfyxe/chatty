@@ -8,6 +8,7 @@ import android.view.*
 import android.widget.Toast
 import androidx.appcompat.app.AlertDialog
 import androidx.appcompat.app.AppCompatActivity
+import androidx.core.view.isVisible
 import androidx.fragment.app.Fragment
 import androidx.lifecycle.Observer
 import androidx.navigation.fragment.findNavController
@@ -16,6 +17,7 @@ import com.heckfyxe.chatty.EmotionDetector
 import com.heckfyxe.chatty.R
 import com.heckfyxe.chatty.model.ChatDialog
 import com.heckfyxe.chatty.util.GlideImageLoader
+import com.heckfyxe.chatty.util.clearSharedPreferencesData
 import com.heckfyxe.chatty.util.setAuthenticated
 import com.sendbird.android.SendBird
 import com.stfalcon.chatkit.dialogs.DialogsListAdapter
@@ -29,9 +31,7 @@ class MainFragment : Fragment() {
 
     private lateinit var adapter: DialogsListAdapter<ChatDialog>
 
-    private var isCameraAccepted = false
-
-    private lateinit var detector: EmotionDetector
+    private lateinit var emotionDetector: EmotionDetector
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -44,8 +44,20 @@ class MainFragment : Fragment() {
         }
 
         connectToViewModel()
+    }
 
-        model.connectUser()
+    private fun showUserConnectingAnimation() {
+        mainProgressBar?.isVisible = true
+        mainToolbar?.isVisible = false
+        newMessageFAB?.isVisible = false
+        dialogList?.isVisible = false
+    }
+
+    private fun hideUserConnectingAnimation() {
+        mainProgressBar?.isVisible = false
+        mainToolbar?.isVisible = true
+        newMessageFAB?.isVisible = true
+        dialogList?.isVisible = true
     }
 
     override fun onActivityCreated(savedInstanceState: Bundle?) {
@@ -54,7 +66,7 @@ class MainFragment : Fragment() {
         (activity as? AppCompatActivity)?.setSupportActionBar(mainToolbar)
         setHasOptionsMenu(true)
 
-        detector = activity as EmotionDetector
+        emotionDetector = activity as EmotionDetector
     }
 
     override fun onCreateOptionsMenu(menu: Menu, inflater: MenuInflater) {
@@ -69,6 +81,7 @@ class MainFragment : Fragment() {
             }
             R.id.mi_sign_out -> {
                 model.logOut {
+                    clearSharedPreferencesData()
                     findNavController().navigate(R.id.action_mainFragment_to_authFragment)
                 }
                 true
@@ -78,6 +91,7 @@ class MainFragment : Fragment() {
 
     private fun connectToViewModel() {
         model.currentUser.observe(this, Observer {
+            hideUserConnectingAnimation()
             model.loadChats()
             registerPushNotification()
         })
@@ -103,6 +117,9 @@ class MainFragment : Fragment() {
         super.onViewCreated(view, savedInstanceState)
 
         dialogList?.setAdapter(adapter)
+
+        model.connectUser()
+        showUserConnectingAnimation()
 
         newMessageFAB?.setOnClickListener { showNewInterlocutorDialog() }
     }
@@ -167,8 +184,7 @@ class MainFragment : Fragment() {
     override fun onStart() {
         super.onStart()
 
-        if (isCameraAccepted)
-            detector.start()
+        emotionDetector.start()
     }
 
     private fun launchMessageFragment(channelId: String) {
