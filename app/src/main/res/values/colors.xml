@@ -1,11 +1,13 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
-    <color name="colorPrimary">#008577</color>
-    <color name="colorPrimaryDark">#00574B</color>
+    <color name="colorPrimary">#F4511E</color>
+    <color name="colorPrimaryDark">#FF3D00</color>
     <color name="colorAccent">#D81B60</color>
 
     <color name="green">#4CAF50</color>
     <color name="grey">#aaa</color>
     <color name="error">#FF0000</color>
     <color name="warning">#FF5722</color>
+    <color name="fab_color">#FF9100</color>
+    <color name="progress_bar_color">#EF5350</color>
 </resources>

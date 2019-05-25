@@ -40,6 +40,7 @@ class MainActivity : AppCompatActivity(), EmotionDetector {
         var isLoading = false
         cameraView?.addFrameProcessor {
             if (isLoading) return@addFrameProcessor
+            if (it.size == null) return@addFrameProcessor
 
             val metadata = FirebaseVisionImageMetadata.Builder()
                 .setFormat(ImageFormat.NV21)

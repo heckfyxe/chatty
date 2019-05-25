@@ -71,7 +71,7 @@ class MessageFragment : Fragment() {
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
 
-        messageList?.setBackgroundResource(R.drawable.background)
+        messageList?.setBackgroundResource(R.drawable.messages_background)
         messageList?.setAdapter(adapter)
         adapter.setLoadMoreListener { _, _ ->
             viewModel.getPrevMessages()

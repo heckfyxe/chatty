@@ -6,11 +6,18 @@
         <item name="colorPrimary">@color/colorPrimary</item>
         <item name="colorPrimaryDark">@color/colorPrimaryDark</item>
         <item name="colorAccent">@color/colorAccent</item>
+        <item name="android:progressBarStyle">@style/ProgressBarStyle</item>
     </style>
 
     <style name="NicknameOkButtonStyle" parent="Widget.AppCompat.Button">
         <item name="android:background">@drawable/button_background</item>
         <item name="android:textColor">@drawable/button_text_color</item>
     </style>
+
+    <style name="FABStyle" parent="Widget.MaterialComponents.FloatingActionButton">
+        <item name="backgroundTint">@color/fab_color</item>
+    </style>
+
+    <style name="ProgressBarStyle" parent="Widget.AppCompat.ProgressBar" />
 
 </resources>
