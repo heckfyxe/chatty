@@ -33,7 +33,6 @@ class MainActivity : AppCompatActivity(), EmotionDetector {
         setContentView(R.layout.activity_main)
 
         cameraView?.setLifecycleOwner(this)
-        cameraView?.bringToFront()
     }
 
     override fun start() {

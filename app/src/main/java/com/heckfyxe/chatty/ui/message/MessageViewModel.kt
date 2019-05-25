@@ -61,7 +61,7 @@ class MessageViewModel(channelId: String) : ViewModel(), KoinComponent {
             interlocutorLiveData.postValue(interlocutor)
             currentUser = repository.currentUser.await().toChatUser()
             withContext(Dispatchers.Main) {
-                repository.messages.observeForever(messagesObserver)
+                repository.messages.await().observeForever(messagesObserver)
             }
         }
     }
@@ -90,6 +90,8 @@ class MessageViewModel(channelId: String) : ViewModel(), KoinComponent {
 
         job.cancel()
         repository.clear()
-        repository.messages.removeObserver(messagesObserver)
+        scope.launch {
+            repository.messages.await().removeObserver(messagesObserver)
+        }
     }
 }

@@ -116,6 +116,8 @@ class MainFragment : Fragment() {
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
 
+        (activity as? AppCompatActivity)?.setSupportActionBar(mainToolbar)
+
         dialogList?.setAdapter(adapter)
 
         model.connectUser()

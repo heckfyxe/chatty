@@ -28,15 +28,18 @@ class MessageRepository(channelId: String) : KoinComponent {
     private val userDao: UserDao by inject()
     private val messageDao: MessageDao by inject()
 
-    private val channel: GroupChannel = channelFromDevice(get(), channelId) as GroupChannel
+    private val channel: Deferred<GroupChannel> = scope.async {
+        channelFromDevice(get(), channelId) as GroupChannel
+    }
 
     private val currentUserId: String by inject(name = KOIN_USER_ID)
-    val currentUser = loadUserByIdAsync(currentUserId)
+    val currentUser = loadCurrentUserAsync()
 
-    private val interlocutorId = channel.members.single { it.userId != currentUserId }.userId
-    val interlocutor = loadUserByIdAsync(interlocutorId)
+    val interlocutor = loadInterlocutorAsync()
 
-    val messages = messageDao.getMessagesLiveData(channel.url)
+    val messages = scope.async {
+        messageDao.getMessagesLiveData(channel.await().url)
+    }
     val errors = MutableLiveData<Exception>()
 
     private var isLoading = false
@@ -49,10 +52,21 @@ class MessageRepository(channelId: String) : KoinComponent {
         }
     }
 
+    private fun loadCurrentUserAsync() = loadUserByIdAsync(currentUserId)
+
+    private fun loadInterlocutorAsync() =
+        scope.async {
+            val interlocutorId = channel.await().members.single { it.userId != currentUserId }.userId
+            loadUserByIdAsync(interlocutorId).await()
+        }
+
+
     private fun loadUserByIdAsync(id: String): Deferred<User> = scope.async {
         userDao.getUserById(id)?.let {
             return@async it
         }
+
+        val channel = channel.await()
 
         val member = channel.members.single { it.userId == id }
         val user = member.let {
@@ -68,32 +82,35 @@ class MessageRepository(channelId: String) : KoinComponent {
         if (isLoading)
             return
 
-        val lastMessage = messages.value?.firstOrNull() ?: return
-        val lastMessageId = lastMessage.id
+        scope.launch {
+            val lastMessage = messages.await().value?.firstOrNull() ?: return@launch
+            val lastMessageId = lastMessage.id
 
-        isLoading = true
-        channel.getPreviousMessagesById(
-            lastMessageId,
-            false, PREV_RESULT_SIZE,
-            true, BaseChannel.MessageTypeFilter.ALL, ""
-        ) { loadedMessages, error ->
+            isLoading = true
+            val channel = channel.await()
+            channel.getPreviousMessagesById(
+                lastMessageId,
+                false, PREV_RESULT_SIZE,
+                true, BaseChannel.MessageTypeFilter.ALL, ""
+            ) { loadedMessages, error ->
 
-            isLoading = false
+                isLoading = false
 
-            if (error != null) {
-                errors.postValue(error)
-                return@getPreviousMessagesById
+                if (error != null) {
+                    errors.postValue(error)
+                    return@getPreviousMessagesById
+                }
+
+                if (loadedMessages.size < PREV_RESULT_SIZE)
+                    isHistoryEmpty = true
+
+                if (loadedMessages.isEmpty())
+                    return@getPreviousMessagesById
+
+                updateDatabase(loadedMessages.map {
+                    Message(it.messageId, channel.url, it.createdAt, it.getSender().userId, it.getText())
+                })
             }
-
-            if (loadedMessages.size < PREV_RESULT_SIZE)
-                isHistoryEmpty = true
-
-            if (loadedMessages.isEmpty())
-                return@getPreviousMessagesById
-
-            updateDatabase(loadedMessages.map {
-                Message(it.messageId, channel.url, it.createdAt, it.getSender().userId, it.getText())
-            })
         }
     }
 
@@ -104,35 +121,43 @@ class MessageRepository(channelId: String) : KoinComponent {
     }
 
     fun sendTextMessage(text: String) {
-        channel.sendUserMessage(text) { message, error ->
-            if (error != null) {
-                errors.postValue(error)
-                return@sendUserMessage
-            }
+        scope.launch {
+            val channel = channel.await()
+            channel.sendUserMessage(text) { message, error ->
+                if (error != null) {
+                    errors.postValue(error)
+                    return@sendUserMessage
+                }
 
-            val roomMessage = Message(
-                message.messageId,
-                channel.url,
-                message.createdAt,
-                message.sender.userId,
-                message.getText()
-            )
+                val roomMessage = Message(
+                    message.messageId,
+                    channel.url,
+                    message.createdAt,
+                    message.sender.userId,
+                    message.getText()
+                )
 
-            scope.launch {
-                database.withTransaction {
-                    messageDao.insert(roomMessage)
-                    dialogDao.updateDialogLastMessageId(channel.url, roomMessage.id)
+                scope.launch {
+                    database.withTransaction {
+                        messageDao.insert(roomMessage)
+                        dialogDao.updateDialogLastMessageId(channel.url, roomMessage.id)
+                    }
                 }
             }
         }
+
     }
 
     fun startTyping() {
-        channel.startTyping()
+        scope.launch {
+            channel.await().startTyping()
+        }
     }
 
     fun endTyping() {
-        channel.endTyping()
+        scope.launch {
+            channel.await().endTyping()
+        }
     }
 
     fun clear() {

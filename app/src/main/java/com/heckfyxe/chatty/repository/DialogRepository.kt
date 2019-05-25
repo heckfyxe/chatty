@@ -65,10 +65,13 @@ class DialogRepository : KoinComponent {
             val users = ArrayList<User>(channels.size + 1)
             val messages = ArrayList<Message>(channels.size)
             val dialogs = ArrayList<Dialog>(channels.size)
+            val channelsDef = ArrayList<Deferred<Unit>>(channels.size)
 
             channels.forEach { channel ->
                 channel.setPushPreference(true) { }
-                channel.saveOnDevice(context)
+                channelsDef.add(scope.async {
+                    channel.saveOnDevice(context)
+                })
 
                 channel.lastMessage.apply {
                     messages.add(Message(messageId, channel.url, createdAt, getSender().userId, getText()))
@@ -97,6 +100,7 @@ class DialogRepository : KoinComponent {
             })
 
             scope.launch {
+                channelsDef.awaitAll()
                 database.withTransaction {
                     userDao.insert(users)
                     messageDao.insert(messages)

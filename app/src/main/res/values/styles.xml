@@ -7,6 +7,7 @@
         <item name="colorPrimaryDark">@color/colorPrimaryDark</item>
         <item name="colorAccent">@color/colorAccent</item>
         <item name="android:progressBarStyle">@style/ProgressBarStyle</item>
+        <item name="android:progressBarStyleHorizontal">@style/HorizontalProgressBarStyle</item>
     </style>
 
     <style name="NicknameOkButtonStyle" parent="Widget.AppCompat.Button">
@@ -19,5 +20,7 @@
     </style>
 
     <style name="ProgressBarStyle" parent="Widget.AppCompat.ProgressBar" />
+
+    <style name="HorizontalProgressBarStyle" parent="Widget.AppCompat.ProgressBar.Horizontal" />
 
 </resources>

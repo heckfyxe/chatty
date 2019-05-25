@@ -46,13 +46,14 @@
             app:layout_anchorGravity="bottom|end"
             app:layout_behavior=".ui.behavior.ScrollAwareFABBehavior"
             android:src="@drawable/ic_next"
-            android:visibility="invisible" />
+            android:visibility="invisible"
+            style="@style/FABStyle" />
     </androidx.coordinatorlayout.widget.CoordinatorLayout>
 
     <ProgressBar
         android:id="@+id/contactsProgressBar"
-        style="@style/Widget.AppCompat.ProgressBar.Horizontal"
         android:layout_width="0dp"
+        style="@style/HorizontalProgressBarStyle"
         android:layout_height="wrap_content"
         android:layout_marginStart="64dp"
         android:layout_marginTop="8dp"

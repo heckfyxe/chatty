@@ -5,9 +5,12 @@ import android.util.Log
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
+import androidx.appcompat.app.AppCompatActivity
 import androidx.fragment.app.Fragment
 import androidx.lifecycle.Observer
+import androidx.navigation.fragment.findNavController
 import androidx.navigation.fragment.navArgs
+import androidx.navigation.ui.NavigationUI
 import com.heckfyxe.chatty.R
 import com.heckfyxe.chatty.koin.KOIN_USER_ID
 import com.heckfyxe.chatty.model.ChatMessage
@@ -70,6 +73,10 @@ class MessageFragment : Fragment() {
 
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
+
+        val appCompatActivity = activity as? AppCompatActivity
+        appCompatActivity?.setSupportActionBar(messageToolbar)
+        NavigationUI.setupWithNavController(messageToolbar, findNavController())
 
         messageList?.setBackgroundResource(R.drawable.messages_background)
         messageList?.setAdapter(adapter)
