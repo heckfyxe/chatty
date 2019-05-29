@@ -47,6 +47,7 @@ class MessageRepository(channelId: String) : KoinComponent {
 
     init {
         scope.launch {
+            channel.await().markAsRead()
             currentUser.await()
             interlocutor.await()
         }

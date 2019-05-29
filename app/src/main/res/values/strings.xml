@@ -22,6 +22,7 @@
     <string name="message">Message</string>
     <string name="choose_interlocutor">Choose interlocutor</string>
     <string name="you_dont_have_friends">You don\'t have friends</string>
+    <string name="enter_message">Enter a message</string>
     <string-array name="new_dialog_methods">
         <item>From friends</item>
         <item>By phone number</item>
