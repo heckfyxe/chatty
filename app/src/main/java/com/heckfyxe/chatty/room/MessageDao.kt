@@ -1,10 +1,7 @@
 package com.heckfyxe.chatty.room
 
 import androidx.lifecycle.LiveData
-import androidx.room.Dao
-import androidx.room.Insert
-import androidx.room.OnConflictStrategy
-import androidx.room.Query
+import androidx.room.*
 
 @Dao
 interface MessageDao {
@@ -14,6 +11,19 @@ interface MessageDao {
 
     @Insert(onConflict = OnConflictStrategy.REPLACE)
     fun insert(messages: List<Message>)
+
+    @Transaction
+    @Query(
+        "UPDATE message SET id = :messageId, time = :time, sent = 1, requestId = '' WHERE requestId = :requestId"
+    )
+    fun updateByRequestId(requestId: String, messageId: Long, time: Long)
+
+    @Transaction
+    fun updateByRequestId(message: Message) {
+        message.apply {
+            updateByRequestId(requestId, id, time)
+        }
+    }
 
     @Query("SELECT * FROM message WHERE id = :id LIMIT 1")
     fun getMessageById(id: Long): Message

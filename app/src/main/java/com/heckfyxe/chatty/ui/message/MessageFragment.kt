@@ -11,43 +11,44 @@ import androidx.lifecycle.Observer
 import androidx.navigation.fragment.findNavController
 import androidx.navigation.fragment.navArgs
 import androidx.navigation.ui.NavigationUI
+import androidx.recyclerview.widget.LinearLayoutManager
+import androidx.recyclerview.widget.RecyclerView
 import com.heckfyxe.chatty.R
-import com.heckfyxe.chatty.koin.KOIN_USER_ID
-import com.heckfyxe.chatty.model.ChatMessage
-import com.heckfyxe.chatty.util.GoneImageLoader
 import com.heckfyxe.chatty.util.loadCircleUserAvatar
 import com.stfalcon.chatkit.messages.MessageInput
-import com.stfalcon.chatkit.messages.MessagesListAdapter
 import kotlinx.android.synthetic.main.message_fragment.*
-import org.koin.android.ext.android.inject
 import org.koin.androidx.viewmodel.ext.android.viewModel
 import org.koin.core.parameter.parametersOf
 
 class MessageFragment : Fragment() {
 
-    private val userId: String by inject(KOIN_USER_ID)
-
     private val viewModel: MessageViewModel by viewModel { parametersOf(args.channelId) }
 
     private val args: MessageFragmentArgs by navArgs()
 
-    private lateinit var adapter: MessagesListAdapter<ChatMessage>
+    private lateinit var adapter: MessageAdapter
+    private lateinit var layoutManager: LinearLayoutManager
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
 
-        adapter = MessagesListAdapter(
-            userId,
-            GoneImageLoader()
-        )
+        adapter = MessageAdapter()
+        layoutManager = LinearLayoutManager(context!!, RecyclerView.VERTICAL, true)
 
         observeViewModel()
     }
 
+    private fun scrollTo(position: Int) {
+        layoutManager.scrollToPosition(position)
+    }
+
     private fun observeViewModel() {
         viewModel.messages.observe(this, Observer {
-            adapter.clear()
-            adapter.addToEnd(it, false)
+            adapter.update(it)
+        })
+
+        viewModel.needsToScroll.observe(this, Observer {
+            scrollTo(it)
         })
 
         viewModel.interlocutorLiveData.observe(this, Observer {
@@ -78,11 +79,14 @@ class MessageFragment : Fragment() {
         appCompatActivity?.setSupportActionBar(messageToolbar)
         NavigationUI.setupWithNavController(messageToolbar, findNavController())
 
-        messageList?.setBackgroundResource(R.drawable.messages_background)
-        messageList?.setAdapter(adapter)
-        adapter.setLoadMoreListener { _, _ ->
-            viewModel.getPrevMessages()
+        messageList?.layoutManager = layoutManager
+        messageList?.adapter = adapter
+        adapter.onLoadMoreListener = object : MessageAdapter.OnLoadMoreListener {
+            override fun onLoadMore(page: Int, total: Int) {
+                viewModel.getPrevMessages()
+            }
         }
+        messageList?.addOnScrollListener(RecyclerScrollMoreListener(layoutManager, adapter))
 
         messageTextInput?.setInputListener {
             viewModel.sendTextMessage(it.toString())

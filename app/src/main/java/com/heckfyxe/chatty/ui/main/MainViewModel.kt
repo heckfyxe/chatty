@@ -29,9 +29,9 @@ class MainViewModel(private val repository: DialogRepository) : ViewModel(), Koi
 
     private val observer = Observer<List<Dialog>> {
         scope.launch {
-            val chatDialogs = it.map {
+            val chatDialogs: List<ChatDialog> = it.map {
                 scope.async {
-                    val lastMessage = repository.getMessageById(it.lastMessageId)
+                    val lastMessage = repository.getMessageById(it.lastMessageId) ?: return@async null
                     val messageSender = repository.getUserById(lastMessage.senderId)
                     val user = with(messageSender) { ChatUser(id, name, avatarUrl) }
                     val chatMessage = with(lastMessage) { ChatMessage(id, Date(time), user, text) }
@@ -39,7 +39,7 @@ class MainViewModel(private val repository: DialogRepository) : ViewModel(), Koi
                         ChatDialog(id, name, photoUrl, chatMessage, unreadCount)
                     }
                 }
-            }.awaitAll()
+            }.awaitAll().filterNotNull()
             _chats.postValue(chatDialogs)
         }
     }

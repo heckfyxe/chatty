@@ -6,9 +6,8 @@ import androidx.room.withTransaction
 import com.google.firebase.auth.FirebaseAuth
 import com.heckfyxe.chatty.koin.KOIN_USER_ID
 import com.heckfyxe.chatty.room.*
-import com.heckfyxe.chatty.util.sendbird.getSender
-import com.heckfyxe.chatty.util.sendbird.getText
 import com.heckfyxe.chatty.util.sendbird.saveOnDevice
+import com.heckfyxe.chatty.util.sendbird.toMessage
 import com.sendbird.android.GroupChannel
 import com.sendbird.android.SendBird
 import kotlinx.coroutines.*
@@ -51,7 +50,7 @@ class DialogRepository : KoinComponent {
         }
     }
 
-    fun getMessageById(id: Long): Message = messageDao.getMessageById(id)
+    fun getMessageById(id: Long): Message? = messageDao.getMessageById(id)
 
     fun getUserById(id: String): User = userDao.getUserById(id)!!
 
@@ -73,9 +72,10 @@ class DialogRepository : KoinComponent {
                     channel.saveOnDevice(context)
                 })
 
-                channel.lastMessage.apply {
-                    messages.add(Message(messageId, channel.url, createdAt, getSender().userId, getText()))
+                channel.lastMessage.let {
+                    messages.add(it.toMessage(userId, channel.url))
                 }
+
                 with(channel) {
                     val interlocutor = members.single { it.userId != userId }
 

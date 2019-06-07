@@ -1,18 +1,20 @@
 package com.heckfyxe.chatty.repository
 
+import android.util.Log
 import androidx.lifecycle.MutableLiveData
 import androidx.room.withTransaction
 import com.heckfyxe.chatty.koin.KOIN_USER_ID
 import com.heckfyxe.chatty.room.*
 import com.heckfyxe.chatty.util.sendbird.channelFromDevice
-import com.heckfyxe.chatty.util.sendbird.getSender
 import com.heckfyxe.chatty.util.sendbird.getText
+import com.heckfyxe.chatty.util.sendbird.toMessage
 import com.sendbird.android.BaseChannel
 import com.sendbird.android.GroupChannel
 import kotlinx.coroutines.*
 import org.koin.standalone.KoinComponent
 import org.koin.standalone.get
 import org.koin.standalone.inject
+import kotlin.random.Random
 
 class MessageRepository(channelId: String) : KoinComponent {
 
@@ -80,7 +82,7 @@ class MessageRepository(channelId: String) : KoinComponent {
     }
 
     fun getPrevMessages() {
-        if (isLoading)
+        if (isLoading || isHistoryEmpty)
             return
 
         scope.launch {
@@ -109,7 +111,7 @@ class MessageRepository(channelId: String) : KoinComponent {
                     return@getPreviousMessagesById
 
                 updateDatabase(loadedMessages.map {
-                    Message(it.messageId, channel.url, it.createdAt, it.getSender().userId, it.getText())
+                    it.toMessage(currentUserId, channel.url)
                 })
             }
         }
@@ -124,7 +126,7 @@ class MessageRepository(channelId: String) : KoinComponent {
     fun sendTextMessage(text: String) {
         scope.launch {
             val channel = channel.await()
-            channel.sendUserMessage(text) { message, error ->
+            val tempMessage = channel.sendUserMessage(text) { message, error ->
                 if (error != null) {
                     errors.postValue(error)
                     return@sendUserMessage
@@ -135,16 +137,34 @@ class MessageRepository(channelId: String) : KoinComponent {
                     channel.url,
                     message.createdAt,
                     message.sender.userId,
-                    message.getText()
+                    message.getText(),
+                    true,
+                    true,
+                    message.requestId
                 )
 
+                Log.i("MessageRepository", "sent: " + roomMessage.requestId)
                 scope.launch {
                     database.withTransaction {
-                        messageDao.insert(roomMessage)
+                        messageDao.updateByRequestId(roomMessage)
                         dialogDao.updateDialogLastMessageId(channel.url, roomMessage.id)
                     }
                 }
             }
+            val tempRoomMessage = tempMessage.let {
+                Message(
+                    Random.nextLong(),
+                    channel.url,
+                    it.createdAt,
+                    it.sender.userId,
+                    it.message,
+                    true,
+                    false,
+                    it.requestId
+                )
+            }
+            Log.i("MessageRepository", "sending: " + tempRoomMessage.requestId)
+            messageDao.insert(tempRoomMessage)
         }
 
     }

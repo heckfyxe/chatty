@@ -60,11 +60,12 @@
             </androidx.appcompat.widget.Toolbar>
         </com.google.android.material.appbar.AppBarLayout>
 
-        <com.stfalcon.chatkit.messages.MessagesList
+        <androidx.recyclerview.widget.RecyclerView
             android:id="@+id/messageList"
             android:layout_width="match_parent"
             android:layout_height="match_parent"
-            tools:background="@drawable/messages_background"
+            android:background="@drawable/messages_background"
+            tools:listitem="@layout/item_in_message"
             app:layout_behavior="@string/appbar_scrolling_view_behavior" />
     </androidx.coordinatorlayout.widget.CoordinatorLayout>
 

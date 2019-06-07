@@ -1,14 +1,10 @@
 package com.heckfyxe.chatty.ui.message
 
-import androidx.lifecycle.LiveData
 import androidx.lifecycle.MutableLiveData
 import androidx.lifecycle.Observer
-import androidx.lifecycle.Transformations
 import androidx.lifecycle.ViewModel
 import com.google.firebase.firestore.CollectionReference
 import com.heckfyxe.chatty.koin.KOIN_USERS_FIRESTORE_COLLECTION
-import com.heckfyxe.chatty.koin.KOIN_USER_ID
-import com.heckfyxe.chatty.model.ChatMessage
 import com.heckfyxe.chatty.model.ChatUser
 import com.heckfyxe.chatty.repository.MessageRepository
 import com.heckfyxe.chatty.room.Message
@@ -17,7 +13,6 @@ import kotlinx.coroutines.*
 import org.koin.core.parameter.parametersOf
 import org.koin.standalone.KoinComponent
 import org.koin.standalone.inject
-import java.util.*
 
 class MessageViewModel(channelId: String) : ViewModel(), KoinComponent {
 
@@ -26,23 +21,12 @@ class MessageViewModel(channelId: String) : ViewModel(), KoinComponent {
     private val job = Job()
     private val scope = CoroutineScope(job + Dispatchers.IO)
 
-    private val currentUserId: String by inject(KOIN_USER_ID)
     private val usersRef: CollectionReference by inject(KOIN_USERS_FIRESTORE_COLLECTION)
 
-    private val _messages = MutableLiveData<List<Message>>()
-    val messages: LiveData<List<ChatMessage>> = Transformations.map(_messages) { messages ->
-        messages.map {
-            ChatMessage(
-                it.id,
-                Date(it.time),
-                if (it.senderId == currentUserId)
-                    currentUser
-                else
-                    interlocutor,
-                it.text
-            )
-        }
-    }
+    private var messageCount = 0
+
+    val messages = MutableLiveData<List<Message>>()
+    val needsToScroll = MutableLiveData<Int>()
     val errors = repository.errors
     val interlocutorLiveData = MutableLiveData<ChatUser>()
     val interlocutorEmotions = MutableLiveData<String>()
@@ -51,7 +35,11 @@ class MessageViewModel(channelId: String) : ViewModel(), KoinComponent {
     private lateinit var currentUser: ChatUser
 
     private val messagesObserver = Observer<List<Message>> {
-        _messages.postValue(it)
+        if (it.size > messageCount) {
+            messageCount = it.size
+            needsToScroll.postValue(0)
+        }
+        messages.postValue(it)
     }
 
     init {

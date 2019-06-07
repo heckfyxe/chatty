@@ -6,8 +6,7 @@ import com.google.firebase.FirebaseApp
 import com.heckfyxe.chatty.koin.KOIN_USER_ID
 import com.heckfyxe.chatty.koin.koinModule
 import com.heckfyxe.chatty.room.*
-import com.heckfyxe.chatty.util.sendbird.getSender
-import com.heckfyxe.chatty.util.sendbird.getText
+import com.heckfyxe.chatty.util.sendbird.toMessage
 import com.sendbird.android.BaseChannel
 import com.sendbird.android.BaseMessage
 import com.sendbird.android.GroupChannel
@@ -22,7 +21,6 @@ import org.koin.android.ext.android.startKoin
 class App : MultiDexApplication() {
 
     companion object {
-        private const val APP_ID = "CCC955EE-E041-483F-9866-590B1C4B1E30"
         private const val CHANNEL_HANDLER_IDENTIFIER = "com.heckfyxe.chatty.CHANNEL_HANDLER_IDENTIFIER"
     }
 
@@ -47,9 +45,8 @@ class App : MultiDexApplication() {
             val dialog = with(channel) {
                 Dialog(url, lastMessage.messageId, interlocutor.name, unreadMessageCount, interlocutor.avatarUrl)
             }
-            val message = with(baseMessage) {
-                Message(messageId, dialog.id, createdAt, getSender().userId, getText())
-            }
+
+            val message = baseMessage.toMessage(userId, dialog.id)
 
             scope.launch {
                 database.withTransaction {
@@ -65,7 +62,7 @@ class App : MultiDexApplication() {
         super.onCreate()
 
         startKoin(this, koinModule)
-        SendBird.init(APP_ID, this)
+        SendBird.init(Build.APP_ID, this)
         FirebaseApp.initializeApp(this)
 
         SendBird.addChannelHandler(CHANNEL_HANDLER_IDENTIFIER, channelHandler)
