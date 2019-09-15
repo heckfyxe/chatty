@@ -5,18 +5,21 @@ import androidx.lifecycle.MutableLiveData
 import androidx.room.withTransaction
 import com.google.firebase.auth.FirebaseAuth
 import com.heckfyxe.chatty.koin.KOIN_USER_ID
+import com.heckfyxe.chatty.remote.SendBirdApi
 import com.heckfyxe.chatty.room.*
 import com.heckfyxe.chatty.util.sendbird.saveOnDevice
 import com.heckfyxe.chatty.util.sendbird.toMessage
 import com.sendbird.android.GroupChannel
 import com.sendbird.android.SendBird
 import kotlinx.coroutines.*
-import org.koin.standalone.KoinComponent
-import org.koin.standalone.inject
+import org.koin.core.KoinComponent
+import org.koin.core.inject
 
 class DialogRepository : KoinComponent {
 
     private val context: Context by inject()
+
+    private val sendBirdApi: SendBirdApi by inject()
 
     private val database: AppDatabase by inject()
     private val dialogDao: DialogDao by inject()
@@ -26,31 +29,31 @@ class DialogRepository : KoinComponent {
     private val userId: String by inject(KOIN_USER_ID)
     private val auth: FirebaseAuth by inject()
 
-    val currentUser = MutableLiveData<com.sendbird.android.User>()
-    val errors = MutableLiveData<Exception>()
+    val currentUser = MutableLiveData<User>()
+    val errors = MutableLiveData<Exception?>()
     val chats = dialogDao.getDialogsLiveData()
 
     private val job = Job()
     private val scope = CoroutineScope(job + Dispatchers.IO)
 
-    fun connectUser() {
-        val user = SendBird.getCurrentUser()
-        if (user != null) {
-            currentUser.postValue(user)
-            return
+    suspend fun connectUser() {
+        try {
+            currentUser.postValue(sendBirdApi.connect(userId))
+        } catch (e: Exception) {
+            errors.postValue(e)
         }
 
-        SendBird.connect(userId) { sendBirdUser, e ->
-            if (e != null) {
-                errors.postValue(e)
-                return@connect
-            }
-
-            currentUser.postValue(sendBirdUser)
-        }
+//       SendBird.connect(userId) { sendBirdUser, e ->
+//            if (e != null) {
+//                errors.postValue(e)
+//                return@connect
+//            }
+//
+//            currentUser.postValue(sendBirdUser)
+//        }
     }
 
-    fun getMessageById(id: Long): Message? = messageDao.getMessageById(id)
+    suspend fun getMessageById(id: Long): Message? = messageDao.getMessageById(id)
 
     fun getUserById(id: String): User = userDao.getUserById(id)!!
 
@@ -69,11 +72,11 @@ class DialogRepository : KoinComponent {
             channels.forEach { channel ->
                 channel.setPushPreference(true) { }
                 channelsDef.add(scope.async {
-                    channel.saveOnDevice(context)
+                    channel.saveOnDevice()
                 })
 
                 channel.lastMessage.let {
-                    messages.add(it.toMessage(userId, channel.url))
+                    messages.add(it.toMessage(userId))
                 }
 
                 with(channel) {

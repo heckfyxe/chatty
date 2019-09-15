@@ -27,7 +27,7 @@ class FriendsFragment : Fragment() {
 
         friendsAdapter = FriendsAdapter { friend ->
             viewModel.createChannel(friend) {
-                it.saveOnDevice(activity!!.applicationContext)
+                it.saveOnDevice()
                 val direction = FriendsFragmentDirections.actionFriendsFragmentToMessageFragment(it.url)
                 findNavController().navigate(direction)
             }

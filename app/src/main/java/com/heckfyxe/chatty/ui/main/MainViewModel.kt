@@ -1,18 +1,14 @@
 package com.heckfyxe.chatty.ui.main
 
-import androidx.lifecycle.LiveData
-import androidx.lifecycle.MutableLiveData
+import androidx.lifecycle.*
 import androidx.lifecycle.Observer
-import androidx.lifecycle.Transformations
-import androidx.lifecycle.ViewModel
 import com.heckfyxe.chatty.model.ChatDialog
 import com.heckfyxe.chatty.model.ChatMessage
 import com.heckfyxe.chatty.model.ChatUser
 import com.heckfyxe.chatty.repository.DialogRepository
 import com.heckfyxe.chatty.room.Dialog
-import com.sendbird.android.User
 import kotlinx.coroutines.*
-import org.koin.standalone.KoinComponent
+import org.koin.core.KoinComponent
 import java.util.*
 
 class MainViewModel(private val repository: DialogRepository) : ViewModel(), KoinComponent {
@@ -20,9 +16,9 @@ class MainViewModel(private val repository: DialogRepository) : ViewModel(), Koi
     private val job = Job()
     private val scope = CoroutineScope(job + Dispatchers.IO)
 
-    val currentUser: LiveData<User> = repository.currentUser
+    val currentUser: LiveData<com.heckfyxe.chatty.room.User> = repository.currentUser
 
-    val errors: LiveData<Exception> = repository.errors
+    val errors: MutableLiveData<Exception?> = repository.errors
 
     private val _chats = MutableLiveData<List<ChatDialog>>()
     val chats: LiveData<List<ChatDialog>> = Transformations.map(_chats) { it }
@@ -48,7 +44,9 @@ class MainViewModel(private val repository: DialogRepository) : ViewModel(), Koi
         repository.chats.observeForever(observer)
     }
 
-    fun connectUser() = repository.connectUser()
+    fun connectUser() = viewModelScope.launch {
+        repository.connectUser()
+    }
 
     fun loadChats() = repository.refresh()
 

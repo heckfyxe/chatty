@@ -14,12 +14,18 @@ private val formatter: SimpleDateFormat by lazy {
 private val date: Date by lazy { Date() }
 
 @BindingAdapter("hhmm")
-fun hhmm(textView: TextView, time: Long) {
+fun hhmm(textView: TextView, time: Long?) {
+    if (time == null)
+        return
+
     textView.text = formatTime(time)
 }
 
 @BindingAdapter("outMessageText")
-fun outMessageText(textView: TextView, message: Message) {
+fun outMessageText(textView: TextView, message: Message?) {
+    if (message == null)
+        return
+
     if (message.sent)
         textView.text = formatTime(message.time)
     else

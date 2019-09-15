@@ -20,8 +20,8 @@ import com.heckfyxe.chatty.room.DialogDao
 import com.sendbird.android.SendBird
 import com.sendbird.android.shadow.com.google.gson.JsonObject
 import com.sendbird.android.shadow.com.google.gson.JsonParser
-import org.koin.standalone.KoinComponent
-import org.koin.standalone.inject
+import org.koin.core.KoinComponent
+import org.koin.core.inject
 
 
 class AppFirebaseMessagingService : FirebaseMessagingService(), KoinComponent {

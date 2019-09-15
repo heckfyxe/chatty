@@ -2,6 +2,7 @@ package com.heckfyxe.chatty.koin
 
 import com.google.firebase.auth.FirebaseAuth
 import com.google.firebase.firestore.FirebaseFirestore
+import com.heckfyxe.chatty.remote.SendBirdApi
 import com.heckfyxe.chatty.repository.ContactRepository
 import com.heckfyxe.chatty.repository.DialogRepository
 import com.heckfyxe.chatty.repository.MessageRepository
@@ -14,9 +15,14 @@ import com.heckfyxe.chatty.ui.main.MainViewModel
 import com.heckfyxe.chatty.ui.main.NewInterlocutorByUserDataViewModel
 import com.heckfyxe.chatty.ui.message.MessageViewModel
 import org.koin.android.ext.koin.androidApplication
-import org.koin.androidx.viewmodel.ext.koin.viewModel
-import org.koin.dsl.module.Module
-import org.koin.dsl.module.module
+import org.koin.androidx.viewmodel.dsl.viewModel
+import org.koin.core.module.Module
+import org.koin.core.qualifier.named
+import org.koin.dsl.module
+
+private val remoteApiModule = module {
+    single { SendBirdApi() }
+}
 
 private val repositoryModule = module {
     factory { DialogRepository() }
@@ -41,8 +47,8 @@ private val viewModelModule = module {
     viewModel { FriendsViewModel() }
 }
 
-const val KOIN_USERS_FIRESTORE_COLLECTION = "users"
-const val KOIN_USER_ID = "uid"
+val KOIN_USERS_FIRESTORE_COLLECTION = named("users")
+val KOIN_USER_ID = named("uid")
 
 private val firebaseModule = module {
     single { FirebaseAuth.getInstance() }
@@ -51,4 +57,5 @@ private val firebaseModule = module {
     factory(KOIN_USER_ID) { get<FirebaseAuth>().currentUser!!.uid }
 }
 
-val koinModule: List<Module> = listOf(repositoryModule, roomModule, viewModelModule, firebaseModule)
+val koinModule: List<Module> =
+    listOf(repositoryModule, roomModule, remoteApiModule, viewModelModule, firebaseModule)

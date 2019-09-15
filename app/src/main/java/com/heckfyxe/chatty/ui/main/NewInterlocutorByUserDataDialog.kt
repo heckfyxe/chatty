@@ -9,6 +9,7 @@ import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
 import android.view.Window
+import androidx.core.content.ContextCompat
 import androidx.core.os.bundleOf
 import androidx.core.view.isVisible
 import androidx.fragment.app.DialogFragment
@@ -55,8 +56,6 @@ class NewInterlocutorByUserDataDialog private constructor() : DialogFragment() {
     }
 
     override fun setupDialog(dialog: Dialog, style: Int) {
-        super.setupDialog(dialog, style)
-
         dialog.requestWindowFeature(Window.FEATURE_NO_TITLE)
     }
 
@@ -95,28 +94,28 @@ class NewInterlocutorByUserDataDialog private constructor() : DialogFragment() {
 
     private fun showError() {
         userDataCheckingResultTextView?.apply {
-            setTextColor(resources.getColor(R.color.error))
+            setTextColor(ContextCompat.getColor(context!!, R.color.error))
             text = resources.getText(R.string.error)
         }
     }
 
     private fun showNotFound() {
         userDataCheckingResultTextView?.apply {
-            setTextColor(resources.getColor(R.color.warning))
+            setTextColor(ContextCompat.getColor(context!!, R.color.warning))
             text = resources.getText(R.string.not_found)
         }
     }
 
     private fun showSuccessful() {
         userDataCheckingResultTextView?.apply {
-            setTextColor(resources.getColor(R.color.green))
+            setTextColor(ContextCompat.getColor(context!!, R.color.green))
             text = resources.getText(R.string.successful)
         }
     }
 
     private fun showItsYourNumber() {
         userDataCheckingResultTextView?.apply {
-            setTextColor(resources.getColor(R.color.warning))
+            setTextColor(ContextCompat.getColor(context!!, R.color.warning))
             text = getString(R.string.its_your)
         }
     }
@@ -127,7 +126,7 @@ class NewInterlocutorByUserDataDialog private constructor() : DialogFragment() {
 
     private fun createDialog(userId: String) {
         model.createDialog(userId) {
-            it.saveOnDevice(context!!)
+            it.saveOnDevice()
             targetFragment?.onActivityResult(targetRequestCode, Activity.RESULT_OK, Intent().apply {
                 putExtra(EXTRA_CHANNEL_ID, it.url)
             })

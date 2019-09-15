@@ -25,8 +25,36 @@ fun BaseMessage.getRequestId(): String = when (this) {
     else -> ""
 }
 
-fun BaseMessage.toMessage(userId: String, dialogId: String, isSent: Boolean = true): Message {
-    val senderId = getSender().userId
-    return Message(messageId, dialogId, createdAt, senderId, getText(), senderId == userId, isSent, getRequestId())
+fun BaseMessage.getDialogId(): String = when (this) {
+    is UserMessage -> channelUrl
+    is FileMessage -> channelUrl
+    else -> ""
 }
+
+fun BaseMessage.toMessage(userId: String, isSent: Boolean = true): Message {
+    val senderId = getSender().userId
+    return Message(
+        messageId,
+        getDialogId(),
+        createdAt,
+        senderId,
+        getText(),
+        senderId == userId,
+        isSent,
+        getRequestId()
+    )
+}
+
+fun UserMessage.toMessage(out: Boolean, sent: Boolean = true) =
+    Message(
+        messageId,
+        channelUrl,
+        createdAt,
+        sender.userId,
+        message,
+        out,
+        sent,
+        requestId
+    )
+
 

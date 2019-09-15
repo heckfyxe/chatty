@@ -1,26 +1,40 @@
 package com.heckfyxe.chatty.repository
 
+import android.content.Context
 import android.util.Log
 import androidx.lifecycle.MutableLiveData
+import androidx.paging.LivePagedListBuilder
+import androidx.paging.PagedList
 import androidx.room.withTransaction
 import com.heckfyxe.chatty.koin.KOIN_USER_ID
+import com.heckfyxe.chatty.repository.source.MessagesDataSource
 import com.heckfyxe.chatty.room.*
 import com.heckfyxe.chatty.util.sendbird.channelFromDevice
-import com.heckfyxe.chatty.util.sendbird.getText
+import com.heckfyxe.chatty.util.sendbird.saveOnDevice
 import com.heckfyxe.chatty.util.sendbird.toMessage
 import com.sendbird.android.BaseChannel
 import com.sendbird.android.GroupChannel
 import kotlinx.coroutines.*
-import org.koin.standalone.KoinComponent
-import org.koin.standalone.get
-import org.koin.standalone.inject
-import kotlin.random.Random
+import kotlinx.coroutines.channels.Channel
+import kotlinx.coroutines.sync.Mutex
+import kotlinx.coroutines.sync.withLock
+import org.koin.core.KoinComponent
+import org.koin.core.inject
 
-class MessageRepository(channelId: String) : KoinComponent {
+class MessageRepository(val channelId: String) : KoinComponent {
 
     companion object {
-        private const val PREV_RESULT_SIZE = 20
+        private const val PAGE_SIZE = 5
+        private const val PREFETCH_SIZE = 2
+
+        private val config = PagedList.Config.Builder()
+            .setPageSize(PAGE_SIZE)
+            .setPrefetchDistance(PREFETCH_SIZE)
+            .setInitialLoadSizeHint(PAGE_SIZE)
+            .build()
     }
+
+    private val context: Context by inject()
 
     private val job = Job()
     private val scope = CoroutineScope(job + Dispatchers.IO)
@@ -30,21 +44,20 @@ class MessageRepository(channelId: String) : KoinComponent {
     private val userDao: UserDao by inject()
     private val messageDao: MessageDao by inject()
 
-    private val channel: Deferred<GroupChannel> = scope.async {
-        channelFromDevice(get(), channelId) as GroupChannel
+    private val channelMutex = Mutex()
+    val channel: Deferred<GroupChannel> = scope.async {
+        channelFromDevice(channelId) as GroupChannel
     }
 
-    private val currentUserId: String by inject(name = KOIN_USER_ID)
+    private val currentUserId: String by inject(KOIN_USER_ID)
     val currentUser = loadCurrentUserAsync()
 
+    private val dataSourceFactory = MessagesDataSource.Factory(this)
+
     val interlocutor = loadInterlocutorAsync()
+    val messages = LivePagedListBuilder(dataSourceFactory, config).build()
+    val errors = MutableLiveData<Exception?>()
 
-    val messages = scope.async {
-        messageDao.getMessagesLiveData(channel.await().url)
-    }
-    val errors = MutableLiveData<Exception>()
-
-    private var isLoading = false
     private var isHistoryEmpty = false
 
     init {
@@ -81,104 +94,130 @@ class MessageRepository(channelId: String) : KoinComponent {
         return@async user
     }
 
-    fun getPrevMessages() {
-        if (isLoading || isHistoryEmpty)
-            return
+    suspend fun getPrevMessages(lastMessageId: Long, count: Int = PAGE_SIZE): List<Message> {
+        val channel = channel.await()
+        val chan = Channel<Boolean>(1)
+        var messages: List<Message> = emptyList()
 
-        scope.launch {
-            val lastMessage = messages.await().value?.firstOrNull() ?: return@launch
-            val lastMessageId = lastMessage.id
+        channel.getPreviousMessagesById(
+            lastMessageId,
+            false, count,
+            true, BaseChannel.MessageTypeFilter.ALL, ""
+        ) { loadedMessages, error ->
 
-            isLoading = true
-            val channel = channel.await()
-            channel.getPreviousMessagesById(
-                lastMessageId,
-                false, PREV_RESULT_SIZE,
-                true, BaseChannel.MessageTypeFilter.ALL, ""
-            ) { loadedMessages, error ->
-
-                isLoading = false
-
-                if (error != null) {
-                    errors.postValue(error)
-                    return@getPreviousMessagesById
-                }
-
-                if (loadedMessages.size < PREV_RESULT_SIZE)
-                    isHistoryEmpty = true
-
-                if (loadedMessages.isEmpty())
-                    return@getPreviousMessagesById
-
-                updateDatabase(loadedMessages.map {
-                    it.toMessage(currentUserId, channel.url)
-                })
-            }
-        }
-    }
-
-    private fun updateDatabase(messages: List<Message>) {
-        scope.launch {
-            messageDao.insert(messages)
-        }
-    }
-
-    fun sendTextMessage(text: String) {
-        scope.launch {
-            val channel = channel.await()
-            val tempMessage = channel.sendUserMessage(text) { message, error ->
-                if (error != null) {
-                    errors.postValue(error)
-                    return@sendUserMessage
-                }
-
-                val roomMessage = Message(
-                    message.messageId,
-                    channel.url,
-                    message.createdAt,
-                    message.sender.userId,
-                    message.getText(),
-                    true,
-                    true,
-                    message.requestId
-                )
-
-                Log.i("MessageRepository", "sent: " + roomMessage.requestId)
+            if (error != null) {
+                errors.postValue(error)
                 scope.launch {
-                    database.withTransaction {
-                        messageDao.updateByRequestId(roomMessage)
-                        dialogDao.updateDialogLastMessageId(channel.url, roomMessage.id)
-                    }
+                    chan.send(false)
                 }
+                return@getPreviousMessagesById
             }
-            val tempRoomMessage = tempMessage.let {
-                Message(
-                    Random.nextLong(),
-                    channel.url,
-                    it.createdAt,
-                    it.sender.userId,
-                    it.message,
-                    true,
-                    false,
-                    it.requestId
-                )
+
+            val newMessages = loadedMessages.map {
+                it.toMessage(currentUserId)
             }
-            Log.i("MessageRepository", "sending: " + tempRoomMessage.requestId)
-            messageDao.insert(tempRoomMessage)
+
+            scope.launch {
+                messages = newMessages
+                updateDatabase(messages)
+                chan.send(true)
+            }
+
+            if (loadedMessages.size < PAGE_SIZE)
+                isHistoryEmpty = true
         }
 
+        chan.receive()
+        chan.close()
+
+        return messages
     }
 
-    fun startTyping() {
-        scope.launch {
-            channel.await().startTyping()
+    suspend fun getPreviousMessagesByTime(time: Long, count: Int = PAGE_SIZE): List<Message> {
+        val channel = channel.await()
+        val chan = Channel<Boolean>(1)
+        var messages: List<Message> = emptyList()
+
+        channel.getPreviousMessagesByTimestamp(
+            time,
+            false, count,
+            true, BaseChannel.MessageTypeFilter.ALL, ""
+        ) { loadedMessages, error ->
+
+            if (error != null) {
+                errors.postValue(error)
+                scope.launch {
+                    chan.send(false)
+                }
+                return@getPreviousMessagesByTimestamp
+            }
+
+            val newMessages = loadedMessages.map {
+                it.toMessage(currentUserId)
+            }
+
+            scope.launch {
+                messages = newMessages
+                updateDatabase(messages)
+                chan.send(true)
+            }
+
+            if (loadedMessages.size < PAGE_SIZE)
+                isHistoryEmpty = true
+        }
+
+        chan.receive()
+        chan.close()
+
+        return messages
+    }
+
+    private suspend fun updateDatabase(messages: List<Message>) {
+        messageDao.insert(messages)
+    }
+
+    private suspend fun saveChannel() {
+        channelMutex.withLock {
+            channel.await().saveOnDevice()
         }
     }
 
-    fun endTyping() {
-        scope.launch {
-            channel.await().endTyping()
+    suspend fun sendTextMessage(text: String) {
+        val channel = channel.await()
+        val tempMessage = channel.sendUserMessage(text) { message, error ->
+            if (error != null) {
+                errors.postValue(error)
+                return@sendUserMessage
+            }
+
+            val roomMessage = message.toMessage(out = true, sent = true)
+
+            Log.i("MessageRepository", "sent: " + roomMessage.requestId)
+            scope.launch {
+                database.withTransaction {
+                    messageDao.updateByRequestId(roomMessage)
+                    dialogDao.updateDialogLastMessageId(channel.url, roomMessage.id)
+                }
+                saveChannel()
+                dataSourceFactory.invalidate()
+            }
         }
+        val lastMessageTime = channel.lastMessage.createdAt
+        val tempRoomMessage = tempMessage.toMessage(out = true, sent = false).apply {
+            time = lastMessageTime + 1
+        }
+        Log.i("MessageRepository", "sending: " + tempRoomMessage.requestId)
+        messageDao.insert(tempRoomMessage)
+        saveChannel()
+        dataSourceFactory.invalidate()
+    }
+
+    suspend fun startTyping() {
+        channel.await().startTyping()
+    }
+
+    suspend fun endTyping() {
+        channel.await().endTyping()
     }
 
     fun clear() {

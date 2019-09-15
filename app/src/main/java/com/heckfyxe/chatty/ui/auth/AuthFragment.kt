@@ -70,20 +70,18 @@ class AuthFragment : Fragment() {
     override fun onActivityResult(requestCode: Int, resultCode: Int, data: Intent?) {
         when (requestCode) {
             RC_AUTH -> {
-                val response = IdpResponse.fromResultIntent(data)
+                val response = IdpResponse.fromResultIntent(data) ?: return
+
                 if (resultCode == Activity.RESULT_OK) {
-                    startMainActivity(response!!.isNewUser)
+                    startMainActivity(response.isNewUser)
                 } else {
-                    if (response == null)
-                        activity?.finish()
-                    else {
-                        val view = activity?.findViewById<View>(android.R.id.content)
-                        Snackbar.make(view!!, R.string.no_connection, Snackbar.LENGTH_INDEFINITE)
-                            .setAction(R.string.retry) {
-                                authPhoneByPhoneNumber()
-                            }
-                            .show()
-                    }
+                    val view = activity?.findViewById<View>(android.R.id.content)
+                    Snackbar.make(view!!, R.string.no_connection, Snackbar.LENGTH_INDEFINITE)
+                        .setAction(R.string.retry) {
+                            authPhoneByPhoneNumber()
+                        }
+                        .show()
+
                 }
             }
             else -> super.onActivityResult(requestCode, resultCode, data)

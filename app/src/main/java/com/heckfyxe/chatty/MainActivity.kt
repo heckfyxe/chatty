@@ -9,6 +9,7 @@ import com.google.firebase.firestore.SetOptions
 import com.google.firebase.ml.vision.FirebaseVision
 import com.google.firebase.ml.vision.common.FirebaseVisionImage
 import com.google.firebase.ml.vision.common.FirebaseVisionImageMetadata
+import com.google.firebase.ml.vision.face.FirebaseVisionFaceDetector
 import com.google.firebase.ml.vision.face.FirebaseVisionFaceDetectorOptions
 import com.heckfyxe.chatty.koin.KOIN_USERS_FIRESTORE_COLLECTION
 import com.heckfyxe.chatty.koin.KOIN_USER_ID
@@ -21,7 +22,9 @@ class MainActivity : AppCompatActivity(), EmotionDetector {
         .setClassificationMode(FirebaseVisionFaceDetectorOptions.ALL_CLASSIFICATIONS)
         .build()
 
-    private val detector = FirebaseVision.getInstance().getVisionFaceDetector(settings)
+    private val detector: FirebaseVisionFaceDetector by lazy {
+        FirebaseVision.getInstance().getVisionFaceDetector(settings)
+    }
 
     private val usersRef: CollectionReference by inject(KOIN_USERS_FIRESTORE_COLLECTION)
     private val uid: String by inject(KOIN_USER_ID)
@@ -31,7 +34,6 @@ class MainActivity : AppCompatActivity(), EmotionDetector {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_main)
-
         cameraView?.setLifecycleOwner(this)
     }
 
@@ -39,7 +41,7 @@ class MainActivity : AppCompatActivity(), EmotionDetector {
         var isLoading = false
         cameraView?.addFrameProcessor {
             if (isLoading) return@addFrameProcessor
-            if (it.size == null) return@addFrameProcessor
+//            it.size ?: return@addFrameProcessor
 
             val metadata = FirebaseVisionImageMetadata.Builder()
                 .setFormat(ImageFormat.NV21)
@@ -67,12 +69,6 @@ class MainActivity : AppCompatActivity(), EmotionDetector {
                 }
             }
         }
-    }
-
-    override fun onDestroy() {
-        super.onDestroy()
-
-        cameraView?.clearFrameProcessors()
     }
 }
 

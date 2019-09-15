@@ -6,8 +6,8 @@ import com.google.firebase.auth.FirebaseAuth
 import com.heckfyxe.chatty.model.Contact
 import io.michaelrocks.libphonenumber.android.NumberParseException
 import io.michaelrocks.libphonenumber.android.PhoneNumberUtil
-import org.koin.standalone.KoinComponent
-import org.koin.standalone.inject
+import org.koin.core.KoinComponent
+import org.koin.core.inject
 import java.util.*
 
 class ContactRepository : KoinComponent {

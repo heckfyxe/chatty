@@ -1,10 +1,10 @@
 package com.heckfyxe.chatty.ui.message
 
 import android.os.Bundle
-import android.util.Log
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
+import android.widget.Toast
 import androidx.appcompat.app.AppCompatActivity
 import androidx.fragment.app.Fragment
 import androidx.lifecycle.Observer
@@ -44,11 +44,7 @@ class MessageFragment : Fragment() {
 
     private fun observeViewModel() {
         viewModel.messages.observe(this, Observer {
-            adapter.update(it)
-        })
-
-        viewModel.needsToScroll.observe(this, Observer {
-            scrollTo(it)
+            adapter.submitList(it)
         })
 
         viewModel.interlocutorLiveData.observe(this, Observer {
@@ -60,8 +56,11 @@ class MessageFragment : Fragment() {
             interlocutorEmotion?.text = it
         })
 
-        viewModel.errors.observe(this, Observer {
-            Log.e("MessageFragment", "error", it)
+        viewModel.errors.observe(this, Observer { exception ->
+            exception?.let {
+                viewModel.errors.postValue(null)
+                Toast.makeText(context!!, R.string.error, Toast.LENGTH_SHORT).show()
+            }
         })
     }
 
@@ -81,12 +80,6 @@ class MessageFragment : Fragment() {
 
         messageList?.layoutManager = layoutManager
         messageList?.adapter = adapter
-        adapter.onLoadMoreListener = object : MessageAdapter.OnLoadMoreListener {
-            override fun onLoadMore(page: Int, total: Int) {
-                viewModel.getPrevMessages()
-            }
-        }
-        messageList?.addOnScrollListener(RecyclerScrollMoreListener(layoutManager, adapter))
 
         messageTextInput?.setInputListener {
             viewModel.sendTextMessage(it.toString())

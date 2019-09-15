@@ -96,9 +96,12 @@ class MainFragment : Fragment() {
             registerPushNotification()
         })
 
-        model.errors.observe(this, Observer {
-            Log.e("MainFragment", it.message, it.cause)
-            Toast.makeText(context!!, R.string.connection_error, Toast.LENGTH_SHORT).show()
+        model.errors.observe(this, Observer { exception ->
+            exception?.let {
+                model.errors.postValue(null)
+                Log.e("MainFragment", it.message, it.cause)
+                Toast.makeText(context!!, R.string.connection_error, Toast.LENGTH_SHORT).show()
+            }
         })
 
         model.chats.observe(this, Observer {
@@ -131,7 +134,7 @@ class MainFragment : Fragment() {
             RC_CREATE_DIALOG -> {
                 if (resultCode == Activity.RESULT_OK) {
                     if (data?.hasExtra(NewInterlocutorByUserDataDialog.EXTRA_CHANNEL_ID) == true) {
-                        launchMessageFragment(data.getStringExtra(NewInterlocutorByUserDataDialog.EXTRA_CHANNEL_ID))
+                        launchMessageFragment(data.getStringExtra(NewInterlocutorByUserDataDialog.EXTRA_CHANNEL_ID)!!)
                     } else {
                         Log.w("MainFragment", "Data doesn't have channel")
                     }

@@ -16,7 +16,8 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.launch
 import org.koin.android.ext.android.inject
-import org.koin.android.ext.android.startKoin
+import org.koin.android.ext.koin.androidContext
+import org.koin.core.context.startKoin
 
 class App : MultiDexApplication() {
 
@@ -46,7 +47,7 @@ class App : MultiDexApplication() {
                 Dialog(url, lastMessage.messageId, interlocutor.name, unreadMessageCount, interlocutor.avatarUrl)
             }
 
-            val message = baseMessage.toMessage(userId, dialog.id)
+            val message = baseMessage.toMessage(userId)
 
             scope.launch {
                 database.withTransaction {
@@ -61,8 +62,11 @@ class App : MultiDexApplication() {
     override fun onCreate() {
         super.onCreate()
 
-        startKoin(this, koinModule)
-        SendBird.init(Build.APP_ID, this)
+        startKoin {
+            androidContext(this@App)
+            modules(koinModule)
+        }
+        SendBird.init("CCC955EE-E041-483F-9866-590B1C4B1E30", this)
         FirebaseApp.initializeApp(this)
 
         SendBird.addChannelHandler(CHANNEL_HANDLER_IDENTIFIER, channelHandler)
