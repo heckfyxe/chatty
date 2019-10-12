@@ -1,10 +1,15 @@
 package com.heckfyxe.chatty.util.sendbird
 
+import com.heckfyxe.chatty.koin.KOIN_USER_ID
 import com.heckfyxe.chatty.room.Message
 import com.sendbird.android.BaseMessage
 import com.sendbird.android.FileMessage
 import com.sendbird.android.Sender
 import com.sendbird.android.UserMessage
+import org.koin.core.context.GlobalContext.get
+
+private val koin = get().koin
+private val currentUserId: String by koin.inject(KOIN_USER_ID)
 
 fun BaseMessage.getSender(): Sender =
     when (this) {
@@ -31,7 +36,7 @@ fun BaseMessage.getDialogId(): String = when (this) {
     else -> ""
 }
 
-fun BaseMessage.toMessage(userId: String, isSent: Boolean = true): Message {
+fun BaseMessage.toMessage(userId: String = currentUserId, isSent: Boolean = true): Message {
     val senderId = getSender().userId
     return Message(
         messageId,

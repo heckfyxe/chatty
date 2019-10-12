@@ -10,17 +10,21 @@ import androidx.room.Query
 interface DialogDao {
 
     @Insert(onConflict = OnConflictStrategy.REPLACE)
-    fun insert(vararg dialog: Dialog)
+    suspend fun insert(vararg dialog: Dialog)
 
     @Insert(onConflict = OnConflictStrategy.REPLACE)
-    fun insert(dialogs: List<Dialog>)
+    suspend fun insert(dialogs: List<Dialog>)
 
     @Query("SELECT * FROM Dialog ORDER BY lastMessageId DESC")
     fun getDialogsLiveData(): LiveData<List<Dialog>>
 
     @Query("UPDATE dialog SET lastMessageId = :lastMessageId WHERE id = :dialogId")
-    fun updateDialogLastMessageId(dialogId: String, lastMessageId: Long)
+    suspend fun updateDialogLastMessageId(dialogId: String, lastMessageId: Long)
 
     @Query("SELECT notificationId FROM dialog WHERE id = :id LIMIT 1")
     fun getNotificationIdByDialogId(id: String): Int?
+
+    @Query("""SELECT Dialog.id, Dialog.interlocutorId, User.* FROM Dialog
+        JOIN User ON Dialog.interlocutorId = User.id WHERE Dialog.id = :dialogId""")
+    suspend fun getInterlocutor(dialogId: String): User
 }

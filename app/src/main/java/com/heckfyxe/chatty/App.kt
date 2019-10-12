@@ -44,7 +44,7 @@ class App : MultiDexApplication() {
                 User(userId, nickname, profileUrl)
             }
             val dialog = with(channel) {
-                Dialog(url, lastMessage.messageId, interlocutor.name, unreadMessageCount, interlocutor.avatarUrl)
+                Dialog(url, lastMessage.messageId, interlocutor.name, unreadMessageCount, interlocutor.avatarUrl, interlocutor.id)
             }
 
             val message = baseMessage.toMessage(userId)

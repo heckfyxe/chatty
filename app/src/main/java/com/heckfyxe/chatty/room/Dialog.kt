@@ -11,6 +11,7 @@ data class Dialog(
     var name: String,
     var unreadCount: Int,
     var photoUrl: String,
+    var interlocutorId: String,
     @PrimaryKey(autoGenerate = true)
     var notificationId: Int = 0
 )

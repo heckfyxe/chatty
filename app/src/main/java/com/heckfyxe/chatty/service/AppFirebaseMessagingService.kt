@@ -92,4 +92,5 @@ class AppFirebaseMessagingService : FirebaseMessagingService(), KoinComponent {
 
         notificationManager.notify(notificationId, notificationBuilder.build())
     }
+
 }

@@ -143,7 +143,7 @@ class ContactFragment : Fragment() {
     }
 
     private fun launchMainFragment() {
-        findNavController().navigate(R.id.action_contactFragment_to_mainFragment)
+        findNavController().popBackStack()
     }
 
 }

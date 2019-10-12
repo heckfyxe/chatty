@@ -15,7 +15,6 @@ import androidx.core.view.isVisible
 import androidx.fragment.app.DialogFragment
 import androidx.lifecycle.Observer
 import com.heckfyxe.chatty.R
-import com.heckfyxe.chatty.util.sendbird.saveOnDevice
 import kotlinx.android.synthetic.main.new_interlocutor_by_user_data_dialog.*
 import org.koin.androidx.viewmodel.ext.android.viewModel
 import org.koin.core.parameter.parametersOf
@@ -126,7 +125,6 @@ class NewInterlocutorByUserDataDialog private constructor() : DialogFragment() {
 
     private fun createDialog(userId: String) {
         model.createDialog(userId) {
-            it.saveOnDevice()
             targetFragment?.onActivityResult(targetRequestCode, Activity.RESULT_OK, Intent().apply {
                 putExtra(EXTRA_CHANNEL_ID, it.url)
             })

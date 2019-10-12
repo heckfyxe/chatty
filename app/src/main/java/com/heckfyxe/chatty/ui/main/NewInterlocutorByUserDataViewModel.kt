@@ -2,15 +2,12 @@ package com.heckfyxe.chatty.ui.main
 
 import androidx.lifecycle.MutableLiveData
 import androidx.lifecycle.ViewModel
+import androidx.lifecycle.viewModelScope
 import com.google.firebase.firestore.CollectionReference
 import com.heckfyxe.chatty.koin.KOIN_USERS_FIRESTORE_COLLECTION
 import com.heckfyxe.chatty.koin.KOIN_USER_ID
+import com.heckfyxe.chatty.remote.SendBirdApi
 import com.sendbird.android.BaseChannel
-import com.sendbird.android.GroupChannel
-import com.sendbird.android.GroupChannelParams
-import kotlinx.coroutines.CoroutineScope
-import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.Job
 import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.launch
 import org.koin.core.KoinComponent
@@ -19,11 +16,11 @@ import org.koin.core.inject
 class NewInterlocutorByUserDataViewModel(private val userDataName: String) : ViewModel(),
     KoinComponent {
 
-    private val job = Job()
-    private val scope = CoroutineScope(Dispatchers.IO + job)
     private val userDataCheckingChannel = Channel<String>(Channel.CONFLATED)
 
     val userId: String by inject(KOIN_USER_ID)
+
+    private val sendBirdApi: SendBirdApi by inject()
 
     val errors = MutableLiveData<Exception>()
     val result = MutableLiveData<Result>()
@@ -31,7 +28,7 @@ class NewInterlocutorByUserDataViewModel(private val userDataName: String) : Vie
     private val usersRef: CollectionReference by inject(KOIN_USERS_FIRESTORE_COLLECTION)
 
     init {
-        scope.launch {
+        viewModelScope.launch {
             for (data in userDataCheckingChannel) {
                 usersRef
                     .whereEqualTo(userDataName, data)
@@ -54,27 +51,25 @@ class NewInterlocutorByUserDataViewModel(private val userDataName: String) : Vie
     }
 
     fun checkData(data: String) {
-        scope.launch { userDataCheckingChannel.send(data) }
+        viewModelScope.launch { userDataCheckingChannel.send(data) }
     }
 
-    fun createDialog(userId: String, success: (BaseChannel) -> Unit) {
-        GroupChannel.createDistinctChannelIfNotExist(GroupChannelParams().addUserId(userId)) { channel, _, e ->
-            if (e != null) {
-                errors.postValue(e)
-                return@createDistinctChannelIfNotExist
+    fun createDialog(interlocutorId: String, success: (BaseChannel) -> Unit) {
+        viewModelScope.launch {
+            try {
+                val channel = sendBirdApi.createChannel(userId, interlocutorId)
+                success(channel)
+            } catch (e: Exception) {
+                errors.value = e
             }
-
-            success(channel)
         }
     }
 
     override fun onCleared() {
         super.onCleared()
 
-        job.cancel()
         userDataCheckingChannel.close()
     }
 
     class Result(val data: String, val userId: String?)
-
 }

@@ -2,6 +2,7 @@ package com.heckfyxe.chatty.room
 
 import androidx.room.Entity
 import androidx.room.PrimaryKey
+import java.io.Serializable
 
 @Entity
 data class User(
@@ -9,4 +10,4 @@ data class User(
     var id: String,
     var name: String,
     var avatarUrl: String
-)
+): Serializable

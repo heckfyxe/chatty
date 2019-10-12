@@ -16,6 +16,7 @@ import com.google.firebase.iid.FirebaseInstanceId
 import com.heckfyxe.chatty.EmotionDetector
 import com.heckfyxe.chatty.R
 import com.heckfyxe.chatty.model.ChatDialog
+import com.heckfyxe.chatty.room.User
 import com.heckfyxe.chatty.util.GlideImageLoader
 import com.heckfyxe.chatty.util.clearSharedPreferencesData
 import com.heckfyxe.chatty.util.setAuthenticated
@@ -27,7 +28,7 @@ import org.koin.androidx.viewmodel.ext.android.viewModel
 
 class MainFragment : Fragment() {
 
-    private val model: MainViewModel by viewModel()
+    private val viewModel: MainViewModel by viewModel()
 
     private lateinit var adapter: DialogsListAdapter<ChatDialog>
 
@@ -40,7 +41,7 @@ class MainFragment : Fragment() {
 
         adapter = DialogsListAdapter(GlideImageLoader())
         adapter.setOnDialogClickListener {
-            launchMessageFragment(it.id)
+            viewModel.launchMessageFragment(it.id)
         }
 
         connectToViewModel()
@@ -80,7 +81,7 @@ class MainFragment : Fragment() {
                 true
             }
             R.id.mi_sign_out -> {
-                model.logOut {
+                viewModel.logOut {
                     clearSharedPreferencesData()
                     findNavController().navigate(R.id.action_mainFragment_to_authFragment)
                 }
@@ -90,21 +91,28 @@ class MainFragment : Fragment() {
         }
 
     private fun connectToViewModel() {
-        model.currentUser.observe(this, Observer {
-            hideUserConnectingAnimation()
-            model.loadChats()
+        viewModel.currentUser.observe(this, Observer {
+            viewModel.loadChats()
             registerPushNotification()
         })
 
-        model.errors.observe(this, Observer { exception ->
+        viewModel.errors.observe(this, Observer { exception ->
             exception?.let {
-                model.errors.postValue(null)
+                viewModel.errors.postValue(null)
                 Log.e("MainFragment", it.message, it.cause)
                 Toast.makeText(context!!, R.string.connection_error, Toast.LENGTH_SHORT).show()
             }
         })
 
-        model.chats.observe(this, Observer {
+        viewModel.launchMessagesEvent.observe(this, Observer {
+            it ?: return@Observer
+
+            viewModel.onMessageFragmentLaunched()
+            launchMessageFragment(it.channelId, it.interlocutor)
+        })
+
+        viewModel.chats.observe(this, Observer {
+            hideUserConnectingAnimation()
             adapter.setItems(it)
         })
     }
@@ -123,7 +131,7 @@ class MainFragment : Fragment() {
 
         dialogList?.setAdapter(adapter)
 
-        model.connectUser()
+        viewModel.connectUser()
         showUserConnectingAnimation()
 
         newMessageFAB?.setOnClickListener { showNewInterlocutorDialog() }
@@ -134,7 +142,9 @@ class MainFragment : Fragment() {
             RC_CREATE_DIALOG -> {
                 if (resultCode == Activity.RESULT_OK) {
                     if (data?.hasExtra(NewInterlocutorByUserDataDialog.EXTRA_CHANNEL_ID) == true) {
-                        launchMessageFragment(data.getStringExtra(NewInterlocutorByUserDataDialog.EXTRA_CHANNEL_ID)!!)
+                        val dialogId = data.getStringExtra(
+                            NewInterlocutorByUserDataDialog.EXTRA_CHANNEL_ID)!!
+                        viewModel.launchMessageFragment(dialogId)
                     } else {
                         Log.w("MainFragment", "Data doesn't have channel")
                     }
@@ -192,8 +202,11 @@ class MainFragment : Fragment() {
         emotionDetector.start()
     }
 
-    private fun launchMessageFragment(channelId: String) {
-        val direction = MainFragmentDirections.actionMainFragmentToMessageFragment(channelId)
+    private fun launchMessageFragment(channelId: String, interlocutor: User) {
+        val direction = MainFragmentDirections.actionMainFragmentToMessageFragment(
+            channelId,
+            interlocutor
+        )
         findNavController().navigate(direction)
     }
 
@@ -201,3 +214,8 @@ class MainFragment : Fragment() {
         private const val RC_CREATE_DIALOG = 0
     }
 }
+
+data class LaunchMessageEvent(
+    val channelId: String,
+    val interlocutor: User
+)

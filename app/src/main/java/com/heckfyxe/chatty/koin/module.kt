@@ -42,7 +42,12 @@ private val viewModelModule = module {
     viewModel { MainViewModel(get()) }
     viewModel { EditUserDataViewModel() }
     viewModel { (userDataName: String) -> NewInterlocutorByUserDataViewModel(userDataName) }
-    viewModel { (channelId: String) -> MessageViewModel(channelId) }
+    viewModel { (channelId: String, interlocutorId: String) ->
+        MessageViewModel(
+            channelId,
+            interlocutorId
+        )
+    }
     viewModel { ContactViewModel() }
     viewModel { FriendsViewModel() }
 }

@@ -26,15 +26,16 @@ class MessagesDataSource(private val repository: MessageRepository) :
         callback: LoadInitialCallback<Message>
     ) {
         scope.launch {
-            val lastMessage = messagesDao.getLastMessage(repository.channelId)
             val localMessages = messagesDao.getPreviousMessagesByTime(
                 repository.channelId,
-                lastMessage.time,
+                params.requestedInitialKey!!,
                 params.requestedLoadSize
             )
-            callback.onResult(listOf(lastMessage, *localMessages.toTypedArray()))
-            val messages =
-                repository.getPreviousMessagesByTime(lastMessage.time, params.requestedLoadSize)
+            val message = messagesDao.getMessageByTime(params.requestedInitialKey!!)
+            callback.onResult(listOf(message, *localMessages.toTypedArray()))
+            val messages = repository.getPreviousMessagesByTime(
+                params.requestedInitialKey!!, params.requestedLoadSize
+            )
             if (messages.toSet() != localMessages.toSet()) {
                 invalidate()
             }
@@ -57,7 +58,18 @@ class MessagesDataSource(private val repository: MessageRepository) :
     }
 
     override fun loadBefore(params: LoadParams<Long>, callback: LoadCallback<Message>) {
-
+        scope.launch {
+            val localMessages = messagesDao.getNextMessagesByTime(
+                repository.channelId,
+                params.key,
+                params.requestedLoadSize
+            )
+            callback.onResult(localMessages)
+            val messages =
+                repository.getNextMessagesByTime(params.key, params.requestedLoadSize)
+            if (messages.toSet() != localMessages.toSet())
+                invalidate()
+        }
     }
 
     override fun getKey(item: Message): Long = item.time

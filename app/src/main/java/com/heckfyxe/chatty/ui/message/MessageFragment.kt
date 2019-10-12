@@ -15,6 +15,7 @@ import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
 import com.heckfyxe.chatty.R
 import com.heckfyxe.chatty.util.loadCircleUserAvatar
+import com.heckfyxe.chatty.util.room.toChatUser
 import com.stfalcon.chatkit.messages.MessageInput
 import kotlinx.android.synthetic.main.message_fragment.*
 import org.koin.androidx.viewmodel.ext.android.viewModel
@@ -22,7 +23,12 @@ import org.koin.core.parameter.parametersOf
 
 class MessageFragment : Fragment() {
 
-    private val viewModel: MessageViewModel by viewModel { parametersOf(args.channelId) }
+    private val viewModel: MessageViewModel by viewModel {
+        parametersOf(
+            args.channelId,
+            args.user.id
+        )
+    }
 
     private val args: MessageFragmentArgs by navArgs()
 
@@ -38,18 +44,13 @@ class MessageFragment : Fragment() {
         observeViewModel()
     }
 
-    private fun scrollTo(position: Int) {
-        layoutManager.scrollToPosition(position)
+    private fun scrollDown() {
+        layoutManager.scrollToPosition(0)
     }
 
     private fun observeViewModel() {
         viewModel.messages.observe(this, Observer {
             adapter.submitList(it)
-        })
-
-        viewModel.interlocutorLiveData.observe(this, Observer {
-            dialogUserNickname?.text = it.name
-            dialogUserAvatar?.loadCircleUserAvatar(it)
         })
 
         viewModel.interlocutorEmotions.observe(this, Observer {
@@ -61,6 +62,12 @@ class MessageFragment : Fragment() {
                 viewModel.errors.postValue(null)
                 Toast.makeText(context!!, R.string.error, Toast.LENGTH_SHORT).show()
             }
+        })
+
+        viewModel.scrollDownEvent.observe(this, Observer {
+            if (it == false) return@Observer
+            scrollDown()
+            viewModel.onScrolledDown()
         })
     }
 
@@ -80,6 +87,11 @@ class MessageFragment : Fragment() {
 
         messageList?.layoutManager = layoutManager
         messageList?.adapter = adapter
+
+        args.user.let {
+            dialogUserNickname?.text = it.name
+            dialogUserAvatar?.loadCircleUserAvatar(it.toChatUser())
+        }
 
         messageTextInput?.setInputListener {
             viewModel.sendTextMessage(it.toString())

@@ -1,12 +1,16 @@
 package com.heckfyxe.chatty.util.sendbird
 
 import android.content.Context
+import com.heckfyxe.chatty.koin.KOIN_USER_ID
 import com.sendbird.android.BaseChannel
+import com.sendbird.android.GroupChannel
+import com.sendbird.android.Member
 import org.koin.core.context.GlobalContext.get
 import java.io.File
 
 private val koin = get().koin
 private val context: Context by koin.inject()
+private val userId: String by koin.inject(KOIN_USER_ID)
 
 fun BaseChannel.saveOnDevice() {
     val file = File(context.filesDir, url)
@@ -21,4 +25,15 @@ fun channelBytesFromDevice(channelId: String): ByteArray {
 fun channelFromDevice(channelId: String): BaseChannel {
     val bytes = channelBytesFromDevice(channelId)
     return BaseChannel.buildFromSerializedData(bytes)
+}
+
+fun List<Member>.getInterlocutor() : Member {
+    if (this.size > 2) {
+        throw Exception("Members count must be 2!")
+    }
+    return this.single { it.userId != userId }
+}
+
+fun GroupChannel.getInterlocutor(): Member {
+    return this.members.getInterlocutor()
 }

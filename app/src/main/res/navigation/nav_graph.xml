@@ -13,7 +13,7 @@
         <action
             android:id="@+id/action_authFragment_to_mainFragment"
             app:destination="@id/mainFragment"
-            app:popUpTo="@id/nav_graph" />
+            app:popUpTo="@+id/nav_graph" />
         <action
             android:id="@+id/action_authFragment_to_editUserDataFragment"
             app:destination="@id/editUserDataFragment"
@@ -30,12 +30,10 @@
             app:popUpTo="@+id/authFragment" />
         <action
             android:id="@+id/action_mainFragment_to_messageFragment"
-            app:destination="@id/messageFragment"
-            app:popUpTo="@+id/mainFragment" />
+            app:destination="@id/messageFragment" />
         <action
             android:id="@+id/action_mainFragment_to_contactFragment"
-            app:destination="@id/contactFragment"
-            app:popUpTo="@+id/mainFragment" />
+            app:destination="@id/contactFragment" />
         <action
             android:id="@+id/action_mainFragment_to_friendsFragment"
             app:destination="@id/friendsFragment" />
@@ -53,25 +51,25 @@
     <fragment
         android:id="@+id/messageFragment"
         android:name="com.heckfyxe.chatty.ui.message.MessageFragment"
-        android:label="MessageFragment">
+        android:label="MessageFragment"
+        tools:layout="@layout/message_fragment">
         <argument
             android:name="channelId"
             app:argType="string" />
+        <argument
+            android:name="user"
+            app:argType="com.heckfyxe.chatty.room.User" />
     </fragment>
     <fragment
         android:id="@+id/contactFragment"
         android:name="com.heckfyxe.chatty.ui.auth.ContactFragment"
         android:label="contact_fragment"
-        tools:layout="@layout/contact_fragment">
-        <action
-            android:id="@+id/action_contactFragment_to_mainFragment"
-            app:destination="@id/mainFragment"
-            app:popUpTo="@id/nav_graph" />
-    </fragment>
+        tools:layout="@layout/contact_fragment"/>
     <fragment
         android:id="@+id/friendsFragment"
         android:name="com.heckfyxe.chatty.ui.main.FriendsFragment"
-        android:label="FriendsFragment">
+        android:label="FriendsFragment"
+        tools:layout="@layout/friends_fragment">
         <action
             android:id="@+id/action_friendsFragment_to_messageFragment"
             app:destination="@id/messageFragment"
