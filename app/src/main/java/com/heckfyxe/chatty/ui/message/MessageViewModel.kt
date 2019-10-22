@@ -32,7 +32,7 @@ class MessageViewModel(channelId: String, private val interlocutorId: String) : 
         }
     }
 
-    private suspend fun startInterlocutorEmotionTracking() {
+    private fun startInterlocutorEmotionTracking() {
         usersRef.document(interlocutorId).addSnapshotListener { snapshot, e ->
             if (e != null) {
                 return@addSnapshotListener
@@ -49,7 +49,6 @@ class MessageViewModel(channelId: String, private val interlocutorId: String) : 
 
     fun sendTextMessage(text: String) = viewModelScope.launch {
         repository.sendTextMessage(text)
-        _scrollDownEvent.postValue(true)
     }
 
     fun startTyping() = viewModelScope.launch { repository.startTyping() }

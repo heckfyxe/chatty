@@ -1,5 +1,7 @@
 package com.heckfyxe.chatty.repository.source
 
+import androidx.lifecycle.Observer
+import androidx.lifecycle.Transformations
 import androidx.paging.DataSource
 import androidx.paging.ItemKeyedDataSource
 import com.heckfyxe.chatty.repository.MessageRepository
@@ -18,8 +20,26 @@ class MessagesDataSource(private val repository: MessageRepository) :
 
     private val messagesDao: MessageDao by inject()
 
+    private val messagesLiveData = messagesDao.getMessagesLiveData(repository.channelId)
+    private val messagesChangesLiveData = Transformations.distinctUntilChanged(messagesLiveData)
+
+
     private val job = Job()
     private val scope = CoroutineScope(job + Dispatchers.IO)
+
+    private var isChangesDetectionStarted = false
+    private val changesObserver: Observer<List<Message>> = Observer {
+        if (isChangesDetectionStarted)
+            invalidate()
+        else
+            isChangesDetectionStarted = true
+    }
+
+    init {
+        scope.launch(Dispatchers.Main) {
+            messagesChangesLiveData.observeForever(changesObserver)
+        }
+    }
 
     override fun loadInitial(
         params: LoadInitialParams<Long>,
@@ -28,17 +48,17 @@ class MessagesDataSource(private val repository: MessageRepository) :
         scope.launch {
             val localMessages = messagesDao.getPreviousMessagesByTime(
                 repository.channelId,
+                params.requestedInitialKey ?: return@launch,
+                params.requestedLoadSize - 1
+            )
+            val message = messagesDao.getMessageByTime(params.requestedInitialKey!!)
+            callback.onResult(listOf(
+                message, *localMessages.toTypedArray()
+            ).sortedByDescending { it.time })
+            repository.getPreviousMessagesByTime(
                 params.requestedInitialKey!!,
                 params.requestedLoadSize
             )
-            val message = messagesDao.getMessageByTime(params.requestedInitialKey!!)
-            callback.onResult(listOf(message, *localMessages.toTypedArray()))
-            val messages = repository.getPreviousMessagesByTime(
-                params.requestedInitialKey!!, params.requestedLoadSize
-            )
-            if (messages.toSet() != localMessages.toSet()) {
-                invalidate()
-            }
         }
     }
 
@@ -50,10 +70,7 @@ class MessagesDataSource(private val repository: MessageRepository) :
                 params.requestedLoadSize
             )
             callback.onResult(localMessages)
-            val messages =
-                repository.getPreviousMessagesByTime(params.key, params.requestedLoadSize)
-            if (messages.toSet() != localMessages.toSet())
-                invalidate()
+            repository.getPreviousMessagesByTime(params.key, params.requestedLoadSize)
         }
     }
 
@@ -65,25 +82,21 @@ class MessagesDataSource(private val repository: MessageRepository) :
                 params.requestedLoadSize
             )
             callback.onResult(localMessages)
-            val messages =
-                repository.getNextMessagesByTime(params.key, params.requestedLoadSize)
-            if (messages.toSet() != localMessages.toSet())
-                invalidate()
+            repository.getNextMessagesByTime(params.key, params.requestedLoadSize)
         }
     }
 
     override fun getKey(item: Message): Long = item.time
 
+    override fun invalidate() {
+        super.invalidate()
+        scope.launch(Dispatchers.Main) {
+            messagesChangesLiveData.removeObserver(changesObserver)
+            job.cancel()
+        }
+    }
+
     class Factory(private val repository: MessageRepository) : DataSource.Factory<Long, Message>() {
-        private var dataSource: MessagesDataSource? = null
-
-        override fun create(): DataSource<Long, Message> {
-            dataSource = MessagesDataSource(repository)
-            return dataSource!!
-        }
-
-        fun invalidate() {
-            dataSource?.invalidate()
-        }
+        override fun create(): DataSource<Long, Message> = MessagesDataSource(repository)
     }
 }

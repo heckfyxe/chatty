@@ -36,15 +36,23 @@ class MessageRepository(val channelId: String) :
 
     private val dataSourceFactory = MessagesDataSource.Factory(this)
 
+    private var messagesSource: LiveData<PagedList<Message>>? = null
     private val _messages = MediatorLiveData<PagedList<Message>>()
     val messages: LiveData<PagedList<Message>> = _messages
 
     suspend fun init() {
         sendBirdApi.loadChannel(channelId)
-        val pagedList = LivePagedListBuilder(dataSourceFactory, config)
-            .setInitialLoadKey(messageDao.getLastMessage(channelId).time)
+        setInitialLoadKey(messageDao.getLastMessage(channelId).time)
+    }
+
+    private fun setInitialLoadKey(key: Long) {
+        if (messagesSource != null) {
+            _messages.removeSource(messagesSource!!)
+        }
+        messagesSource = LivePagedListBuilder(dataSourceFactory, config)
+            .setInitialLoadKey(key)
             .build()
-        _messages.addSource(pagedList) {
+        _messages.addSource(messagesSource!!) {
             _messages.postValue(it)
         }
     }
@@ -69,13 +77,13 @@ class MessageRepository(val channelId: String) :
         val channel = sendBirdApi.sendMessage(channelId, text)
         val tempMessage = channel.receive()
         messageDao.insert(tempMessage)
-        dataSourceFactory.invalidate()
+        setInitialLoadKey(tempMessage.time)
         val message = channel.receive()
         database.withTransaction {
             messageDao.updateByRequestId(message)
             dialogDao.updateDialogLastMessageId(channelId, message.id)
         }
-        dataSourceFactory.invalidate()
+        setInitialLoadKey(message.time)
     }
 
     suspend fun startTyping() = sendBirdApi.startTyping(channelId)
