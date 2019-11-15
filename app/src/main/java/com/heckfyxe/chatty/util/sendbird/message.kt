@@ -37,14 +37,14 @@ fun BaseMessage.getDialogId(): String = when (this) {
 }
 
 fun BaseMessage.toRoomMessage(userId: String = currentUserId, isSent: Boolean = true): RoomMessage {
-    val senderId = getSender().userId
+    val sender = getSender()
     return RoomMessage(
         messageId,
         getDialogId(),
         createdAt,
-        senderId,
+        sender.toDomain(),
         getText(),
-        senderId == userId,
+        sender.userId == userId,
         isSent,
         getRequestId()
     )
@@ -55,7 +55,7 @@ fun UserMessage.toRoomMessage(out: Boolean, sent: Boolean = true) =
         messageId,
         channelUrl,
         createdAt,
-        sender.userId,
+        sender.toDomain(),
         message,
         out,
         sent,

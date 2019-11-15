@@ -34,7 +34,8 @@ class FriendsFragment : Fragment() {
                         it.url,
                         with(friend) {
                             User(userId, nickname, profileUrl)
-                        }
+                        },
+                        it.lastMessage.messageId
                     )
                 findNavController().navigate(direction)
             }

@@ -41,6 +41,9 @@ class DialogRepository : KoinComponent {
 
     suspend fun getMessageById(id: Long): RoomMessage? = messageDao.getMessageById(id)
 
+    suspend fun getLastMessageId(dialogId: String) =
+        messageDao.getLastMessage(dialogId).id
+
     suspend fun getUserById(id: String): RoomUser = userDao.getUserById(id)!!
 
     suspend fun refresh() {

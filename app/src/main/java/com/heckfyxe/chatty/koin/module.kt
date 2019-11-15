@@ -26,7 +26,12 @@ private val remoteApiModule = module {
 
 private val repositoryModule = module {
     factory { DialogRepository() }
-    factory { (channelId: String) -> MessageRepository(channelId) }
+    factory { (channelId: String, lastMessageTime: Long) ->
+        MessageRepository(
+            channelId,
+            lastMessageTime
+        )
+    }
     factory { ContactRepository() }
     factory { UserRepository() }
 }
@@ -42,10 +47,11 @@ private val viewModelModule = module {
     viewModel { MainViewModel(get()) }
     viewModel { EditUserDataViewModel() }
     viewModel { (userDataName: String) -> NewInterlocutorByUserDataViewModel(userDataName) }
-    viewModel { (channelId: String, interlocutorId: String) ->
+    viewModel { (channelId: String, interlocutorId: String, lastMessageTime: Long) ->
         MessageViewModel(
             channelId,
-            interlocutorId
+            interlocutorId,
+            lastMessageTime
         )
     }
     viewModel { ContactViewModel() }

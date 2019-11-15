@@ -31,7 +31,7 @@ interface MessageDao {
     @Query("SELECT * FROM message WHERE time = :time LIMIT 1")
     suspend fun getMessageByTime(time: Long): RoomMessage
 
-    @Query("SELECT * FROM message WHERE dialog_id = :dialogId ORDER BY time DESC")
+    @Query("SELECT * FROM message WHERE dialog_id = :dialogId")
     fun getMessagesLiveData(dialogId: String): LiveData<List<RoomMessage>>
 
     @Query("SELECT * FROM message WHERE dialog_id = :dialogId AND id < :from ORDER BY time DESC LIMIT :count")
@@ -44,7 +44,7 @@ interface MessageDao {
         count: Int
     ): List<RoomMessage>
 
-    @Query("SELECT * FROM message WHERE dialog_id = :dialogId AND time > :from ORDER BY time DESC LIMIT :count")
+    @Query("SELECT * FROM message WHERE dialog_id = :dialogId AND time > :from ORDER BY time ASC LIMIT :count")
     suspend fun getNextMessagesByTime(dialogId: String, from: Long, count: Int): List<RoomMessage>
 
     @Query("SELECT * FROM message WHERE dialog_id = :dialogId AND time = (SELECT MAX(time) FROM message WHERE dialog_id = :dialogId) LIMIT 1")

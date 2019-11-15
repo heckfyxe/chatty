@@ -6,7 +6,7 @@ import androidx.databinding.BindingAdapter
 import coil.api.load
 import coil.transform.RoundedCornersTransformation
 import com.heckfyxe.chatty.R
-import com.heckfyxe.chatty.room.RoomMessage
+import com.heckfyxe.chatty.model.Message
 import java.text.SimpleDateFormat
 import java.util.*
 
@@ -25,7 +25,7 @@ fun hhmm(textView: TextView, time: Long?) {
 }
 
 @BindingAdapter("outMessageText")
-fun outMessageText(textView: TextView, message: RoomMessage?) {
+fun outMessageText(textView: TextView, message: Message?) {
     if (message == null)
         return
 

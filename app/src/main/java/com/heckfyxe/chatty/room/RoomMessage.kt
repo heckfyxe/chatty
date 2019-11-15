@@ -1,12 +1,15 @@
 package com.heckfyxe.chatty.room
 
-import androidx.room.ColumnInfo
-import androidx.room.Entity
-import androidx.room.ForeignKey
+import androidx.room.*
+import com.heckfyxe.chatty.model.Message
+import com.heckfyxe.chatty.model.User
 
 @Entity(
     tableName = "message",
     primaryKeys = ["id"],
+    indices = [
+        Index(value = ["time"], unique = true)
+    ],
     foreignKeys = [
         ForeignKey(
             entity = RoomDialog::class,
@@ -20,9 +23,11 @@ data class RoomMessage(
     var id: Long,
     @ColumnInfo(name = "dialog_id") var dialogId: String,
     var time: Long,
-    @ColumnInfo(name = "sender_id") var senderId: String,
+    @Embedded(prefix = "sender_") var sender: User,
     var text: String,
     var out: Boolean,
     var sent: Boolean,
     @ColumnInfo(name = "request_id") var requestId: String
 )
+
+fun RoomMessage.toDomain(): Message = Message(id, time, sender, text, out, sent)

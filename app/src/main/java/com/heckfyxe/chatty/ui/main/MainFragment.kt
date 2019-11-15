@@ -38,7 +38,7 @@ class MainFragment : Fragment() {
         setAuthenticated()
 
         adapter = DialogsAdapter(OnClickAction {
-            viewModel.launchMessageFragment(it.id)
+            viewModel.launchMessageFragment(it)
         })
 
         connectToViewModel()
@@ -105,7 +105,7 @@ class MainFragment : Fragment() {
             it ?: return@Observer
 
             viewModel.onMessageFragmentLaunched()
-            launchMessageFragment(it.channelId, it.interlocutor)
+            launchMessageFragment(it.channelId, it.interlocutor, it.lastMessageTime)
         })
 
         viewModel.chats.observe(this, Observer {
@@ -141,7 +141,7 @@ class MainFragment : Fragment() {
                     if (data?.hasExtra(NewInterlocutorByUserDataDialog.EXTRA_CHANNEL_ID) == true) {
                         val dialogId = data.getStringExtra(
                             NewInterlocutorByUserDataDialog.EXTRA_CHANNEL_ID)!!
-                        viewModel.launchMessageFragment(dialogId)
+//                        viewModel.launchMessageFragment(dialogId)
                     } else {
                         Log.w("MainFragment", "Data doesn't have channel")
                     }
@@ -199,10 +199,11 @@ class MainFragment : Fragment() {
         emotionDetector.start()
     }
 
-    private fun launchMessageFragment(channelId: String, interlocutor: User) {
+    private fun launchMessageFragment(channelId: String, interlocutor: User, lastMessageId: Long) {
         val direction = MainFragmentDirections.actionMainFragmentToMessageFragment(
             channelId,
-            interlocutor
+            interlocutor,
+            lastMessageId
         )
         findNavController().navigate(direction)
     }

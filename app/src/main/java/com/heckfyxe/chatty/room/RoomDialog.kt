@@ -38,7 +38,7 @@ data class Interlocutor(
 )
 
 fun RoomDialog.toDomain(): Dialog =
-    Dialog(id, name, photoUrl, lastMessage.text, lastMessage.time, unreadCount)
+    Dialog(id, name, photoUrl, lastMessage.id, lastMessage.text, lastMessage.time, unreadCount)
 
 fun BaseMessage.toLastMessage() = LastMessage(messageId, getText(), createdAt)
 

@@ -59,6 +59,9 @@
         <argument
             android:name="user"
             app:argType="com.heckfyxe.chatty.model.User" />
+        <argument
+            android:name="lastMessageTime"
+            app:argType="long" />
     </fragment>
     <fragment
         android:id="@+id/contactFragment"

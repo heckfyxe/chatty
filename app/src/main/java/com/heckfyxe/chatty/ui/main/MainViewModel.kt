@@ -11,7 +11,8 @@ import org.koin.core.KoinComponent
 
 data class LaunchMessageEvent(
     val channelId: String,
-    val interlocutor: User
+    val interlocutor: User,
+    val lastMessageTime: Long
 )
 
 class MainViewModel(private val repository: DialogRepository) : ViewModel(), KoinComponent {
@@ -40,10 +41,16 @@ class MainViewModel(private val repository: DialogRepository) : ViewModel(), Koi
         repository.refresh()
     }
 
-    fun launchMessageFragment(dialogId: String) {
+    fun launchMessageFragment(dialog: Dialog) {
         viewModelScope.launch {
-            val interlocutor = repository.getInterlocutor(dialogId)
-            _launchMessagesEvent.postValue(LaunchMessageEvent(dialogId, interlocutor.toDomain()))
+            val interlocutor = repository.getInterlocutor(dialog.id)
+            _launchMessagesEvent.postValue(
+                LaunchMessageEvent(
+                    dialog.id,
+                    interlocutor.toDomain(),
+                    dialog.lastMessageTime
+                )
+            )
         }
     }
 

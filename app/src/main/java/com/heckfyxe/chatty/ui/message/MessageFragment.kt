@@ -26,7 +26,8 @@ class MessageFragment : Fragment() {
     private val viewModel: MessageViewModel by viewModel {
         parametersOf(
             args.channelId,
-            args.user.id
+            args.user.id,
+            args.lastMessageTime
         )
     }
 
@@ -90,7 +91,7 @@ class MessageFragment : Fragment() {
 
         args.user.let {
             dialogUserNickname?.text = it.name
-            dialogUserAvatar?.load(it.imageUrl) {
+            dialogUserAvatar?.load(it.avatarUrl) {
                 transformations(CircleCropTransformation())
             }
         }
