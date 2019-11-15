@@ -1,4 +1,4 @@
-package com.heckfyxe.chatty.ui.main
+package com.heckfyxe.chatty.ui.friends
 
 import android.view.LayoutInflater
 import android.view.View
@@ -32,7 +32,12 @@ class FriendsAdapter(private val onClickAction: (User) -> Unit) :
     }
 
     fun update(friendList: List<User>) {
-        val diff = DiffUtil.calculateDiff(FriendsDiff(friends, friendList))
+        val diff = DiffUtil.calculateDiff(
+            FriendsDiff(
+                friends,
+                friendList
+            )
+        )
         friends.clear()
         friends.addAll(friendList)
         diff.dispatchUpdatesTo(this)

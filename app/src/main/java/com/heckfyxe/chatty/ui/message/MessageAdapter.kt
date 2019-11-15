@@ -9,11 +9,11 @@ import androidx.recyclerview.widget.DiffUtil
 import androidx.recyclerview.widget.RecyclerView
 import com.heckfyxe.chatty.databinding.ItemInMessageBinding
 import com.heckfyxe.chatty.databinding.ItemOutMessageBinding
-import com.heckfyxe.chatty.room.Message
+import com.heckfyxe.chatty.room.RoomMessage
 import org.koin.core.KoinComponent
 import org.koin.core.inject
 
-class MessageAdapter : PagedListAdapter<Message, MessageViewHolder>(DIFF), KoinComponent {
+class MessageAdapter : PagedListAdapter<RoomMessage, MessageViewHolder>(DIFF), KoinComponent {
 
     companion object {
         private const val TYPE_MESSAGE_IN = 0
@@ -25,11 +25,11 @@ class MessageAdapter : PagedListAdapter<Message, MessageViewHolder>(DIFF), KoinC
     private val context: Context by inject()
     private val inflater = LayoutInflater.from(context)
 
-    private class MessageAdapterDiff : DiffUtil.ItemCallback<Message>() {
-        override fun areItemsTheSame(oldItem: Message, newItem: Message): Boolean =
+    private class MessageAdapterDiff : DiffUtil.ItemCallback<RoomMessage>() {
+        override fun areItemsTheSame(oldItem: RoomMessage, newItem: RoomMessage): Boolean =
             oldItem.time == newItem.time
 
-        override fun areContentsTheSame(oldItem: Message, newItem: Message): Boolean =
+        override fun areContentsTheSame(oldItem: RoomMessage, newItem: RoomMessage): Boolean =
             oldItem == newItem
     }
 
@@ -61,18 +61,18 @@ class MessageAdapter : PagedListAdapter<Message, MessageViewHolder>(DIFF), KoinC
 }
 
 abstract class MessageViewHolder(binding: ViewDataBinding) : RecyclerView.ViewHolder(binding.root) {
-    abstract fun bind(message: Message)
+    abstract fun bind(message: RoomMessage)
 }
 
 class MessageInViewHolder(private val binding: ItemInMessageBinding) : MessageViewHolder(binding) {
-    override fun bind(message: Message) {
+    override fun bind(message: RoomMessage) {
         binding.message = message
     }
 }
 
 class MessageOutViewHolder(private val binding: ItemOutMessageBinding) :
     MessageViewHolder(binding) {
-    override fun bind(message: Message) {
+    override fun bind(message: RoomMessage) {
         binding.message = message
     }
 }

@@ -15,13 +15,11 @@ import androidx.navigation.fragment.findNavController
 import com.google.firebase.iid.FirebaseInstanceId
 import com.heckfyxe.chatty.EmotionDetector
 import com.heckfyxe.chatty.R
-import com.heckfyxe.chatty.model.ChatDialog
-import com.heckfyxe.chatty.room.User
-import com.heckfyxe.chatty.util.GlideImageLoader
+import com.heckfyxe.chatty.model.User
+import com.heckfyxe.chatty.util.OnClickAction
 import com.heckfyxe.chatty.util.clearSharedPreferencesData
 import com.heckfyxe.chatty.util.setAuthenticated
 import com.sendbird.android.SendBird
-import com.stfalcon.chatkit.dialogs.DialogsListAdapter
 import kotlinx.android.synthetic.main.main_fragment.*
 import org.koin.androidx.viewmodel.ext.android.viewModel
 
@@ -30,7 +28,7 @@ class MainFragment : Fragment() {
 
     private val viewModel: MainViewModel by viewModel()
 
-    private lateinit var adapter: DialogsListAdapter<ChatDialog>
+    private lateinit var adapter: DialogsAdapter
 
     private lateinit var emotionDetector: EmotionDetector
 
@@ -39,10 +37,9 @@ class MainFragment : Fragment() {
 
         setAuthenticated()
 
-        adapter = DialogsListAdapter(GlideImageLoader())
-        adapter.setOnDialogClickListener {
+        adapter = DialogsAdapter(OnClickAction {
             viewModel.launchMessageFragment(it.id)
-        }
+        })
 
         connectToViewModel()
     }
@@ -113,7 +110,7 @@ class MainFragment : Fragment() {
 
         viewModel.chats.observe(this, Observer {
             hideUserConnectingAnimation()
-            adapter.setItems(it)
+            adapter.submitList(it)
         })
     }
 
@@ -129,7 +126,7 @@ class MainFragment : Fragment() {
 
         (activity as? AppCompatActivity)?.setSupportActionBar(mainToolbar)
 
-        dialogList?.setAdapter(adapter)
+        dialogList?.adapter = adapter
 
         viewModel.connectUser()
         showUserConnectingAnimation()
@@ -214,8 +211,3 @@ class MainFragment : Fragment() {
         private const val RC_CREATE_DIALOG = 0
     }
 }
-
-data class LaunchMessageEvent(
-    val channelId: String,
-    val interlocutor: User
-)

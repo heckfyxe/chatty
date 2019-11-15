@@ -2,6 +2,9 @@ package com.heckfyxe.chatty.util.sendbird
 
 import android.content.Context
 import com.heckfyxe.chatty.koin.KOIN_USER_ID
+import com.heckfyxe.chatty.room.RoomDialog
+import com.heckfyxe.chatty.room.toInterlocutor
+import com.heckfyxe.chatty.room.toLastMessage
 import com.sendbird.android.BaseChannel
 import com.sendbird.android.GroupChannel
 import com.sendbird.android.Member
@@ -27,13 +30,23 @@ fun channelFromDevice(channelId: String): BaseChannel {
     return BaseChannel.buildFromSerializedData(bytes)
 }
 
-fun List<Member>.getInterlocutor() : Member {
+fun List<Member>.getInterlocutor(): Member {
     if (this.size > 2) {
         throw Exception("Members count must be 2!")
     }
     return this.single { it.userId != userId }
 }
 
-fun GroupChannel.getInterlocutor(): Member {
-    return this.members.getInterlocutor()
+fun GroupChannel.getInterlocutor(): Member = members.getInterlocutor()
+
+fun GroupChannel.toRoomDialog(): RoomDialog {
+    val interlocutor = getInterlocutor()
+    return RoomDialog(
+        url,
+        interlocutor.nickname,
+        unreadMessageCount,
+        interlocutor.profileUrl,
+        interlocutor.toInterlocutor(),
+        lastMessage.toLastMessage()
+    )
 }

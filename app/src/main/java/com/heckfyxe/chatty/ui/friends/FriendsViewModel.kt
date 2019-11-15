@@ -1,4 +1,4 @@
-package com.heckfyxe.chatty.ui.main
+package com.heckfyxe.chatty.ui.friends
 
 import androidx.lifecycle.MutableLiveData
 import androidx.lifecycle.ViewModel

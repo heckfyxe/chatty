@@ -1,4 +1,4 @@
-package com.heckfyxe.chatty.ui.main
+package com.heckfyxe.chatty.ui.friends
 
 import android.os.Bundle
 import android.view.LayoutInflater
@@ -12,7 +12,7 @@ import androidx.navigation.fragment.findNavController
 import androidx.recyclerview.widget.LinearLayoutManager
 import com.google.android.material.snackbar.Snackbar
 import com.heckfyxe.chatty.R
-import com.heckfyxe.chatty.room.User
+import com.heckfyxe.chatty.model.User
 import com.heckfyxe.chatty.util.sendbird.saveOnDevice
 import kotlinx.android.synthetic.main.friends_fragment.*
 import org.koin.androidx.viewmodel.ext.android.viewModel
@@ -29,12 +29,13 @@ class FriendsFragment : Fragment() {
         friendsAdapter = FriendsAdapter { friend ->
             viewModel.createChannel(friend) {
                 it.saveOnDevice()
-                val direction = FriendsFragmentDirections.actionFriendsFragmentToMessageFragment(
-                    it.url,
-                    with(friend) {
-                        User(userId, nickname, profileUrl)
-                    }
-                )
+                val direction =
+                    FriendsFragmentDirections.actionFriendsFragmentToMessageFragment(
+                        it.url,
+                        with(friend) {
+                            User(userId, nickname, profileUrl)
+                        }
+                    )
                 findNavController().navigate(direction)
             }
         }

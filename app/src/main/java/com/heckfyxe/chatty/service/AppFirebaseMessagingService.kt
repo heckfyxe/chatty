@@ -10,8 +10,8 @@ import android.media.RingtoneManager
 import android.os.Build
 import androidx.core.app.NotificationCompat
 import androidx.core.graphics.drawable.toBitmap
-import com.bumptech.glide.Glide
-import com.bumptech.glide.Priority
+import coil.Coil
+import coil.api.get
 import com.google.firebase.messaging.FirebaseMessagingService
 import com.google.firebase.messaging.RemoteMessage
 import com.heckfyxe.chatty.MainActivity
@@ -20,6 +20,8 @@ import com.heckfyxe.chatty.room.DialogDao
 import com.sendbird.android.SendBird
 import com.sendbird.android.shadow.com.google.gson.JsonObject
 import com.sendbird.android.shadow.com.google.gson.JsonParser
+import kotlinx.coroutines.GlobalScope
+import kotlinx.coroutines.launch
 import org.koin.core.KoinComponent
 import org.koin.core.inject
 
@@ -35,10 +37,12 @@ class AppFirebaseMessagingService : FirebaseMessagingService(), KoinComponent {
     override fun onMessageReceived(remoteMessage: RemoteMessage) {
         val message = remoteMessage.data["message"]
         val payload = JsonParser().parse(remoteMessage.data["sendbird"]).asJsonObject
-        sendNotification(message, payload)
+        GlobalScope.launch {
+            sendNotification(message, payload)
+        }
     }
 
-    private fun sendNotification(message: String?, payload: JsonObject) {
+    private suspend fun sendNotification(message: String?, payload: JsonObject) {
         val intent = Intent(this, MainActivity::class.java)
         intent.addFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP)
         val pendingIntent = PendingIntent.getActivity(
@@ -50,10 +54,7 @@ class AppFirebaseMessagingService : FirebaseMessagingService(), KoinComponent {
         val sender = payload["sender"].asJsonObject
         val channelId = channel["channel_url"].asString
         val senderAvatar = sender["profile_url"].asString
-        val avatarDrawable = Glide.with(this)
-            .load(senderAvatar)
-            .priority(Priority.IMMEDIATE)
-            .submit().get()
+        val avatarDrawable = Coil.get(senderAvatar)
 
         val notificationId = dialogDao.getNotificationIdByDialogId(channelId) ?: -1
 

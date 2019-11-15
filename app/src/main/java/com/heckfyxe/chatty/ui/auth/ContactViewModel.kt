@@ -126,7 +126,10 @@ class ContactViewModel : ViewModel(), KoinComponent {
         }
     }
 
-    fun addUserToDatabase(users: List<com.heckfyxe.chatty.room.User>, onCompleteAction: () -> Unit) {
+    fun addUserToDatabase(
+        users: List<com.heckfyxe.chatty.room.RoomUser>,
+        onCompleteAction: () -> Unit
+    ) {
         scope.launch(Dispatchers.IO) {
             userRepository.saveUsersInDatabase(users)
             onCompleteAction()

@@ -7,7 +7,7 @@ import com.heckfyxe.chatty.koin.KOIN_USER_ID
 import com.heckfyxe.chatty.remote.SendBirdApi
 import com.heckfyxe.chatty.room.*
 import com.heckfyxe.chatty.util.sendbird.getInterlocutor
-import com.heckfyxe.chatty.util.sendbird.toMessage
+import com.heckfyxe.chatty.util.sendbird.toRoomMessage
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 import org.koin.core.KoinComponent
@@ -25,7 +25,7 @@ class DialogRepository : KoinComponent {
     private val userId: String by inject(KOIN_USER_ID)
     private val auth: FirebaseAuth by inject()
 
-    val currentUser = MutableLiveData<User>()
+    val currentUser = MutableLiveData<RoomUser>()
     val errors = MutableLiveData<Exception?>()
     val chats = dialogDao.getDialogsLiveData()
 
@@ -37,41 +37,40 @@ class DialogRepository : KoinComponent {
         }
     }
 
-    suspend fun getInterlocutor(dialogId: String): User = dialogDao.getInterlocutor(dialogId)
+    suspend fun getInterlocutor(dialogId: String): RoomUser = dialogDao.getInterlocutor(dialogId)
 
-    suspend fun getMessageById(id: Long): Message? = messageDao.getMessageById(id)
+    suspend fun getMessageById(id: Long): RoomMessage? = messageDao.getMessageById(id)
 
-    suspend fun getUserById(id: String): User = userDao.getUserById(id)!!
+    suspend fun getUserById(id: String): RoomUser = userDao.getUserById(id)!!
 
     suspend fun refresh() {
         try {
             for (channels in sendBirdApi.getChannels()) {
-                val users = mutableSetOf<User>()
-                val messages = ArrayList<Message>(channels.size)
-                val dialogs = ArrayList<Dialog>(channels.size)
+                val users = ArrayList<RoomUser>(channels.size)
+                val messages = ArrayList<RoomMessage>(channels.size)
+                val dialogs = ArrayList<RoomDialog>(channels.size)
 
                 channels.forEach { channel ->
-                    channel.lastMessage.let {
-                        messages.add(it.toMessage(userId))
-                    }
-
-                    users.addAll(channel.members.map {
-                        User(it.userId, it.nickname, it.profileUrl)
-                    })
+                    messages.add(channel.lastMessage.toRoomMessage())
 
                     val interlocutor = channel.getInterlocutor()
+                    users.add(interlocutor.toRoomUser())
 
                     dialogs.add(
-                        Dialog(
-                            channel.url, channel.lastMessage.messageId, interlocutor.nickname,
-                            channel.unreadMessageCount, interlocutor.profileUrl, interlocutor.userId
+                        RoomDialog(
+                            channel.url,
+                            interlocutor.nickname,
+                            channel.unreadMessageCount,
+                            interlocutor.profileUrl,
+                            interlocutor.toInterlocutor(),
+                            channel.lastMessage.toLastMessage()
                         )
                     )
                 }
                 database.withTransaction {
+                    dialogDao.insert(dialogs)
                     userDao.insert(users.toList())
                     messageDao.insert(messages)
-                    dialogDao.insert(dialogs)
                 }
             }
         } catch (e: Exception) {

@@ -9,8 +9,8 @@ import com.heckfyxe.chatty.remote.SendBirdApi
 import com.heckfyxe.chatty.repository.source.MessagesDataSource
 import com.heckfyxe.chatty.room.AppDatabase
 import com.heckfyxe.chatty.room.DialogDao
-import com.heckfyxe.chatty.room.Message
 import com.heckfyxe.chatty.room.MessageDao
+import com.heckfyxe.chatty.room.RoomMessage
 import org.koin.core.KoinComponent
 import org.koin.core.inject
 
@@ -18,8 +18,8 @@ class MessageRepository(val channelId: String) :
     KoinComponent {
 
     companion object {
-        private const val PAGE_SIZE = 40
-        private const val PREFETCH_SIZE = 17
+        private const val PAGE_SIZE = 20
+        private const val PREFETCH_SIZE = 8
 
         private val config = PagedList.Config.Builder()
             .setPageSize(PAGE_SIZE)
@@ -36,9 +36,9 @@ class MessageRepository(val channelId: String) :
 
     private val dataSourceFactory = MessagesDataSource.Factory(this)
 
-    private var messagesSource: LiveData<PagedList<Message>>? = null
-    private val _messages = MediatorLiveData<PagedList<Message>>()
-    val messages: LiveData<PagedList<Message>> = _messages
+    private var messagesSource: LiveData<PagedList<RoomMessage>>? = null
+    private val _messages = MediatorLiveData<PagedList<RoomMessage>>()
+    val messages: LiveData<PagedList<RoomMessage>> = _messages
 
     suspend fun init() {
         sendBirdApi.loadChannel(channelId)
@@ -57,19 +57,19 @@ class MessageRepository(val channelId: String) :
         }
     }
 
-    suspend fun getPreviousMessagesByTime(time: Long, count: Int = PAGE_SIZE): List<Message> {
+    suspend fun getPreviousMessagesByTime(time: Long, count: Int = PAGE_SIZE): List<RoomMessage> {
         val messages = sendBirdApi.getPreviousMessagesByTime(channelId, time, count)
         updateDatabase(messages)
         return messages
     }
 
-    suspend fun getNextMessagesByTime(time: Long, count: Int = PAGE_SIZE): List<Message> {
+    suspend fun getNextMessagesByTime(time: Long, count: Int = PAGE_SIZE): List<RoomMessage> {
         val messages = sendBirdApi.getNextMessagesByTime(channelId, time, count)
         updateDatabase(messages)
         return messages
     }
 
-    private suspend fun updateDatabase(messages: List<Message>) {
+    private suspend fun updateDatabase(messages: List<RoomMessage>) {
         messageDao.insert(messages)
     }
 

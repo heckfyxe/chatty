@@ -1,9 +1,12 @@
 package com.heckfyxe.chatty.util.databinding
 
+import android.widget.ImageView
 import android.widget.TextView
 import androidx.databinding.BindingAdapter
+import coil.api.load
+import coil.transform.RoundedCornersTransformation
 import com.heckfyxe.chatty.R
-import com.heckfyxe.chatty.room.Message
+import com.heckfyxe.chatty.room.RoomMessage
 import java.text.SimpleDateFormat
 import java.util.*
 
@@ -22,7 +25,7 @@ fun hhmm(textView: TextView, time: Long?) {
 }
 
 @BindingAdapter("outMessageText")
-fun outMessageText(textView: TextView, message: Message?) {
+fun outMessageText(textView: TextView, message: RoomMessage?) {
     if (message == null)
         return
 
@@ -35,4 +38,12 @@ fun outMessageText(textView: TextView, message: Message?) {
 private fun formatTime(time: Long): String {
     date.time = time
     return formatter.format(date)
+}
+
+@BindingAdapter("loadAvatar")
+fun loadAvatar(imageView: ImageView?, url: String?) {
+    imageView?.load(url) {
+        transformations(RoundedCornersTransformation(20f))
+        build()
+    }
 }

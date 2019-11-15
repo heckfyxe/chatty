@@ -13,9 +13,9 @@ import androidx.navigation.fragment.navArgs
 import androidx.navigation.ui.NavigationUI
 import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
+import coil.api.load
+import coil.transform.CircleCropTransformation
 import com.heckfyxe.chatty.R
-import com.heckfyxe.chatty.util.loadCircleUserAvatar
-import com.heckfyxe.chatty.util.room.toChatUser
 import com.stfalcon.chatkit.messages.MessageInput
 import kotlinx.android.synthetic.main.message_fragment.*
 import org.koin.androidx.viewmodel.ext.android.viewModel
@@ -90,7 +90,9 @@ class MessageFragment : Fragment() {
 
         args.user.let {
             dialogUserNickname?.text = it.name
-            dialogUserAvatar?.loadCircleUserAvatar(it.toChatUser())
+            dialogUserAvatar?.load(it.imageUrl) {
+                transformations(CircleCropTransformation())
+            }
         }
 
         messageTextInput?.setInputListener {

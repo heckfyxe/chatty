@@ -1,7 +1,7 @@
 package com.heckfyxe.chatty.util.sendbird
 
 import com.heckfyxe.chatty.koin.KOIN_USER_ID
-import com.heckfyxe.chatty.room.Message
+import com.heckfyxe.chatty.room.RoomMessage
 import com.sendbird.android.BaseMessage
 import com.sendbird.android.FileMessage
 import com.sendbird.android.Sender
@@ -36,9 +36,9 @@ fun BaseMessage.getDialogId(): String = when (this) {
     else -> ""
 }
 
-fun BaseMessage.toMessage(userId: String = currentUserId, isSent: Boolean = true): Message {
+fun BaseMessage.toRoomMessage(userId: String = currentUserId, isSent: Boolean = true): RoomMessage {
     val senderId = getSender().userId
-    return Message(
+    return RoomMessage(
         messageId,
         getDialogId(),
         createdAt,
@@ -50,8 +50,8 @@ fun BaseMessage.toMessage(userId: String = currentUserId, isSent: Boolean = true
     )
 }
 
-fun UserMessage.toMessage(out: Boolean, sent: Boolean = true) =
-    Message(
+fun UserMessage.toRoomMessage(out: Boolean, sent: Boolean = true) =
+    RoomMessage(
         messageId,
         channelUrl,
         createdAt,

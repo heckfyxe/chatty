@@ -1,7 +1,7 @@
 package com.heckfyxe.chatty.ui.auth
 
+import android.content.Context
 import android.content.res.ColorStateList
-import android.graphics.drawable.Drawable
 import android.os.Bundle
 import android.text.Editable
 import android.text.TextWatcher
@@ -15,11 +15,10 @@ import androidx.core.view.isVisible
 import androidx.fragment.app.Fragment
 import androidx.lifecycle.Observer
 import androidx.navigation.fragment.findNavController
-import com.bumptech.glide.Glide
-import com.bumptech.glide.load.DataSource
-import com.bumptech.glide.load.engine.GlideException
-import com.bumptech.glide.request.RequestListener
-import com.bumptech.glide.request.target.Target
+import coil.ImageLoader
+import coil.api.load
+import coil.decode.GifDecoder
+import coil.transform.CircleCropTransformation
 import com.google.android.material.snackbar.Snackbar
 import com.heckfyxe.chatty.R
 import com.heckfyxe.chatty.util.setAuthenticated
@@ -34,6 +33,18 @@ class EditUserDataFragment : Fragment() {
     private val model: EditUserDataViewModel by viewModel()
 
     private val scope = CoroutineScope(Dispatchers.Default)
+
+    private lateinit var imageLoader: ImageLoader
+
+    override fun onAttach(context: Context) {
+        super.onAttach(context)
+
+        imageLoader = ImageLoader(context) {
+            componentRegistry {
+                add(GifDecoder())
+            }
+        }
+    }
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -143,38 +154,13 @@ class EditUserDataFragment : Fragment() {
 
     private fun startAvatarLoadingAnimation() {
         circleImageView?.isVisible = true
-        Glide.with(context!!)
-            .asGif()
-            .load(R.drawable.spinner)
-            .circleCrop()
-            .into(circleImageView)
     }
 
     private fun startAvatarLoading(avatarUrl: String) {
-        Glide.with(this)
-            .load(avatarUrl)
-            .listener(object: RequestListener<Drawable> {
-                override fun onLoadFailed(
-                    e: GlideException?,
-                    model: Any?,
-                    target: Target<Drawable>?,
-                    isFirstResource: Boolean
-                ): Boolean = false
-
-                override fun onResourceReady(
-                    resource: Drawable?,
-                    model: Any?,
-                    target: Target<Drawable>?,
-                    dataSource: DataSource?,
-                    isFirstResource: Boolean
-                ): Boolean {
-                    Glide.with(context!!)
-                        .load(resource)
-                        .circleCrop()
-                        .into(circleImageView)
-                    return false
-                }
-            }).preload()
+        circleImageView?.load(avatarUrl, imageLoader) {
+            placeholder(R.drawable.spinner)
+            transformations(CircleCropTransformation())
+        }
     }
 
     private fun showNicknameCheckingProgress() {

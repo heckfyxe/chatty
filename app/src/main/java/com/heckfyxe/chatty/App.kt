@@ -3,10 +3,15 @@ package com.heckfyxe.chatty
 import androidx.multidex.MultiDexApplication
 import androidx.room.withTransaction
 import com.google.firebase.FirebaseApp
-import com.heckfyxe.chatty.koin.KOIN_USER_ID
 import com.heckfyxe.chatty.koin.koinModule
-import com.heckfyxe.chatty.room.*
-import com.heckfyxe.chatty.util.sendbird.toMessage
+import com.heckfyxe.chatty.room.AppDatabase
+import com.heckfyxe.chatty.room.DialogDao
+import com.heckfyxe.chatty.room.MessageDao
+import com.heckfyxe.chatty.room.UserDao
+import com.heckfyxe.chatty.util.sendbird.getInterlocutor
+import com.heckfyxe.chatty.util.sendbird.toRoomDialog
+import com.heckfyxe.chatty.util.sendbird.toRoomMessage
+import com.heckfyxe.chatty.util.sendbird.toRoomUser
 import com.sendbird.android.BaseChannel
 import com.sendbird.android.BaseMessage
 import com.sendbird.android.GroupChannel
@@ -30,24 +35,17 @@ class App : MultiDexApplication() {
     private val messageDao: MessageDao by inject()
     private val userDao: UserDao by inject()
 
-    private val userId: String by inject(KOIN_USER_ID)
-
     private val job = Job()
     private val scope = CoroutineScope(job + Dispatchers.IO)
 
     private val channelHandler = object : SendBird.ChannelHandler() {
         override fun onMessageReceived(channel: BaseChannel, baseMessage: BaseMessage) {
-            if (channel !is GroupChannel)
-                return
+            if (channel !is GroupChannel) return
 
-            val interlocutor = with(channel.members.single { it.userId != userId }) {
-                User(userId, nickname, profileUrl)
-            }
-            val dialog = with(channel) {
-                Dialog(url, lastMessage.messageId, interlocutor.name, unreadMessageCount, interlocutor.avatarUrl, interlocutor.id)
-            }
+            val interlocutor = channel.getInterlocutor().toRoomUser()
+            val dialog = channel.toRoomDialog()
 
-            val message = baseMessage.toMessage(userId)
+            val message = baseMessage.toRoomMessage()
 
             scope.launch {
                 database.withTransaction {

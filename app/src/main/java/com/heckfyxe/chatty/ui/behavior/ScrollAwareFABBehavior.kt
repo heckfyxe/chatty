@@ -43,10 +43,10 @@ class ScrollAwareFABBehavior(
 //    ) {
 //        super.onNestedScroll(coordinatorLayout, child, target, dxConsumed, dyConsumed, dxUnconsumed, dyUnconsumed)
 //        if (dyConsumed > 0 && child.visibility == View.VISIBLE) {
-//            // User scrolled down and the FAB is currently visible -> hide the FAB
+//            // RoomUser scrolled down and the FAB is currently visible -> hide the FAB
 //            child.hide()
 //        } else if (dyConsumed < 0 && child.visibility != View.VISIBLE) {
-//            // User scrolled up and the FAB is currently not visible -> show the FAB
+//            // RoomUser scrolled up and the FAB is currently not visible -> show the FAB
 //            child.show()
 //        }
 //    }
@@ -82,7 +82,7 @@ class ScrollAwareFABBehavior(
         super.onNestedScroll(coordinatorLayout, child, target, dxConsumed, dyConsumed, dxUnconsumed, dyUnconsumed, type)
         if (type == ViewCompat.TYPE_TOUCH) {
             if (dyConsumed > 0 && child.visibility == View.VISIBLE) {
-                // User scrolled down and the FAB is currently visible -> hide the FAB
+                // RoomUser scrolled down and the FAB is currently visible -> hide the FAB
                 child.hide(object : FloatingActionButton.OnVisibilityChangedListener() {
                     @SuppressLint("RestrictedApi")
                     override fun onHidden(fab: FloatingActionButton?) {
@@ -91,7 +91,7 @@ class ScrollAwareFABBehavior(
                     }
                 })
             } else if (dyConsumed < 0 && child.visibility != View.VISIBLE) {
-                // User scrolled up and the FAB is currently not visible -> show the FAB
+                // RoomUser scrolled up and the FAB is currently not visible -> show the FAB
                 child.show()
             }
         }

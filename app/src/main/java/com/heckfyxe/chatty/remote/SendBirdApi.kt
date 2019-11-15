@@ -1,8 +1,8 @@
 package com.heckfyxe.chatty.remote
 
-import com.heckfyxe.chatty.room.Message
-import com.heckfyxe.chatty.room.User
-import com.heckfyxe.chatty.util.sendbird.toMessage
+import com.heckfyxe.chatty.room.RoomMessage
+import com.heckfyxe.chatty.room.RoomUser
+import com.heckfyxe.chatty.util.sendbird.toRoomMessage
 import com.heckfyxe.chatty.util.sendbird.toRoomUser
 import com.sendbird.android.BaseChannel
 import com.sendbird.android.GroupChannel
@@ -44,8 +44,8 @@ class SendBirdApi {
         }
     }
 
-    suspend fun connect(userId: String): User {
-        val result = Channel<User>()
+    suspend fun connect(userId: String): RoomUser {
+        val result = Channel<RoomUser>()
         val error = Channel<Exception>()
         SendBird.connect(userId) { user, e ->
             scope.launch {
@@ -125,8 +125,12 @@ class SendBirdApi {
         return getResult(result, error)
     }
 
-    suspend fun getPreviousMessagesByTime(channelId: String, time: Long, count: Int): List<Message> {
-        val result = Channel<List<Message>>()
+    suspend fun getPreviousMessagesByTime(
+        channelId: String,
+        time: Long,
+        count: Int
+    ): List<RoomMessage> {
+        val result = Channel<List<RoomMessage>>()
         val errorChan = Channel<Exception>(1)
         getChannel(channelId).getPreviousMessagesByTimestamp(
             time,
@@ -140,7 +144,7 @@ class SendBirdApi {
                 }
 
                 val messages = loadedMessages.map {
-                    it.toMessage()
+                    it.toRoomMessage()
                 }
                 result.send(messages)
             }
@@ -148,8 +152,12 @@ class SendBirdApi {
         return getResult(result, errorChan)
     }
 
-    suspend fun getNextMessagesByTime(channelId: String, time: Long, count: Int): List<Message> {
-        val result = Channel<List<Message>>()
+    suspend fun getNextMessagesByTime(
+        channelId: String,
+        time: Long,
+        count: Int
+    ): List<RoomMessage> {
+        val result = Channel<List<RoomMessage>>()
         val errorChan = Channel<Exception>(1)
         getChannel(channelId).getNextMessagesByTimestamp(
             time,
@@ -163,7 +171,7 @@ class SendBirdApi {
                 }
 
                 val messages = loadedMessages.map {
-                    it.toMessage()
+                    it.toRoomMessage()
                 }
                 result.send(messages)
             }
@@ -171,9 +179,9 @@ class SendBirdApi {
         return getResult(result, errorChan)
     }
 
-    suspend fun sendMessage(channelId: String, text: String): ReceiveChannel<Message> {
+    suspend fun sendMessage(channelId: String, text: String): ReceiveChannel<RoomMessage> {
         val channel = getChannel(channelId)
-        val result = Channel<Message>(1)
+        val result = Channel<RoomMessage>(1)
         val tempMessage = channel.sendUserMessage(text) { message, e ->
             updateMemoryCachedChannel(channel)
             scope.launch {
@@ -182,12 +190,12 @@ class SendBirdApi {
                     return@launch
                 }
 
-                result.send(message.toMessage(true))
+                result.send(message.toRoomMessage(true))
                 result.close()
             }
         }
         updateMemoryCachedChannel(channel)
-        result.send(tempMessage.toMessage(out = true, sent = false).apply {
+        result.send(tempMessage.toRoomMessage(out = true, sent = false).apply {
             channel.lastMessage.createdAt + 1
         })
         return result

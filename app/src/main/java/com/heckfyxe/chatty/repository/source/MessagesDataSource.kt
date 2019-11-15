@@ -5,8 +5,8 @@ import androidx.lifecycle.Transformations
 import androidx.paging.DataSource
 import androidx.paging.ItemKeyedDataSource
 import com.heckfyxe.chatty.repository.MessageRepository
-import com.heckfyxe.chatty.room.Message
 import com.heckfyxe.chatty.room.MessageDao
+import com.heckfyxe.chatty.room.RoomMessage
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
@@ -15,7 +15,7 @@ import org.koin.core.KoinComponent
 import org.koin.core.inject
 
 class MessagesDataSource(private val repository: MessageRepository) :
-    ItemKeyedDataSource<Long, Message>(),
+    ItemKeyedDataSource<Long, RoomMessage>(),
     KoinComponent {
 
     private val messagesDao: MessageDao by inject()
@@ -28,7 +28,7 @@ class MessagesDataSource(private val repository: MessageRepository) :
     private val scope = CoroutineScope(job + Dispatchers.IO)
 
     private var isChangesDetectionStarted = false
-    private val changesObserver: Observer<List<Message>> = Observer {
+    private val changesObserver: Observer<List<RoomMessage>> = Observer {
         if (isChangesDetectionStarted)
             invalidate()
         else
@@ -43,7 +43,7 @@ class MessagesDataSource(private val repository: MessageRepository) :
 
     override fun loadInitial(
         params: LoadInitialParams<Long>,
-        callback: LoadInitialCallback<Message>
+        callback: LoadInitialCallback<RoomMessage>
     ) {
         scope.launch {
             val localMessages = messagesDao.getPreviousMessagesByTime(
@@ -62,7 +62,7 @@ class MessagesDataSource(private val repository: MessageRepository) :
         }
     }
 
-    override fun loadAfter(params: LoadParams<Long>, callback: LoadCallback<Message>) {
+    override fun loadAfter(params: LoadParams<Long>, callback: LoadCallback<RoomMessage>) {
         scope.launch {
             val localMessages = messagesDao.getPreviousMessagesByTime(
                 repository.channelId,
@@ -74,7 +74,7 @@ class MessagesDataSource(private val repository: MessageRepository) :
         }
     }
 
-    override fun loadBefore(params: LoadParams<Long>, callback: LoadCallback<Message>) {
+    override fun loadBefore(params: LoadParams<Long>, callback: LoadCallback<RoomMessage>) {
         scope.launch {
             val localMessages = messagesDao.getNextMessagesByTime(
                 repository.channelId,
@@ -86,7 +86,7 @@ class MessagesDataSource(private val repository: MessageRepository) :
         }
     }
 
-    override fun getKey(item: Message): Long = item.time
+    override fun getKey(item: RoomMessage): Long = item.time
 
     override fun invalidate() {
         super.invalidate()
@@ -96,7 +96,8 @@ class MessagesDataSource(private val repository: MessageRepository) :
         }
     }
 
-    class Factory(private val repository: MessageRepository) : DataSource.Factory<Long, Message>() {
-        override fun create(): DataSource<Long, Message> = MessagesDataSource(repository)
+    class Factory(private val repository: MessageRepository) :
+        DataSource.Factory<Long, RoomMessage>() {
+        override fun create(): DataSource<Long, RoomMessage> = MessagesDataSource(repository)
     }
 }

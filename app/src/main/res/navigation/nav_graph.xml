@@ -58,7 +58,7 @@
             app:argType="string" />
         <argument
             android:name="user"
-            app:argType="com.heckfyxe.chatty.room.User" />
+            app:argType="com.heckfyxe.chatty.model.User" />
     </fragment>
     <fragment
         android:id="@+id/contactFragment"
@@ -67,7 +67,7 @@
         tools:layout="@layout/contact_fragment"/>
     <fragment
         android:id="@+id/friendsFragment"
-        android:name="com.heckfyxe.chatty.ui.main.FriendsFragment"
+        android:name="com.heckfyxe.chatty.ui.friends.FriendsFragment"
         android:label="FriendsFragment"
         tools:layout="@layout/friends_fragment">
         <action
