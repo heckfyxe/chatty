@@ -15,17 +15,16 @@ import com.heckfyxe.chatty.room.RoomMessage
 import org.koin.core.KoinComponent
 import org.koin.core.inject
 
-class MessageRepository(val channelId: String, lastMessageTime: Long) :
+class MessageRepository(val channelId: String, private val lastMessageTime: Long) :
     KoinComponent {
 
     companion object {
-        private const val PAGE_SIZE = 100
-        private const val PREFETCH_SIZE = PAGE_SIZE / 5 * 2
+        private const val PAGE_SIZE = 40
+        private const val PREFETCH_SIZE = PAGE_SIZE / 3
 
         private val config = PagedList.Config.Builder()
             .setPageSize(PAGE_SIZE)
-            .setPrefetchDistance(PREFETCH_SIZE)
-            .setInitialLoadSizeHint(PAGE_SIZE)
+//            .setPrefetchDistance(1)
             .build()
     }
 
@@ -41,15 +40,17 @@ class MessageRepository(val channelId: String, lastMessageTime: Long) :
     private val _messages = MediatorLiveData<PagedList<Message>>()
     val messages: LiveData<PagedList<Message>> = _messages
 
-    init {
-        setInitialLoadKey(lastMessageTime)
-    }
-
     suspend fun init() {
+        setInitialLoadKey(lastMessageTime)
         sendBirdApi.loadChannel(channelId)
     }
 
-    private fun setInitialLoadKey(key: Long) {
+    private suspend fun setInitialLoadKey(key: Long) {
+        if (key == -1L) {
+            val lastMessage = messageDao.getLastMessage(channelId) ?: return
+            setInitialLoadKey(lastMessage.time)
+            return
+        }
         if (messagesSource != null) {
             _messages.removeSource(messagesSource!!)
         }
@@ -81,13 +82,13 @@ class MessageRepository(val channelId: String, lastMessageTime: Long) :
         val channel = sendBirdApi.sendMessage(channelId, text)
         val tempMessage = channel.receive()
         messageDao.insert(tempMessage)
-        setInitialLoadKey(tempMessage.time)
+//        setInitialLoadKey(tempMessage.time)
         val message = channel.receive()
         database.withTransaction {
             messageDao.updateByRequestId(message)
             dialogDao.updateDialogLastMessageId(channelId, message.id)
         }
-        setInitialLoadKey(message.time)
+//        setInitialLoadKey(message.time)
     }
 
     suspend fun startTyping() = sendBirdApi.startTyping(channelId)

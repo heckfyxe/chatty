@@ -43,12 +43,11 @@ class MainViewModel(private val repository: DialogRepository) : ViewModel(), Koi
 
     fun launchMessageFragment(dialog: Dialog) {
         viewModelScope.launch {
-            val interlocutor = repository.getInterlocutor(dialog.id)
             _launchMessagesEvent.postValue(
                 LaunchMessageEvent(
                     dialog.id,
-                    interlocutor.toDomain(),
-                    dialog.lastMessageTime
+                    dialog.interlocutor,
+                    dialog.lastMessage.time
                 )
             )
         }

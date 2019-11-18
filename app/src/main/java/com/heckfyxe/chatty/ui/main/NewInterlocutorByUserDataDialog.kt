@@ -15,6 +15,8 @@ import androidx.core.view.isVisible
 import androidx.fragment.app.DialogFragment
 import androidx.lifecycle.Observer
 import com.heckfyxe.chatty.R
+import com.heckfyxe.chatty.util.sendbird.getInterlocutor
+import com.heckfyxe.chatty.util.sendbird.toDomain
 import kotlinx.android.synthetic.main.new_interlocutor_by_user_data_dialog.*
 import org.koin.androidx.viewmodel.ext.android.viewModel
 import org.koin.core.parameter.parametersOf
@@ -127,6 +129,7 @@ class NewInterlocutorByUserDataDialog private constructor() : DialogFragment() {
         model.createDialog(userId) {
             targetFragment?.onActivityResult(targetRequestCode, Activity.RESULT_OK, Intent().apply {
                 putExtra(EXTRA_CHANNEL_ID, it.url)
+                putExtra(EXTRA_INTERLOCUTOR, it.getInterlocutor().toDomain())
             })
             dismiss()
         }
@@ -138,6 +141,7 @@ class NewInterlocutorByUserDataDialog private constructor() : DialogFragment() {
 
     companion object {
         const val EXTRA_CHANNEL_ID = "com.heckfyxe.chatty.ui.main.EXTRA_CHANNEL_ID"
+        const val EXTRA_INTERLOCUTOR = "com.heckfyxe.chatty.ui.main.EXTRA_INTERLOCUTOR"
 
         private const val ARG_USER_DATA_TYPE = "com.heckfyxe.chatty.ui.main.ARG_USER_DATA_TYPE"
 

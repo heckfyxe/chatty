@@ -35,7 +35,7 @@ class FriendsFragment : Fragment() {
                         with(friend) {
                             User(userId, nickname, profileUrl)
                         },
-                        it.lastMessage.messageId
+                        it.lastMessage.createdAt
                     )
                 findNavController().navigate(direction)
             }

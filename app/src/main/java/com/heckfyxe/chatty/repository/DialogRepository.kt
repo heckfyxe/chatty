@@ -42,7 +42,7 @@ class DialogRepository : KoinComponent {
     suspend fun getMessageById(id: Long): RoomMessage? = messageDao.getMessageById(id)
 
     suspend fun getLastMessageId(dialogId: String) =
-        messageDao.getLastMessage(dialogId).id
+        messageDao.getLastMessage(dialogId)?.id
 
     suspend fun getUserById(id: String): RoomUser = userDao.getUserById(id)!!
 
@@ -65,8 +65,8 @@ class DialogRepository : KoinComponent {
                             interlocutor.nickname,
                             channel.unreadMessageCount,
                             interlocutor.profileUrl,
-                            interlocutor.toInterlocutor(),
-                            channel.lastMessage.toLastMessage()
+                            interlocutor.toDomain(),
+                            channel.lastMessage.toDomain()
                         )
                     )
                 }

@@ -138,13 +138,20 @@ class MainFragment : Fragment() {
         when (requestCode) {
             RC_CREATE_DIALOG -> {
                 if (resultCode == Activity.RESULT_OK) {
-                    if (data?.hasExtra(NewInterlocutorByUserDataDialog.EXTRA_CHANNEL_ID) == true) {
-                        val dialogId = data.getStringExtra(
-                            NewInterlocutorByUserDataDialog.EXTRA_CHANNEL_ID)!!
-//                        viewModel.launchMessageFragment(dialogId)
-                    } else {
-                        Log.w("MainFragment", "Data doesn't have channel")
+                    if (data == null ||
+                        !data.hasExtra(NewInterlocutorByUserDataDialog.EXTRA_CHANNEL_ID) ||
+                        !data.hasExtra(NewInterlocutorByUserDataDialog.EXTRA_INTERLOCUTOR)
+                    ) {
+                        Log.w("MainFragment", "Not got requirement data from dialog")
+                        return
                     }
+                    val dialogId = data.getStringExtra(
+                        NewInterlocutorByUserDataDialog.EXTRA_CHANNEL_ID
+                    )!!
+                    val user = data.getSerializableExtra(
+                        NewInterlocutorByUserDataDialog.EXTRA_INTERLOCUTOR
+                    ) as User
+                    launchMessageFragment(dialogId, user)
                 }
             }
             else -> super.onActivityResult(requestCode, resultCode, data)
@@ -185,7 +192,8 @@ class MainFragment : Fragment() {
     }
 
     private fun registerPushNotification() {
-        FirebaseInstanceId.getInstance().instanceId.addOnSuccessListener(activity!!) { instanceIdResult ->
+        FirebaseInstanceId.getInstance()
+            .instanceId.addOnSuccessListener(activity!!) { instanceIdResult ->
             SendBird.registerPushTokenForCurrentUser(instanceIdResult.token) { _, e ->
                 if (e != null)
                     Log.w("MainFragment", "registerPushNotification", e)
@@ -199,11 +207,15 @@ class MainFragment : Fragment() {
         emotionDetector.start()
     }
 
-    private fun launchMessageFragment(channelId: String, interlocutor: User, lastMessageId: Long) {
+    private fun launchMessageFragment(
+        channelId: String,
+        interlocutor: User,
+        lastMessageTime: Long = -1
+    ) {
         val direction = MainFragmentDirections.actionMainFragmentToMessageFragment(
             channelId,
             interlocutor,
-            lastMessageId
+            lastMessageTime
         )
         findNavController().navigate(direction)
     }

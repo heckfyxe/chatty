@@ -54,11 +54,10 @@ class MessagesDataSource(private val repository: MessageRepository) :
                 params.requestedLoadSize - 1
             )
             val message = messagesDao.getMessageByTime(params.requestedInitialKey!!)
+            if (message == null) invalidate()
             callback.onResult(
                 sortAndFilter(
-                    listOf(
-                message, *localMessages.toTypedArray()
-                    )
+                    listOf(message, *localMessages.toTypedArray())
                 )
             )
             repository.getPreviousMessagesByTime(
@@ -87,7 +86,8 @@ class MessagesDataSource(private val repository: MessageRepository) :
                 params.key,
                 params.requestedLoadSize
             )
-            callback.onResult(sortAndFilter(localMessages))
+            if (localMessages.isNotEmpty())
+                callback.onResult(sortAndFilter(localMessages))
             repository.getNextMessagesByTime(params.key, params.requestedLoadSize)
         }
     }

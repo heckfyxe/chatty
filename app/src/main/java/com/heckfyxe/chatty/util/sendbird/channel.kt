@@ -3,8 +3,7 @@ package com.heckfyxe.chatty.util.sendbird
 import android.content.Context
 import com.heckfyxe.chatty.koin.KOIN_USER_ID
 import com.heckfyxe.chatty.room.RoomDialog
-import com.heckfyxe.chatty.room.toInterlocutor
-import com.heckfyxe.chatty.room.toLastMessage
+import com.heckfyxe.chatty.room.toDomain
 import com.sendbird.android.BaseChannel
 import com.sendbird.android.GroupChannel
 import com.sendbird.android.Member
@@ -46,7 +45,7 @@ fun GroupChannel.toRoomDialog(): RoomDialog {
         interlocutor.nickname,
         unreadMessageCount,
         interlocutor.profileUrl,
-        interlocutor.toInterlocutor(),
-        lastMessage.toLastMessage()
+        interlocutor.toDomain(),
+        lastMessage.toDomain()
     )
 }

@@ -7,7 +7,7 @@ import com.google.firebase.firestore.CollectionReference
 import com.heckfyxe.chatty.koin.KOIN_USERS_FIRESTORE_COLLECTION
 import com.heckfyxe.chatty.koin.KOIN_USER_ID
 import com.heckfyxe.chatty.remote.SendBirdApi
-import com.sendbird.android.BaseChannel
+import com.sendbird.android.GroupChannel
 import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.launch
 import org.koin.core.KoinComponent
@@ -54,7 +54,7 @@ class NewInterlocutorByUserDataViewModel(private val userDataName: String) : Vie
         viewModelScope.launch { userDataCheckingChannel.send(data) }
     }
 
-    fun createDialog(interlocutorId: String, success: (BaseChannel) -> Unit) {
+    fun createDialog(interlocutorId: String, success: (GroupChannel) -> Unit) {
         viewModelScope.launch {
             try {
                 val channel = sendBirdApi.createChannel(userId, interlocutorId)

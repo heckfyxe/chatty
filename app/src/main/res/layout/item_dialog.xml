@@ -46,7 +46,7 @@
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:textAppearance="?android:textAppearanceSmall"
-            app:hhmm="@{dialog.lastMessageTime}"
+            app:hhmm="@{dialog.lastMessage.time}"
             app:layout_constraintEnd_toEndOf="parent"
             app:layout_constraintTop_toTopOf="parent"
             tools:text="A minute ago" />
@@ -59,7 +59,7 @@
             android:layout_marginTop="8dp"
             android:ellipsize="end"
             android:maxLines="2"
-            android:text="@{dialog.lastMessageText}"
+            android:text="@{dialog.lastMessage.text}"
             android:textAppearance="?android:textAppearanceMedium"
             app:layout_constraintEnd_toStartOf="@+id/appCompatImageView2"
             app:layout_constraintStart_toEndOf="@+id/appCompatImageView"

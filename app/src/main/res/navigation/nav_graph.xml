@@ -61,6 +61,7 @@
             app:argType="com.heckfyxe.chatty.model.User" />
         <argument
             android:name="lastMessageTime"
+            android:defaultValue="-1L"
             app:argType="long" />
     </fragment>
     <fragment

@@ -1,11 +1,12 @@
 package com.heckfyxe.chatty.model
 
+import androidx.room.Embedded
 import java.io.Serializable
 
 data class Message(
     var id: Long,
     var time: Long,
-    var interlocutor: User,
+    @Embedded(prefix = "sender_") var sender: User,
     var text: String,
     var out: Boolean,
     var sent: Boolean
