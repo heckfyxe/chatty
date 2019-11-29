@@ -26,16 +26,13 @@ interface MessageDao {
     }
 
     @Query("SELECT * FROM message WHERE id = :id LIMIT 1")
-    suspend fun getMessageById(id: Long): RoomMessage
+    suspend fun getMessageById(id: Long): RoomMessage?
 
     @Query("SELECT * FROM message WHERE time = :time LIMIT 1")
     suspend fun getMessageByTime(time: Long): RoomMessage?
 
     @Query("SELECT * FROM message WHERE dialog_id = :dialogId")
     fun getMessagesLiveData(dialogId: String): LiveData<List<RoomMessage>>
-
-    @Query("SELECT * FROM message WHERE dialog_id = :dialogId AND id < :from ORDER BY time DESC LIMIT :count")
-    suspend fun getPreviousMessagesById(dialogId: String, from: Long, count: Int): List<RoomMessage>
 
     @Query("SELECT * FROM message WHERE dialog_id = :dialogId AND time < :from ORDER BY time DESC LIMIT :count")
     suspend fun getPreviousMessagesByTime(

@@ -6,6 +6,7 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.google.firebase.firestore.CollectionReference
 import com.heckfyxe.chatty.koin.KOIN_USERS_FIRESTORE_COLLECTION
+import com.heckfyxe.chatty.model.Message
 import com.heckfyxe.chatty.repository.MessageRepository
 import kotlinx.coroutines.launch
 import org.koin.core.KoinComponent
@@ -16,24 +17,90 @@ class MessageViewModel(
     channelId: String,
     private val interlocutorId: String,
     lastMessageTime: Long
-) : ViewModel(), KoinComponent {
+) : ViewModel(), MessageAdapter.LoadingListener, KoinComponent {
 
-    private val repository: MessageRepository by inject { parametersOf(channelId, lastMessageTime) }
+    private val repository: MessageRepository by inject { parametersOf(channelId) }
 
     private val usersRef: CollectionReference by inject(KOIN_USERS_FIRESTORE_COLLECTION)
 
-    val messages = repository.messages
-    val errors = MutableLiveData<Exception?>()
-    val interlocutorEmotions = MutableLiveData<String>()
-    private val _scrollDownEvent = MutableLiveData<Boolean>()
-    val scrollDownEvent: LiveData<Boolean>
-        get() = _scrollDownEvent
+    val adapter = MessageAdapter().apply {
+        setLoadingListener(this@MessageViewModel)
+    }
+    private var isPreviousMessagesLoading = false
+    private var isNextMessagesLoading = false
+
+    private var isHistoryEmpty = false
+
+    private val lastMessageLiveData = MutableLiveData<Message>()
+
+    private val _errors = MutableLiveData<Exception?>()
+    val errors: LiveData<Exception?> = _errors
+    private val _interlocutorEmotions = MutableLiveData<String>()
+    val interlocutorEmotions: LiveData<String> = _interlocutorEmotions
+
+    private val _scrollDown = MutableLiveData<Boolean>()
+    val scrollDown: LiveData<Boolean> = _scrollDown
 
     init {
         viewModelScope.launch {
-            repository.init()
-            startInterlocutorEmotionTracking()
+            val lastMessage =
+                repository.getMessageByTime(lastMessageTime) ?: repository.getLastMessage()
+                ?: repository.refreshLastMessage().run {
+                    repository.getLastMessage()!!
+                }
+            adapter.addMessages(listOf(lastMessage))
+
+            lastMessageLiveData.value = lastMessage
+            repository.refreshLastMessage()
+            lastMessageLiveData.value = repository.getLastMessage()
         }
+        startInterlocutorEmotionTracking()
+    }
+
+    override fun prefetchSize(): Int = 35
+
+    override fun loadPreviousMessages(time: Long) {
+        if (isPreviousMessagesLoading || isHistoryEmpty) return
+        isPreviousMessagesLoading = true
+        viewModelScope.launch {
+            try {
+                adapter.addMessages(repository.loadPreviousMessages(time).also {
+                    isHistoryEmpty = it.isEmpty()
+                })
+                repository.refreshPreviousMessages(time)
+                adapter.addMessages(repository.loadPreviousMessages(time).also {
+                    isHistoryEmpty = it.isEmpty()
+                })
+            } catch (e: Exception) {
+                _errors.value = e
+            } finally {
+                isPreviousMessagesLoading = false
+            }
+        }
+    }
+
+    override fun loadNextMessages(time: Long) {
+        if (isNextMessagesLoading || time == lastMessageLiveData.value?.time) return
+        isNextMessagesLoading = true
+        viewModelScope.launch {
+            try {
+                adapter.addMessages(repository.loadNextMessages(time))
+                repository.refreshNextMessages(time)
+                adapter.addMessages(repository.loadNextMessages(time))
+            } catch (e: Exception) {
+                _errors.value = e
+            } finally {
+                isNextMessagesLoading = false
+            }
+        }
+    }
+
+    private fun scrollDown() {
+        _scrollDown.value = true
+    }
+
+    fun onScrolledDown() {
+        _scrollDown.value = false
     }
 
     private fun startInterlocutorEmotionTracking() {
@@ -43,16 +110,24 @@ class MessageViewModel(
             }
 
             val emotion = snapshot?.getString("emotion") ?: return@addSnapshotListener
-            interlocutorEmotions.postValue(emotion)
+            _interlocutorEmotions.value = emotion
         }
     }
 
-    fun onScrolledDown() {
-        _scrollDownEvent.postValue(false)
+    fun onErrorMessagesDisplayed() {
+        _errors.value = null
     }
 
     fun sendTextMessage(text: String) = viewModelScope.launch {
-        repository.sendTextMessage(text)
+        try {
+            val channel = repository.sendTextMessage(text)
+            adapter.addMessages(listOf(channel.receive()))
+            scrollDown()
+            adapter.messageSent(channel.receive())
+            scrollDown()
+        } catch (e: Exception) {
+            _errors.value = e
+        }
     }
 
     fun startTyping() = viewModelScope.launch { repository.startTyping() }

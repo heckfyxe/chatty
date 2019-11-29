@@ -23,10 +23,4 @@ interface DialogDao {
 
     @Query("SELECT notification_id FROM dialog WHERE id = :id LIMIT 1")
     fun getNotificationIdByDialogId(id: String): Int?
-
-    @Query(
-        """SELECT dialog.id, dialog.interlocutor_id, user.* FROM dialog
-        JOIN user ON dialog.interlocutor_id = user.id WHERE dialog.id = :dialogId"""
-    )
-    suspend fun getInterlocutor(dialogId: String): RoomUser
 }

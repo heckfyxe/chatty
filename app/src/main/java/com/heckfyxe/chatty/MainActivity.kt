@@ -11,6 +11,7 @@ import com.google.firebase.ml.vision.common.FirebaseVisionImage
 import com.google.firebase.ml.vision.common.FirebaseVisionImageMetadata
 import com.google.firebase.ml.vision.face.FirebaseVisionFaceDetector
 import com.google.firebase.ml.vision.face.FirebaseVisionFaceDetectorOptions
+import com.google.firebase.ml.vision.face.FirebaseVisionFaceDetectorOptions.ACCURATE
 import com.heckfyxe.chatty.koin.KOIN_USERS_FIRESTORE_COLLECTION
 import com.heckfyxe.chatty.koin.KOIN_USER_ID
 import kotlinx.android.synthetic.main.activity_main.*
@@ -18,9 +19,12 @@ import org.koin.android.ext.android.inject
 
 class MainActivity : AppCompatActivity(), EmotionDetector {
 
-    private val settings = FirebaseVisionFaceDetectorOptions.Builder()
-        .setClassificationMode(FirebaseVisionFaceDetectorOptions.ALL_CLASSIFICATIONS)
-        .build()
+    private val settings: FirebaseVisionFaceDetectorOptions by lazy {
+        FirebaseVisionFaceDetectorOptions.Builder()
+            .setPerformanceMode(ACCURATE)
+            .setClassificationMode(FirebaseVisionFaceDetectorOptions.ALL_CLASSIFICATIONS)
+            .build()
+    }
 
     private val detector: FirebaseVisionFaceDetector by lazy {
         FirebaseVision.getInstance().getVisionFaceDetector(settings)
@@ -41,7 +45,6 @@ class MainActivity : AppCompatActivity(), EmotionDetector {
         var isLoading = false
         cameraView?.addFrameProcessor {
             if (isLoading) return@addFrameProcessor
-//            it.size ?: return@addFrameProcessor
 
             val metadata = FirebaseVisionImageMetadata.Builder()
                 .setFormat(ImageFormat.NV21)

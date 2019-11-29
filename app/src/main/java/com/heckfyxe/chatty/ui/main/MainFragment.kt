@@ -8,13 +8,13 @@ import android.view.*
 import android.widget.Toast
 import androidx.appcompat.app.AlertDialog
 import androidx.appcompat.app.AppCompatActivity
-import androidx.core.view.isVisible
 import androidx.fragment.app.Fragment
 import androidx.lifecycle.Observer
 import androidx.navigation.fragment.findNavController
 import com.google.firebase.iid.FirebaseInstanceId
 import com.heckfyxe.chatty.EmotionDetector
 import com.heckfyxe.chatty.R
+import com.heckfyxe.chatty.databinding.MainFragmentBinding
 import com.heckfyxe.chatty.model.User
 import com.heckfyxe.chatty.util.OnClickAction
 import com.heckfyxe.chatty.util.clearSharedPreferencesData
@@ -37,25 +37,12 @@ class MainFragment : Fragment() {
 
         setAuthenticated()
 
+        viewModel.connectUser()
         adapter = DialogsAdapter(OnClickAction {
             viewModel.launchMessageFragment(it)
         })
 
         connectToViewModel()
-    }
-
-    private fun showUserConnectingAnimation() {
-        mainProgressBar?.isVisible = true
-        mainToolbar?.isVisible = false
-        newMessageFAB?.isVisible = false
-        dialogList?.isVisible = false
-    }
-
-    private fun hideUserConnectingAnimation() {
-        mainProgressBar?.isVisible = false
-        mainToolbar?.isVisible = true
-        newMessageFAB?.isVisible = true
-        dialogList?.isVisible = true
     }
 
     override fun onActivityCreated(savedInstanceState: Bundle?) {
@@ -89,7 +76,6 @@ class MainFragment : Fragment() {
 
     private fun connectToViewModel() {
         viewModel.currentUser.observe(this, Observer {
-            viewModel.loadChats()
             registerPushNotification()
         })
 
@@ -107,18 +93,16 @@ class MainFragment : Fragment() {
             viewModel.onMessageFragmentLaunched()
             launchMessageFragment(it.channelId, it.interlocutor, it.lastMessageTime)
         })
-
-        viewModel.chats.observe(this, Observer {
-            hideUserConnectingAnimation()
-            adapter.submitList(it)
-        })
     }
 
     override fun onCreateView(
         inflater: LayoutInflater, container: ViewGroup?,
         savedInstanceState: Bundle?
-    ): View {
-        return inflater.inflate(R.layout.main_fragment, container, false)
+    ): View = MainFragmentBinding.inflate(inflater).run {
+        lifecycleOwner = this@MainFragment
+        dialogList.adapter = adapter
+        viewModel = this@MainFragment.viewModel
+        return root
     }
 
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
@@ -126,10 +110,6 @@ class MainFragment : Fragment() {
 
         (activity as? AppCompatActivity)?.setSupportActionBar(mainToolbar)
 
-        dialogList?.adapter = adapter
-
-        viewModel.connectUser()
-        showUserConnectingAnimation()
 
         newMessageFAB?.setOnClickListener { showNewInterlocutorDialog() }
     }

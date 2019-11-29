@@ -4,10 +4,7 @@ import com.heckfyxe.chatty.room.RoomMessage
 import com.heckfyxe.chatty.room.RoomUser
 import com.heckfyxe.chatty.util.sendbird.toRoomMessage
 import com.heckfyxe.chatty.util.sendbird.toRoomUser
-import com.sendbird.android.BaseChannel
-import com.sendbird.android.GroupChannel
-import com.sendbird.android.GroupChannelParams
-import com.sendbird.android.SendBird
+import com.sendbird.android.*
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.channels.Channel
@@ -21,11 +18,16 @@ import java.util.concurrent.TimeUnit
 
 private val CHANNELS_CLEAN_DELAY = TimeUnit.MINUTES.toMillis(2)
 
+class UserIsNotConnectedException : Exception("User isn't connected!")
+
 class SendBirdApi {
     private val scope = CoroutineScope(Dispatchers.IO)
 
     private val channelsHashMap = ConcurrentHashMap<String, GroupChannel>()
     private val channelsLastUsageTime = ConcurrentHashMap<String, Long>()
+
+    val isUserConnected: Boolean
+        get() = SendBird.getCurrentUser() != null
 
     init {
         startInMemoryChannelsCaching()
@@ -42,6 +44,10 @@ class SendBirdApi {
                 }
             }
         }
+    }
+
+    private fun checkConnection() {
+        if (!isUserConnected) throw UserIsNotConnectedException()
     }
 
     suspend fun connect(userId: String): RoomUser {
@@ -61,6 +67,7 @@ class SendBirdApi {
     }
 
     suspend fun getChannels(): ReceiveChannel<List<GroupChannel>> {
+        checkConnection()
         val currentUser = SendBird.getCurrentUser()
         connect(currentUser.userId)
         val result = Channel<List<GroupChannel>>()
@@ -86,6 +93,7 @@ class SendBirdApi {
             return channelsHashMap[channelUrl]!!
         }
 
+        checkConnection()
         val result = Channel<GroupChannel>()
         val error = Channel<Exception>()
         GroupChannel.getChannel(channelUrl) { channel, e ->
@@ -103,9 +111,8 @@ class SendBirdApi {
         return getResult(result, error)
     }
 
-    suspend fun loadChannel(channelId: String) {
-        getChannel(channelId)
-    }
+    suspend fun getLastMessage(channelUrl: String): BaseMessage? =
+        getChannel(channelUrl).lastMessage
 
     suspend fun createChannel(userId: String, interlocutorId: String): GroupChannel {
         connect(userId)
@@ -130,6 +137,7 @@ class SendBirdApi {
         time: Long,
         count: Int
     ): List<RoomMessage> {
+        checkConnection()
         val result = Channel<List<RoomMessage>>()
         val errorChan = Channel<Exception>(1)
         getChannel(channelId).getPreviousMessagesByTimestamp(
@@ -157,6 +165,7 @@ class SendBirdApi {
         time: Long,
         count: Int
     ): List<RoomMessage> {
+        checkConnection()
         val result = Channel<List<RoomMessage>>()
         val errorChan = Channel<Exception>(1)
         getChannel(channelId).getNextMessagesByTimestamp(
@@ -180,6 +189,7 @@ class SendBirdApi {
     }
 
     suspend fun sendMessage(channelId: String, text: String): ReceiveChannel<RoomMessage> {
+        checkConnection()
         val channel = getChannel(channelId)
         val result = Channel<RoomMessage>(1)
         val tempMessage = channel.sendUserMessage(text) { message, e ->
@@ -195,9 +205,7 @@ class SendBirdApi {
             }
         }
         updateMemoryCachedChannel(channel)
-        result.send(tempMessage.toRoomMessage(out = true, sent = false).apply {
-            channel.lastMessage.createdAt + 1
-        })
+        result.send(tempMessage.toRoomMessage(out = true, sent = false))
         return result
     }
 

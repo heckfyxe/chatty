@@ -3,10 +3,13 @@ package com.heckfyxe.chatty.util.databinding
 import android.widget.ImageView
 import android.widget.TextView
 import androidx.databinding.BindingAdapter
+import androidx.recyclerview.widget.RecyclerView
 import coil.api.load
 import coil.transform.RoundedCornersTransformation
 import com.heckfyxe.chatty.R
+import com.heckfyxe.chatty.model.Dialog
 import com.heckfyxe.chatty.model.Message
+import com.heckfyxe.chatty.ui.main.DialogsAdapter
 import java.text.SimpleDateFormat
 import java.util.*
 
@@ -46,4 +49,10 @@ fun loadAvatar(imageView: ImageView?, url: String?) {
         transformations(RoundedCornersTransformation(20f))
         build()
     }
+}
+
+@BindingAdapter("dialogItems")
+fun dialogItems(recyclerView: RecyclerView?, dialogs: List<Dialog>?) {
+    dialogs ?: return
+    (recyclerView?.adapter as? DialogsAdapter)?.submitList(dialogs)
 }

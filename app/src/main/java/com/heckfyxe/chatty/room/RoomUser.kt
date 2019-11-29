@@ -1,9 +1,6 @@
 package com.heckfyxe.chatty.room
 
-import androidx.room.Entity
-import androidx.room.ForeignKey
-import androidx.room.Index
-import androidx.room.PrimaryKey
+import androidx.room.*
 import com.heckfyxe.chatty.model.User
 import com.sendbird.android.Member
 import java.io.Serializable
@@ -25,7 +22,7 @@ data class RoomUser(
     @PrimaryKey
     var id: String,
     var name: String,
-    var avatarUrl: String
+    @ColumnInfo(name = "avatar_url") var avatarUrl: String
 ) : Serializable
 
 fun Member.toRoomUser() = RoomUser(userId, nickname, profileUrl)

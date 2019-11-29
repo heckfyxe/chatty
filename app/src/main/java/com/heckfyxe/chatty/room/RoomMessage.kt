@@ -8,7 +8,8 @@ import com.heckfyxe.chatty.model.User
     tableName = "message",
     primaryKeys = ["id"],
     indices = [
-        Index(value = ["time"], unique = true)
+        Index(value = ["time"], unique = true),
+        Index(value = ["dialog_id"], unique = false)
     ],
     foreignKeys = [
         ForeignKey(
@@ -30,4 +31,8 @@ data class RoomMessage(
     @ColumnInfo(name = "request_id") var requestId: String
 )
 
-fun RoomMessage.toDomain(): Message = Message(id, time, sender, text, out, sent)
+fun RoomMessage.toDomain(): Message = Message(id, time, sender, text, out, sent, requestId)
+
+fun List<RoomMessage>.toDomain() = map {
+    it.toDomain()
+}

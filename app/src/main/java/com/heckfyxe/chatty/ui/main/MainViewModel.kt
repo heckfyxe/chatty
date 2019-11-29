@@ -15,9 +15,15 @@ data class LaunchMessageEvent(
     val lastMessageTime: Long
 )
 
+enum class Progress {
+    LOADING,
+    COMPLETED
+}
+
 class MainViewModel(private val repository: DialogRepository) : ViewModel(), KoinComponent {
 
     val currentUser: LiveData<User> = Transformations.map(repository.currentUser) {
+        refreshChats()
         it.toDomain()
     }
 
@@ -28,16 +34,22 @@ class MainViewModel(private val repository: DialogRepository) : ViewModel(), Koi
         get() = _launchMessagesEvent
 
     val chats: LiveData<List<Dialog>> = Transformations.map(repository.chats) {
-        it.map { dialog ->
-            dialog.toDomain()
-        }
+        _progress.value = Progress.COMPLETED
+        it.toDomain()
+    }
+
+    private val _progress = MutableLiveData<Progress>()
+    val progress: LiveData<Progress> = _progress
+
+    init {
+        _progress.value = Progress.LOADING
     }
 
     fun connectUser() = viewModelScope.launch {
         repository.connectUser()
     }
 
-    fun loadChats() = viewModelScope.launch {
+    private fun refreshChats() = viewModelScope.launch {
         repository.refresh()
     }
 

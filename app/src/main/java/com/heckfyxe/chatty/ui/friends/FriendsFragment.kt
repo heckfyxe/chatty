@@ -13,7 +13,6 @@ import androidx.recyclerview.widget.LinearLayoutManager
 import com.google.android.material.snackbar.Snackbar
 import com.heckfyxe.chatty.R
 import com.heckfyxe.chatty.model.User
-import com.heckfyxe.chatty.util.sendbird.saveOnDevice
 import kotlinx.android.synthetic.main.friends_fragment.*
 import org.koin.androidx.viewmodel.ext.android.viewModel
 
@@ -28,7 +27,6 @@ class FriendsFragment : Fragment() {
 
         friendsAdapter = FriendsAdapter { friend ->
             viewModel.createChannel(friend) {
-                it.saveOnDevice()
                 val direction =
                     FriendsFragmentDirections.actionFriendsFragmentToMessageFragment(
                         it.url,

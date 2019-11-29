@@ -26,10 +26,9 @@ private val remoteApiModule = module {
 
 private val repositoryModule = module {
     factory { DialogRepository() }
-    factory { (channelId: String, lastMessageTime: Long) ->
+    factory { (channelId: String) ->
         MessageRepository(
-            channelId,
-            lastMessageTime
+            channelId
         )
     }
     factory { ContactRepository() }

@@ -44,13 +44,18 @@ fun RoomDialog.toDomain(): Dialog =
         unreadCount
     )
 
+fun List<RoomDialog>.toDomain(): List<Dialog> = map {
+    it.toDomain()
+}
+
 fun BaseMessage.toDomain() = Message(
     messageId,
     createdAt,
     getSender().toDomain(),
     getText(),
     getSender().userId == currentUserId,
-    true
+    true,
+    ""
 )
 
 fun Member.toDomain() = User(userId, nickname, profileUrl)

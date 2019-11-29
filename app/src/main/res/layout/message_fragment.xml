@@ -1,81 +1,98 @@
 <?xml version="1.0" encoding="utf-8"?>
-<androidx.constraintlayout.widget.ConstraintLayout
-    xmlns:tools="http://schemas.android.com/tools"
+<layout xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:app="http://schemas.android.com/apk/res-auto"
-    xmlns:android="http://schemas.android.com/apk/res/android"
-    android:layout_width="match_parent"
-    android:layout_height="match_parent">
+    xmlns:tools="http://schemas.android.com/tools">
 
-    <androidx.coordinatorlayout.widget.CoordinatorLayout
-        android:id="@+id/coordinatorLayout"
-        android:layout_width="0dp"
-        android:layout_height="0dp"
-        app:layout_constraintBottom_toTopOf="@+id/messageTextInput"
-        app:layout_constraintEnd_toEndOf="parent"
-        app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toTopOf="parent">
+    <data>
 
-        <com.google.android.material.appbar.AppBarLayout
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content">
+        <variable
+            name="interlocutor"
+            type="com.heckfyxe.chatty.model.User" />
 
-            <androidx.appcompat.widget.Toolbar
-                android:id="@+id/messageToolbar"
+        <variable
+            name="messageViewModel"
+            type="com.heckfyxe.chatty.ui.message.MessageViewModel" />
+    </data>
+
+    <androidx.constraintlayout.widget.ConstraintLayout
+        android:layout_width="match_parent"
+        android:layout_height="match_parent">
+
+        <androidx.coordinatorlayout.widget.CoordinatorLayout
+            android:id="@+id/coordinatorLayout"
+            android:layout_width="0dp"
+            android:layout_height="0dp"
+            app:layout_constraintBottom_toTopOf="@+id/messageTextInput"
+            app:layout_constraintEnd_toEndOf="parent"
+            app:layout_constraintStart_toStartOf="parent"
+            app:layout_constraintTop_toTopOf="parent">
+
+            <com.google.android.material.appbar.AppBarLayout
                 android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:minHeight="?android:actionBarSize">
+                android:layout_height="wrap_content">
 
-                <RelativeLayout
+                <androidx.appcompat.widget.Toolbar
+                    android:id="@+id/messageToolbar"
                     android:layout_width="match_parent"
-                    android:layout_height="match_parent">
+                    android:layout_height="wrap_content"
+                    android:minHeight="?android:actionBarSize">
 
-                    <androidx.appcompat.widget.AppCompatImageView
-                        android:id="@+id/dialogUserAvatar"
-                        android:layout_width="50dp"
-                        android:layout_height="50dp"
-                        android:padding="1dp"
-                        android:layout_alignParentStart="true"
-                        android:layout_alignParentTop="true"
-                        android:layout_alignParentBottom="true"
-                        tools:src="@tools:sample/avatars" />
+                    <RelativeLayout
+                        android:layout_width="match_parent"
+                        android:layout_height="match_parent">
 
-                    <androidx.appcompat.widget.AppCompatTextView
-                        android:id="@+id/dialogUserNickname"
-                        android:layout_width="wrap_content"
-                        android:layout_height="wrap_content"
-                        android:layout_marginStart="8dp"
-                        android:layout_alignParentTop="true"
-                        android:layout_toEndOf="@+id/dialogUserAvatar"
-                        android:textSize="20sp"
-                        tools:text="@tools:sample/first_names" />
+                        <androidx.appcompat.widget.AppCompatImageView
+                            android:id="@+id/dialogUserAvatar"
+                            android:layout_width="50dp"
+                            android:layout_height="50dp"
+                            android:layout_alignParentStart="true"
+                            android:layout_alignParentTop="true"
+                            android:layout_alignParentBottom="true"
+                            android:padding="1dp"
+                            app:loadAvatar="@{interlocutor.avatarUrl}"
+                            tools:src="@tools:sample/avatars" />
 
-                    <androidx.appcompat.widget.AppCompatTextView
-                        android:id="@+id/interlocutorEmotion"
-                        android:layout_width="wrap_content"
-                        android:layout_height="wrap_content"
-                        android:layout_toEndOf="@id/dialogUserNickname"
-                        android:layout_alignBottom="@id/dialogUserNickname"
-                        tools:text="😐" />
-                </RelativeLayout>
-            </androidx.appcompat.widget.Toolbar>
-        </com.google.android.material.appbar.AppBarLayout>
+                        <androidx.appcompat.widget.AppCompatTextView
+                            android:id="@+id/dialogUserNickname"
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:layout_alignParentTop="true"
+                            android:layout_marginStart="8dp"
+                            android:layout_toEndOf="@+id/dialogUserAvatar"
+                            android:text="@{interlocutor.name}"
+                            android:textSize="20sp"
+                            tools:text="@tools:sample/first_names" />
 
-        <androidx.recyclerview.widget.RecyclerView
-            android:id="@+id/messageList"
-            android:layout_width="match_parent"
-            android:layout_height="match_parent"
-            android:background="@drawable/messages_background"
-            tools:listitem="@layout/item_in_message"
-            app:layout_behavior="@string/appbar_scrolling_view_behavior" />
-    </androidx.coordinatorlayout.widget.CoordinatorLayout>
+                        <androidx.appcompat.widget.AppCompatTextView
+                            android:id="@+id/interlocutorEmotion"
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:layout_alignBottom="@id/dialogUserNickname"
+                            android:layout_toEndOf="@id/dialogUserNickname"
+                            android:text="@{messageViewModel.interlocutorEmotions}" />
+                    </RelativeLayout>
+                </androidx.appcompat.widget.Toolbar>
+            </com.google.android.material.appbar.AppBarLayout>
 
-    <com.stfalcon.chatkit.messages.MessageInput
-        android:id="@+id/messageTextInput"
-        android:layout_width="0dp"
-        android:layout_height="wrap_content"
-        app:inputHint="@string/enter_message"
-        android:background="@color/light_grey"
-        app:layout_constraintBottom_toBottomOf="parent"
-        app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintEnd_toEndOf="parent" />
-</androidx.constraintlayout.widget.ConstraintLayout>
+            <androidx.recyclerview.widget.RecyclerView
+                android:id="@+id/messageList"
+                android:layout_width="match_parent"
+                android:layout_height="match_parent"
+                android:background="@drawable/messages_background"
+                app:layoutManager="androidx.recyclerview.widget.LinearLayoutManager"
+                app:layout_behavior="@string/appbar_scrolling_view_behavior"
+                app:reverseLayout="true"
+                tools:listitem="@layout/item_in_message" />
+        </androidx.coordinatorlayout.widget.CoordinatorLayout>
+
+        <com.stfalcon.chatkit.messages.MessageInput
+            android:id="@+id/messageTextInput"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:background="@color/light_grey"
+            app:inputHint="@string/enter_message"
+            app:layout_constraintBottom_toBottomOf="parent"
+            app:layout_constraintEnd_toEndOf="parent"
+            app:layout_constraintStart_toStartOf="parent" />
+    </androidx.constraintlayout.widget.ConstraintLayout>
+</layout>

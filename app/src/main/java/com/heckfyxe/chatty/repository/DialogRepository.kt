@@ -7,6 +7,7 @@ import com.heckfyxe.chatty.koin.KOIN_USER_ID
 import com.heckfyxe.chatty.remote.SendBirdApi
 import com.heckfyxe.chatty.room.*
 import com.heckfyxe.chatty.util.sendbird.getInterlocutor
+import com.heckfyxe.chatty.util.sendbird.toRoomDialog
 import com.heckfyxe.chatty.util.sendbird.toRoomMessage
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
@@ -37,15 +38,6 @@ class DialogRepository : KoinComponent {
         }
     }
 
-    suspend fun getInterlocutor(dialogId: String): RoomUser = dialogDao.getInterlocutor(dialogId)
-
-    suspend fun getMessageById(id: Long): RoomMessage? = messageDao.getMessageById(id)
-
-    suspend fun getLastMessageId(dialogId: String) =
-        messageDao.getLastMessage(dialogId)?.id
-
-    suspend fun getUserById(id: String): RoomUser = userDao.getUserById(id)!!
-
     suspend fun refresh() {
         try {
             for (channels in sendBirdApi.getChannels()) {
@@ -55,20 +47,8 @@ class DialogRepository : KoinComponent {
 
                 channels.forEach { channel ->
                     messages.add(channel.lastMessage.toRoomMessage())
-
-                    val interlocutor = channel.getInterlocutor()
-                    users.add(interlocutor.toRoomUser())
-
-                    dialogs.add(
-                        RoomDialog(
-                            channel.url,
-                            interlocutor.nickname,
-                            channel.unreadMessageCount,
-                            interlocutor.profileUrl,
-                            interlocutor.toDomain(),
-                            channel.lastMessage.toDomain()
-                        )
-                    )
+                    users.add(channel.getInterlocutor().toRoomUser())
+                    dialogs.add(channel.toRoomDialog())
                 }
                 database.withTransaction {
                     dialogDao.insert(dialogs)
