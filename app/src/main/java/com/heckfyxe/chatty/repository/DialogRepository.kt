@@ -4,6 +4,7 @@ import androidx.lifecycle.MutableLiveData
 import androidx.room.withTransaction
 import com.google.firebase.auth.FirebaseAuth
 import com.heckfyxe.chatty.koin.KOIN_USER_ID
+import com.heckfyxe.chatty.model.Dialog
 import com.heckfyxe.chatty.remote.SendBirdApi
 import com.heckfyxe.chatty.room.*
 import com.heckfyxe.chatty.util.sendbird.getInterlocutor
@@ -58,6 +59,16 @@ class DialogRepository : KoinComponent {
             }
         } catch (e: Exception) {
             errors.postValue(e)
+        }
+    }
+
+    suspend fun insertDialog(dialog: Dialog) = withContext(Dispatchers.IO) {
+        database.withTransaction {
+            userDao.insert(dialog.interlocutor.toRoomUser())
+            messageDao.insert(dialog.lastMessage.run {
+                RoomMessage(id, dialog.id, time, sender, text, out, sent, requestId)
+            })
+            dialogDao.insert(dialog.toRoomDialog())
         }
     }
 

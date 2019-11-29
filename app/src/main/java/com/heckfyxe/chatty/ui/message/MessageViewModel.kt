@@ -8,10 +8,18 @@ import com.google.firebase.firestore.CollectionReference
 import com.heckfyxe.chatty.koin.KOIN_USERS_FIRESTORE_COLLECTION
 import com.heckfyxe.chatty.model.Message
 import com.heckfyxe.chatty.repository.MessageRepository
+import com.heckfyxe.chatty.util.sendbird.toDomain
+import com.sendbird.android.BaseChannel
+import com.sendbird.android.BaseMessage
+import com.sendbird.android.GroupChannel
+import com.sendbird.android.SendBird
 import kotlinx.coroutines.launch
 import org.koin.core.KoinComponent
 import org.koin.core.inject
 import org.koin.core.parameter.parametersOf
+
+private const val CHANNEL_HANDLER_IDENTIFIER =
+    "com.heckfyxe.chatty.ui.message.CHANNEL_HANDLER_IDENTIFIER"
 
 class MessageViewModel(
     channelId: String,
@@ -22,6 +30,23 @@ class MessageViewModel(
     private val repository: MessageRepository by inject { parametersOf(channelId) }
 
     private val usersRef: CollectionReference by inject(KOIN_USERS_FIRESTORE_COLLECTION)
+
+    private val channelHandler = object : SendBird.ChannelHandler() {
+        override fun onMessageReceived(channel: BaseChannel, baseMessage: BaseMessage) {
+            if (channel !is GroupChannel) return
+
+            val dialog = channel.toDomain()
+
+            viewModelScope.launch {
+                repository.insertDialog(dialog)
+            }
+
+            if (dialog.id == channelId) {
+                adapter.addMessages(listOf(dialog.lastMessage))
+                scrollDown()
+            }
+        }
+    }
 
     val adapter = MessageAdapter().apply {
         setLoadingListener(this@MessageViewModel)
@@ -54,6 +79,7 @@ class MessageViewModel(
             repository.refreshLastMessage()
             lastMessageLiveData.value = repository.getLastMessage()
         }
+        SendBird.addChannelHandler(CHANNEL_HANDLER_IDENTIFIER, channelHandler)
         startInterlocutorEmotionTracking()
     }
 
@@ -133,4 +159,10 @@ class MessageViewModel(
     fun startTyping() = viewModelScope.launch { repository.startTyping() }
 
     fun endTyping() = viewModelScope.launch { repository.endTyping() }
+
+    override fun onCleared() {
+        super.onCleared()
+
+        SendBird.removeChannelHandler(CHANNEL_HANDLER_IDENTIFIER)
+    }
 }

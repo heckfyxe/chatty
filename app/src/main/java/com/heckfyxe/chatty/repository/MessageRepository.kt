@@ -2,12 +2,10 @@ package com.heckfyxe.chatty.repository
 
 import androidx.room.withTransaction
 import com.heckfyxe.chatty.koin.KOIN_USER_ID
+import com.heckfyxe.chatty.model.Dialog
 import com.heckfyxe.chatty.model.Message
 import com.heckfyxe.chatty.remote.SendBirdApi
-import com.heckfyxe.chatty.room.AppDatabase
-import com.heckfyxe.chatty.room.DialogDao
-import com.heckfyxe.chatty.room.MessageDao
-import com.heckfyxe.chatty.room.toDomain
+import com.heckfyxe.chatty.room.*
 import com.heckfyxe.chatty.util.sendbird.toRoomMessage
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.channels.Channel
@@ -27,6 +25,7 @@ class MessageRepository(val channelId: String) :
     private val currentUserId: String by inject(KOIN_USER_ID)
 
     private val database: AppDatabase by inject()
+    private val userDao: UserDao by inject()
     private val dialogDao: DialogDao by inject()
     private val messageDao: MessageDao by inject()
 
@@ -64,6 +63,16 @@ class MessageRepository(val channelId: String) :
         withContext(Dispatchers.IO) {
             val messages = sendBirdApi.getNextMessagesByTime(channelId, time, count)
             messageDao.insert(messages)
+        }
+    }
+
+    suspend fun insertDialog(dialog: Dialog) = withContext(Dispatchers.IO) {
+        database.withTransaction {
+            userDao.insert(dialog.interlocutor.toRoomUser())
+            messageDao.insert(dialog.lastMessage.run {
+                RoomMessage(id, dialog.id, time, sender, text, out, sent, requestId)
+            })
+            dialogDao.insert(dialog.toRoomDialog())
         }
     }
 

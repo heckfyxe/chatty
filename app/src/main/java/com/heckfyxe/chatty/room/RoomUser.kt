@@ -28,3 +28,5 @@ data class RoomUser(
 fun Member.toRoomUser() = RoomUser(userId, nickname, profileUrl)
 
 fun RoomUser.toDomain() = User(id, name, avatarUrl)
+
+fun User.toRoomUser() = RoomUser(id, name, avatarUrl)

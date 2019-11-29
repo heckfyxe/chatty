@@ -1,6 +1,7 @@
 package com.heckfyxe.chatty.util.sendbird
 
 import com.heckfyxe.chatty.koin.KOIN_USER_ID
+import com.heckfyxe.chatty.model.Dialog
 import com.heckfyxe.chatty.room.RoomDialog
 import com.heckfyxe.chatty.room.toDomain
 import com.sendbird.android.GroupChannel
@@ -28,5 +29,17 @@ fun GroupChannel.toRoomDialog(): RoomDialog {
         interlocutor.profileUrl,
         interlocutor.toDomain(),
         lastMessage.toDomain()
+    )
+}
+
+fun GroupChannel.toDomain(): Dialog {
+    val interlocutor = getInterlocutor()
+    return Dialog(
+        url,
+        interlocutor.nickname,
+        interlocutor.profileUrl,
+        interlocutor.toDomain(),
+        lastMessage.toDomain(),
+        unreadMessageCount
     )
 }

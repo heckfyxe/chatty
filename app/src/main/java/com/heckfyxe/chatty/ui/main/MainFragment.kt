@@ -100,18 +100,13 @@ class MainFragment : Fragment() {
         savedInstanceState: Bundle?
     ): View = MainFragmentBinding.inflate(inflater).run {
         lifecycleOwner = this@MainFragment
-        dialogList.adapter = adapter
         viewModel = this@MainFragment.viewModel
-        return root
-    }
-
-    override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
-        super.onViewCreated(view, savedInstanceState)
 
         (activity as? AppCompatActivity)?.setSupportActionBar(mainToolbar)
+        dialogList.adapter = adapter
+        newMessageFAB.setOnClickListener { showNewInterlocutorDialog() }
 
-
-        newMessageFAB?.setOnClickListener { showNewInterlocutorDialog() }
+        return root
     }
 
     override fun onActivityResult(requestCode: Int, resultCode: Int, data: Intent?) {
