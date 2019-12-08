@@ -1,38 +1,36 @@
 package com.heckfyxe.chatty.remote
 
 import com.heckfyxe.chatty.room.RoomMessage
-import com.heckfyxe.chatty.room.RoomUser
 import com.heckfyxe.chatty.util.sendbird.toRoomMessage
-import com.heckfyxe.chatty.util.sendbird.toRoomUser
 import com.sendbird.android.*
-import kotlinx.coroutines.CoroutineScope
-import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.*
 import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.channels.ReceiveChannel
 import kotlinx.coroutines.channels.ticker
-import kotlinx.coroutines.launch
-import kotlinx.coroutines.selects.select
+import java.io.File
 import java.util.concurrent.ConcurrentHashMap
 import java.util.concurrent.TimeUnit
+import kotlin.coroutines.resume
 
 
 private val CHANNELS_CLEAN_DELAY = TimeUnit.MINUTES.toMillis(2)
 
-class UserIsNotConnectedException : Exception("User isn't connected!")
-
-class SendBirdApi {
+class SendBirdApi(private val userId: String) {
     private val scope = CoroutineScope(Dispatchers.IO)
 
     private val channelsHashMap = ConcurrentHashMap<String, GroupChannel>()
     private val channelsLastUsageTime = ConcurrentHashMap<String, Long>()
 
-    val isUserConnected: Boolean
-        get() = SendBird.getCurrentUser() != null
+    private val currentUser: User?
+        get() = SendBird.getCurrentUser()
+    private val isUserConnected: Boolean
+        get() = currentUser != null
 
     init {
         startInMemoryChannelsCaching()
     }
 
+    @UseExperimental(ObsoleteCoroutinesApi::class)
     private fun startInMemoryChannelsCaching() {
         scope.launch {
             for (tick in ticker(CHANNELS_CLEAN_DELAY)) {
@@ -46,30 +44,22 @@ class SendBirdApi {
         }
     }
 
-    private fun checkConnection() {
-        if (!isUserConnected) throw UserIsNotConnectedException()
+    private suspend fun checkConnection() {
+        if (!isUserConnected) connect()
     }
 
-    suspend fun connect(userId: String): RoomUser {
-        val result = Channel<RoomUser>()
-        val error = Channel<Exception>()
+    suspend fun connect(): User = suspendCancellableCoroutine {
         SendBird.connect(userId) { user, e ->
-            scope.launch {
-                if (e != null) {
-                    error.send(e)
-                    return@launch
-                }
-
-                result.send(user.toRoomUser())
+            if (e != null) {
+                it.cancel(e)
+            } else {
+                it.resume(user)
             }
         }
-        return getResult(result, error)
     }
 
     suspend fun getChannels(): ReceiveChannel<List<GroupChannel>> {
         checkConnection()
-        val currentUser = SendBird.getCurrentUser()
-        connect(currentUser.userId)
         val result = Channel<List<GroupChannel>>()
         GroupChannel.createMyGroupChannelListQuery().next { channels, e ->
             scope.launch {
@@ -94,42 +84,35 @@ class SendBirdApi {
         }
 
         checkConnection()
-        val result = Channel<GroupChannel>()
-        val error = Channel<Exception>()
-        GroupChannel.getChannel(channelUrl) { channel, e ->
-            scope.launch {
+        return suspendCancellableCoroutine {
+            GroupChannel.getChannel(channelUrl) { channel, e ->
                 if (e != null) {
-                    error.send(e)
-                    return@launch
+                    it.cancel(e)
+                } else {
+                    channelsHashMap[channel.url] = channel
+                    channelsLastUsageTime[channel.url] = System.currentTimeMillis()
+                    it.resume(channel)
                 }
-
-                channelsHashMap[channel.url] = channel
-                channelsLastUsageTime[channel.url] = System.currentTimeMillis()
-                result.send(channel)
             }
         }
-        return getResult(result, error)
     }
 
     suspend fun getLastMessage(channelUrl: String): BaseMessage? =
         getChannel(channelUrl).lastMessage
 
-    suspend fun createChannel(userId: String, interlocutorId: String): GroupChannel {
-        connect(userId)
-        val result = Channel<GroupChannel>(1)
-        val error = Channel<Exception>(1)
-        GroupChannel.createDistinctChannelIfNotExist(
-            GroupChannelParams().addUserId(interlocutorId)
-        ) { channel, _, e ->
-            scope.launch {
+    suspend fun createChannel(interlocutorId: String): GroupChannel {
+        checkConnection()
+        return suspendCancellableCoroutine {
+            GroupChannel.createDistinctChannelIfNotExist(
+                GroupChannelParams().addUserId(interlocutorId)
+            ) { channel, _, e ->
                 if (e != null) {
-                    error.send(e)
-                    return@launch
+                    it.cancel(e)
+                    return@createDistinctChannelIfNotExist
                 }
-                result.send(channel)
+                it.resume(channel)
             }
         }
-        return getResult(result, error)
     }
 
     suspend fun getPreviousMessagesByTime(
@@ -138,26 +121,24 @@ class SendBirdApi {
         count: Int
     ): List<RoomMessage> {
         checkConnection()
-        val result = Channel<List<RoomMessage>>()
-        val errorChan = Channel<Exception>(1)
-        getChannel(channelId).getPreviousMessagesByTimestamp(
-            time,
-            false, count,
-            true, BaseChannel.MessageTypeFilter.ALL, ""
-        ) { loadedMessages, error ->
-            scope.launch {
+        val channel = getChannel(channelId)
+        return suspendCancellableCoroutine {
+            channel.getPreviousMessagesByTimestamp(
+                time,
+                false, count,
+                true, BaseChannel.MessageTypeFilter.ALL, ""
+            ) { loadedMessages, error ->
                 if (error != null) {
-                    errorChan.send(error)
-                    return@launch
+                    it.cancel(error)
+                    return@getPreviousMessagesByTimestamp
                 }
 
                 val messages = loadedMessages.map {
                     it.toRoomMessage()
                 }
-                result.send(messages)
+                it.resume(messages)
             }
         }
-        return getResult(result, errorChan)
     }
 
     suspend fun getNextMessagesByTime(
@@ -166,33 +147,31 @@ class SendBirdApi {
         count: Int
     ): List<RoomMessage> {
         checkConnection()
-        val result = Channel<List<RoomMessage>>()
-        val errorChan = Channel<Exception>(1)
-        getChannel(channelId).getNextMessagesByTimestamp(
-            time,
-            false, count,
-            true, BaseChannel.MessageTypeFilter.ALL, ""
-        ) { loadedMessages, error ->
-            scope.launch {
+        val channel = getChannel(channelId)
+        return suspendCancellableCoroutine {
+            channel.getNextMessagesByTimestamp(
+                time,
+                false, count,
+                true, BaseChannel.MessageTypeFilter.ALL, ""
+            ) { loadedMessages, error ->
                 if (error != null) {
-                    errorChan.send(error)
-                    return@launch
+                    it.cancel(error)
+                    return@getNextMessagesByTimestamp
                 }
 
                 val messages = loadedMessages.map {
                     it.toRoomMessage()
                 }
-                result.send(messages)
+                it.resume(messages)
             }
         }
-        return getResult(result, errorChan)
     }
 
     suspend fun sendMessage(channelId: String, text: String): ReceiveChannel<RoomMessage> {
         checkConnection()
         val channel = getChannel(channelId)
         val result = Channel<RoomMessage>(1)
-        val tempMessage = channel.sendUserMessage(text) { message, e ->
+        val tempMessage = channel.sendUserMessage(text.trim()) { message, e ->
             updateMemoryCachedChannel(channel)
             scope.launch {
                 if (e != null) {
@@ -213,6 +192,45 @@ class SendBirdApi {
 
     suspend fun endTyping(channelId: String) = getChannel(channelId).endTyping()
 
+    suspend fun updateNickname(nickname: String) {
+        checkConnection()
+        suspendCancellableCoroutine<Unit> {
+            SendBird.updateCurrentUserInfo(nickname, currentUser!!.profileUrl) { e ->
+                if (e != null) {
+                    it.cancel(e)
+                    return@updateCurrentUserInfo
+                }
+                it.resume(Unit)
+            }
+        }
+    }
+
+    suspend fun updateNicknameWithAvatarImage(nickname: String, avatar: File) {
+        checkConnection()
+        suspendCancellableCoroutine<Unit> {
+            SendBird.updateCurrentUserInfoWithProfileImage(nickname, avatar) { e ->
+                if (e != null) {
+                    it.cancel(e)
+                    return@updateCurrentUserInfoWithProfileImage
+                }
+                it.resume(Unit)
+            }
+        }
+    }
+
+    suspend fun registerPushNotifications(token: String) {
+        checkConnection()
+        suspendCancellableCoroutine<Unit> {
+            SendBird.registerPushTokenForCurrentUser(token) { _, e ->
+                if (e != null) {
+                    it.cancel(e)
+                    return@registerPushTokenForCurrentUser
+                }
+                it.resume(Unit)
+            }
+        }
+    }
+
     private fun updateMemoryCachedChannel(channel: GroupChannel) {
         if (channelsHashMap.containsKey(channel.url)) {
             channelsLastUsageTime[channel.url] = System.currentTimeMillis()
@@ -220,29 +238,9 @@ class SendBirdApi {
         }
     }
 
-    private suspend fun <T: Any> getResult(result: Channel<T>, error: Channel<Exception>): T =
-        select {
-            result.onReceive {
-                result.close()
-                error.close()
-                it
-            }
-            error.onReceive {
-                result.close()
-                error.close()
-                throw it
-            }
-        }
-
-
-    suspend fun disconnect() {
-        val channel = Channel<Boolean>(1)
+    suspend fun disconnect(): Unit = suspendCancellableCoroutine {
         SendBird.disconnect {
-            scope.launch {
-                channel.send(true)
-            }
+            it.resume(Unit)
         }
-        channel.receive()
-        channel.close()
     }
 }

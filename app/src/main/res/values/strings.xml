@@ -5,7 +5,6 @@
     <string name="successful">Successful</string>
     <string name="connection_error">Connection error</string>
     <string name="sign_out">Sign out</string>
-    <string name="create_chat">Create chat</string>
     <string name="nickname">Nickname</string>
     <string name="allowed">Allowed</string>
     <string name="the_nickname_is_already_taken">The nickname is already taken</string>
@@ -15,7 +14,6 @@
     <string name="enter_phone_number">Enter interlocutor phone number</string>
     <string name="enter_nickname">Enter interlocutor nickname</string>
     <string name="not_found">Not found</string>
-    <string name="new_dialog">New dialog</string>
     <string name="its_your">It\'s your</string>
     <string name="default_notification_channel_id">com.heckfyxe.chatty.NOTIFICATION_CHANNEL_ID</string>
     <string name="add_friends">Add friends</string>

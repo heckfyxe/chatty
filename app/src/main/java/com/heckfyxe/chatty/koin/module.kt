@@ -2,11 +2,9 @@ package com.heckfyxe.chatty.koin
 
 import com.google.firebase.auth.FirebaseAuth
 import com.google.firebase.firestore.FirebaseFirestore
+import com.google.firebase.firestore.FirebaseFirestoreSettings
 import com.heckfyxe.chatty.remote.SendBirdApi
-import com.heckfyxe.chatty.repository.ContactRepository
-import com.heckfyxe.chatty.repository.DialogRepository
-import com.heckfyxe.chatty.repository.MessageRepository
-import com.heckfyxe.chatty.repository.UserRepository
+import com.heckfyxe.chatty.repository.*
 import com.heckfyxe.chatty.room.AppDatabase
 import com.heckfyxe.chatty.ui.auth.ContactViewModel
 import com.heckfyxe.chatty.ui.auth.EditUserDataViewModel
@@ -21,7 +19,7 @@ import org.koin.core.qualifier.named
 import org.koin.dsl.module
 
 private val remoteApiModule = module {
-    single { SendBirdApi() }
+    single { SendBirdApi(get(KOIN_USER_ID)) }
 }
 
 private val repositoryModule = module {
@@ -33,18 +31,19 @@ private val repositoryModule = module {
     }
     factory { ContactRepository() }
     factory { UserRepository() }
+    factory { EditUserDataRepository(get(), get(KOIN_USERS_FIRESTORE_COLLECTION)) }
 }
 
 private val roomModule = module {
     single { AppDatabase.getInstance(androidApplication()) }
-    single { (get() as AppDatabase).getDialogDao() }
-    single { (get() as AppDatabase).getMessageDao() }
-    single { (get() as AppDatabase).getUserDao() }
+    factory { (get() as AppDatabase).getDialogDao() }
+    factory { (get() as AppDatabase).getMessageDao() }
+    factory { (get() as AppDatabase).getUserDao() }
 }
 
 private val viewModelModule = module {
     viewModel { MainViewModel(get()) }
-    viewModel { EditUserDataViewModel() }
+    viewModel { EditUserDataViewModel(androidApplication(), get()) }
     viewModel { (userDataName: String) -> NewInterlocutorByUserDataViewModel(userDataName) }
     viewModel { (channelId: String, interlocutorId: String, lastMessageTime: Long) ->
         MessageViewModel(
@@ -62,7 +61,14 @@ val KOIN_USER_ID = named("uid")
 
 private val firebaseModule = module {
     single { FirebaseAuth.getInstance() }
-    single { FirebaseFirestore.getInstance() }
+    single {
+        FirebaseFirestore.getInstance().apply {
+            firestoreSettings = FirebaseFirestoreSettings.Builder()
+                .setPersistenceEnabled(false)
+                .setCacheSizeBytes(-1)
+                .build()
+        }
+    }
     factory(KOIN_USERS_FIRESTORE_COLLECTION) { get<FirebaseFirestore>().collection("users") }
     factory(KOIN_USER_ID) { get<FirebaseAuth>().currentUser!!.uid }
 }

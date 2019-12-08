@@ -10,17 +10,19 @@ import android.media.RingtoneManager
 import android.os.Build
 import androidx.core.app.NotificationCompat
 import androidx.core.graphics.drawable.toBitmap
-import coil.Coil
-import coil.api.get
+import com.bumptech.glide.Glide
+import com.bumptech.glide.Priority
 import com.google.firebase.messaging.FirebaseMessagingService
 import com.google.firebase.messaging.RemoteMessage
 import com.heckfyxe.chatty.MainActivity
 import com.heckfyxe.chatty.R
+import com.heckfyxe.chatty.remote.SendBirdApi
 import com.heckfyxe.chatty.room.DialogDao
-import com.sendbird.android.SendBird
 import com.sendbird.android.shadow.com.google.gson.JsonObject
 import com.sendbird.android.shadow.com.google.gson.JsonParser
-import kotlinx.coroutines.GlobalScope
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.Job
 import kotlinx.coroutines.launch
 import org.koin.core.KoinComponent
 import org.koin.core.inject
@@ -29,24 +31,30 @@ import org.koin.core.inject
 class AppFirebaseMessagingService : FirebaseMessagingService(), KoinComponent {
 
     private val dialogDao: DialogDao by inject()
+    private val sendBirdApi: SendBirdApi by inject()
+
+    private val job = Job()
+    private val scope = CoroutineScope(job + Dispatchers.IO)
 
     override fun onNewToken(token: String) {
-        SendBird.registerPushTokenForCurrentUser(token) { _, _ -> }
+        scope.launch {
+            sendBirdApi.registerPushNotifications(token)
+        }
     }
 
     override fun onMessageReceived(remoteMessage: RemoteMessage) {
         val message = remoteMessage.data["message"]
         val payload = JsonParser().parse(remoteMessage.data["sendbird"]).asJsonObject
-        GlobalScope.launch {
+        scope.launch {
             sendNotification(message, payload)
         }
     }
 
-    private suspend fun sendNotification(message: String?, payload: JsonObject) {
+    private fun sendNotification(message: String?, payload: JsonObject) {
         val intent = Intent(this, MainActivity::class.java)
         intent.addFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP)
         val pendingIntent = PendingIntent.getActivity(
-            this, 0 /* Request code */, intent,
+            this, 0, intent,
             PendingIntent.FLAG_ONE_SHOT
         )
 
@@ -54,7 +62,11 @@ class AppFirebaseMessagingService : FirebaseMessagingService(), KoinComponent {
         val sender = payload["sender"].asJsonObject
         val channelId = channel["channel_url"].asString
         val senderAvatar = sender["profile_url"].asString
-        val avatarDrawable = Coil.get(senderAvatar)
+        val avatarDrawable = Glide.with(this)
+            .load(senderAvatar)
+            .priority(Priority.IMMEDIATE)
+            .submit()
+            .get()
 
         val notificationId = dialogDao.getNotificationIdByDialogId(channelId) ?: -1
 
@@ -69,7 +81,8 @@ class AppFirebaseMessagingService : FirebaseMessagingService(), KoinComponent {
             .setSound(defaultSoundUri)
             .setContentIntent(pendingIntent)
 
-        val notificationManager = getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager
+        val notificationManager =
+            getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager
 
         // Since android Oreo notification channel is needed.
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
@@ -77,8 +90,7 @@ class AppFirebaseMessagingService : FirebaseMessagingService(), KoinComponent {
                 notificationChannelId,
                 getString(R.string.message),
                 NotificationManager.IMPORTANCE_HIGH
-            )
-            notificationChannel.apply {
+            ).apply {
                 enableVibration(true)
                 enableLights(true)
                 setSound(
@@ -94,4 +106,9 @@ class AppFirebaseMessagingService : FirebaseMessagingService(), KoinComponent {
         notificationManager.notify(notificationId, notificationBuilder.build())
     }
 
+    override fun onDestroy() {
+        super.onDestroy()
+
+        job.cancel()
+    }
 }

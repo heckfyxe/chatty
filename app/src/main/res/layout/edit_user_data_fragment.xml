@@ -1,88 +1,93 @@
 <?xml version="1.0" encoding="utf-8"?>
-<androidx.constraintlayout.widget.ConstraintLayout xmlns:android="http://schemas.android.com/apk/res/android"
+<layout xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:app="http://schemas.android.com/apk/res-auto"
-    xmlns:tools="http://schemas.android.com/tools"
-    android:id="@+id/editUserDataFragmentRoot"
-    android:layout_width="match_parent"
-    android:layout_height="match_parent"
-    tools:context=".ui.auth.EditUserDataFragment">
+    xmlns:tools="http://schemas.android.com/tools">
 
-    <androidx.appcompat.widget.AppCompatImageView
-        android:id="@+id/circleImageView"
-        android:layout_width="100dp"
-        android:layout_height="100dp"
-        android:layout_marginTop="8dp"
-        android:layout_marginBottom="8dp"
-        app:layout_constraintBottom_toBottomOf="parent"
-        app:layout_constraintEnd_toEndOf="@+id/nicknameInputLayout"
-        app:layout_constraintStart_toStartOf="@+id/nicknameInputLayout"
-        app:layout_constraintTop_toTopOf="parent"
-        app:layout_constraintVertical_bias="0.25" />
+    <data>
 
-    <com.google.android.material.textfield.TextInputLayout
-        android:id="@+id/nicknameInputLayout"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:layout_marginTop="32dp"
-        app:layout_constraintEnd_toEndOf="@+id/nicknameOkButton"
-        app:layout_constraintStart_toStartOf="@+id/nicknameOkButton"
-        app:layout_constraintTop_toBottomOf="@+id/circleImageView">
+        <import type="android.view.View" />
 
-        <com.google.android.material.textfield.TextInputEditText
-            android:id="@+id/nicknameEditText"
+        <import type="com.heckfyxe.chatty.R" />
+
+        <variable
+            name="viewModel"
+            type="com.heckfyxe.chatty.ui.auth.EditUserDataViewModel" />
+    </data>
+
+    <androidx.constraintlayout.widget.ConstraintLayout
+        android:id="@+id/editUserDataFragmentRoot"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        tools:context=".ui.auth.EditUserDataFragment">
+
+        <androidx.appcompat.widget.AppCompatImageView
+            android:id="@+id/avatarImageView"
+            android:layout_width="100dp"
+            android:layout_height="100dp"
+            android:layout_marginTop="8dp"
+            android:layout_marginBottom="8dp"
+            android:src="@drawable/ic_user"
+            app:layout_constraintBottom_toBottomOf="parent"
+            app:layout_constraintEnd_toEndOf="@+id/nicknameInputLayout"
+            app:layout_constraintStart_toStartOf="@+id/nicknameInputLayout"
+            app:layout_constraintTop_toTopOf="parent"
+            app:layout_constraintVertical_bias="0.25"
+            app:loadAvatar="@{viewModel.profileImage}" />
+
+        <com.google.android.material.textfield.TextInputLayout
+            android:id="@+id/nicknameInputLayout"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:singleLine="true"
-            android:enabled="false"
-            android:maxLength="@integer/nickname_max_length"
-            android:ems="10"
-            android:inputType="textPersonName"
-            android:hint="@string/nickname" />
-    </com.google.android.material.textfield.TextInputLayout>
+            android:layout_marginTop="32dp"
+            app:helperText="@{viewModel.helperText}"
+            app:helperTextColor="@{viewModel.helperTextColor}"
+            app:helperTextEnabled="@{viewModel.helperText != null}"
+            app:layout_constraintEnd_toEndOf="@+id/nicknameOkButton"
+            app:layout_constraintStart_toStartOf="@+id/nicknameOkButton"
+            app:layout_constraintTop_toBottomOf="@+id/avatarImageView">
 
-    <ProgressBar
-        android:id="@+id/nicknameCheckingProgressBar"
-        android:layout_width="20dp"
-        android:layout_height="20dp"
-        android:layout_marginStart="8dp"
-        android:indeterminate="true"
-        android:visibility="invisible"
-        app:layout_constraintBottom_toBottomOf="@+id/nicknameInputLayout"
-        app:layout_constraintEnd_toEndOf="parent"
-        app:layout_constraintHorizontal_bias="0.0"
-        app:layout_constraintStart_toEndOf="@+id/nicknameInputLayout"
-        app:layout_constraintTop_toTopOf="@+id/nicknameInputLayout" />
+            <com.google.android.material.textfield.TextInputEditText
+                android:id="@+id/nicknameEditText"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:ems="10"
+                android:hint="@string/nickname"
+                android:inputType="textPersonName"
+                android:maxLength="@integer/nickname_max_length"
+                android:singleLine="true" />
+        </com.google.android.material.textfield.TextInputLayout>
 
-    <androidx.appcompat.widget.AppCompatTextView
-        android:id="@+id/nicknameCheckingErrorTextView"
-        android:layout_width="0dp"
-        android:layout_height="wrap_content"
-        android:text="@string/error"
-        android:visibility="gone"
-        android:textColor="@color/error"
-        android:textAppearance="?android:textAppearanceSmall"
-        android:layout_marginStart="8dp"
-        android:layout_marginEnd="8dp"
-        app:layout_constraintBottom_toBottomOf="@+id/nicknameInputLayout"
-        app:layout_constraintEnd_toEndOf="parent"
-        app:layout_constraintStart_toStartOf="@+id/nicknameCheckingProgressBar"
-        app:layout_constraintTop_toTopOf="@+id/nicknameInputLayout" />
+        <ProgressBar
+            android:id="@+id/nicknameCheckingProgressBar"
+            android:layout_width="20dp"
+            android:layout_height="20dp"
+            android:layout_marginStart="8dp"
+            android:indeterminate="true"
+            android:visibility="@{viewModel.isProgress ? View.VISIBLE : View.INVISIBLE}"
+            app:layout_constraintBottom_toBottomOf="@+id/nicknameInputLayout"
+            app:layout_constraintEnd_toEndOf="parent"
+            app:layout_constraintHorizontal_bias="0.0"
+            app:layout_constraintStart_toEndOf="@+id/nicknameInputLayout"
+            app:layout_constraintTop_toTopOf="@+id/nicknameInputLayout"
+            tools:visibility="invisible" />
 
-    <br.com.simplepass.loadingbutton.customViews.CircularProgressButton
-        android:id="@+id/nicknameOkButton"
-        android:layout_width="80dp"
-        android:layout_height="40dp"
-        style="@style/NicknameOkButtonStyle"
-        app:spinning_bar_padding="8dp"
-        app:spinning_bar_color="@color/colorAccent"
-        app:initialCornerAngle="15dp"
-        android:enabled="false"
-        android:layout_marginStart="8dp"
-        android:layout_marginTop="16dp"
-        android:layout_marginEnd="8dp"
-        android:text="@android:string/ok"
-        app:layout_constraintEnd_toEndOf="parent"
-        app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toBottomOf="@+id/nicknameInputLayout" />
+        <br.com.simplepass.loadingbutton.customViews.CircularProgressButton
+            android:id="@+id/nicknameOkButton"
+            style="@style/NicknameOkButtonStyle"
+            android:layout_width="80dp"
+            android:layout_height="40dp"
+            android:layout_marginStart="8dp"
+            android:layout_marginTop="16dp"
+            android:layout_marginEnd="8dp"
+            android:enabled="@{viewModel.nicknameReady}"
+            android:text="@android:string/ok"
+            app:initialCornerAngle="15dp"
+            app:layout_constraintEnd_toEndOf="parent"
+            app:layout_constraintStart_toStartOf="parent"
+            app:layout_constraintTop_toBottomOf="@+id/nicknameInputLayout"
+            app:showLoading="@{viewModel.status}"
+            app:spinning_bar_color="@color/colorAccent"
+            app:spinning_bar_padding="8dp" />
 
-</androidx.constraintlayout.widget.ConstraintLayout>
+    </androidx.constraintlayout.widget.ConstraintLayout>
+</layout>

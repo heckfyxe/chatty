@@ -129,7 +129,7 @@ class NewInterlocutorByUserDataDialog private constructor() : DialogFragment() {
         model.createDialog(userId) {
             targetFragment?.onActivityResult(targetRequestCode, Activity.RESULT_OK, Intent().apply {
                 putExtra(EXTRA_CHANNEL_ID, it.url)
-                putExtra(EXTRA_INTERLOCUTOR, it.getInterlocutor().toDomain())
+                putExtra(EXTRA_INTERLOCUTOR, it.getInterlocutor()!!.toDomain())
             })
             dismiss()
         }

@@ -11,12 +11,11 @@ import com.sendbird.android.BaseMessage
 import com.sendbird.android.GroupChannel
 import com.sendbird.android.SendBird
 import kotlinx.coroutines.launch
-import org.koin.core.KoinComponent
 
 
 data class LaunchMessageEvent(
     val channelId: String,
-    val interlocutor: User,
+    val interlocutor: User?,
     val lastMessageTime: Long
 )
 
@@ -28,7 +27,7 @@ enum class Progress {
 private const val CHANNEL_HANDLER_IDENTIFIER =
     "com.heckfyxe.chatty.ui.main.CHANNEL_HANDLER_IDENTIFIER"
 
-class MainViewModel(private val repository: DialogRepository) : ViewModel(), KoinComponent {
+class MainViewModel(private val repository: DialogRepository) : ViewModel() {
 
     private val channelHandler = object : SendBird.ChannelHandler() {
         override fun onMessageReceived(channel: BaseChannel, baseMessage: BaseMessage) {
@@ -42,12 +41,8 @@ class MainViewModel(private val repository: DialogRepository) : ViewModel(), Koi
         }
     }
 
-    val currentUser: LiveData<User> = Transformations.map(repository.currentUser) {
-        refreshChats()
-        it.toDomain()
-    }
-
-    val errors: MutableLiveData<Exception?> = repository.errors
+    private val _errors = MutableLiveData<Exception?>()
+    val errors: LiveData<Exception?> = _errors
 
     private val _launchMessagesEvent = MutableLiveData<LaunchMessageEvent?>()
     val launchMessagesEvent: LiveData<LaunchMessageEvent?>
@@ -64,30 +59,35 @@ class MainViewModel(private val repository: DialogRepository) : ViewModel(), Koi
     init {
         _progress.value = Progress.LOADING
         SendBird.addChannelHandler(CHANNEL_HANDLER_IDENTIFIER, channelHandler)
-    }
-
-    fun connectUser() = viewModelScope.launch {
-        repository.connectUser()
-    }
-
-    private fun refreshChats() = viewModelScope.launch {
-        repository.refresh()
-    }
-
-    fun launchMessageFragment(dialog: Dialog) {
+        refreshChats()
         viewModelScope.launch {
-            _launchMessagesEvent.postValue(
-                LaunchMessageEvent(
-                    dialog.id,
-                    dialog.interlocutor,
-                    dialog.lastMessage.time
-                )
-            )
+            repository.registerPushNotifications()
         }
     }
 
+    private fun refreshChats() = viewModelScope.launch {
+        try {
+            repository.refresh()
+        } catch (e: Exception) {
+            _errors.value = e
+        }
+    }
+
+    fun launchMessageFragment(dialog: Dialog) {
+        _launchMessagesEvent.value = LaunchMessageEvent(
+            dialog.id,
+            dialog.interlocutor,
+            dialog.lastMessage!!.time
+        )
+    }
+
+    fun onErrorGotten() {
+        _errors.value = null
+    }
+
+
     fun onMessageFragmentLaunched() {
-        _launchMessagesEvent.postValue(null)
+        _launchMessagesEvent.value = null
     }
 
     fun logOut(action: () -> Unit) = viewModelScope.launch {

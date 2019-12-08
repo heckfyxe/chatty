@@ -2,6 +2,7 @@ package com.heckfyxe.chatty.ui.auth
 
 
 import android.app.Activity
+import android.app.Activity.RESULT_CANCELED
 import android.content.Intent
 import android.os.Bundle
 import android.view.LayoutInflater
@@ -17,6 +18,8 @@ import com.heckfyxe.chatty.R
 import com.heckfyxe.chatty.util.isAuthenticated
 
 
+private const val RC_AUTH = 0
+
 class AuthFragment : Fragment() {
 
     private lateinit var locale: String
@@ -24,26 +27,7 @@ class AuthFragment : Fragment() {
     override fun onCreateView(
         inflater: LayoutInflater, container: ViewGroup?,
         savedInstanceState: Bundle?
-    ): View? {
-        // Inflate the layout for this fragment
-        return inflater.inflate(R.layout.fragment_auth, container, false)
-    }
-
-
-    companion object {
-        private const val RC_AUTH = 0
-    }
-
-    override fun onCreate(savedInstanceState: Bundle?) {
-        super.onCreate(savedInstanceState)
-
-        if (isAuthenticated()) {
-            return
-        }
-
-        locale = ConfigurationCompat.getLocales(resources.configuration)[0].country
-        authPhoneByPhoneNumber()
-    }
+    ): View? = inflater.inflate(R.layout.fragment_auth, container, false)
 
     private fun authPhoneByPhoneNumber() {
         AuthUI.getInstance()
@@ -65,11 +49,18 @@ class AuthFragment : Fragment() {
 
         if (isAuthenticated())
             startMainActivity()
+        else {
+            locale = ConfigurationCompat.getLocales(resources.configuration)[0].country
+            authPhoneByPhoneNumber()
+        }
     }
 
     override fun onActivityResult(requestCode: Int, resultCode: Int, data: Intent?) {
         when (requestCode) {
             RC_AUTH -> {
+                if (resultCode == RESULT_CANCELED)
+                    activity?.finish()
+
                 val response = IdpResponse.fromResultIntent(data) ?: return
 
                 if (resultCode == Activity.RESULT_OK) {

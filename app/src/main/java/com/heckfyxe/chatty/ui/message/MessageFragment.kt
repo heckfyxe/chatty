@@ -24,7 +24,7 @@ class MessageFragment : Fragment() {
     private val viewModel: MessageViewModel by viewModel {
         parametersOf(
             args.channelId,
-            args.user.id,
+            args.user?.id,
             args.lastMessageTime
         )
     }
@@ -59,6 +59,7 @@ class MessageFragment : Fragment() {
         inflater: LayoutInflater, container: ViewGroup?,
         savedInstanceState: Bundle?
     ): View? = MessageFragmentBinding.inflate(inflater).run {
+        lifecycleOwner = this@MessageFragment
         interlocutor = args.user
         messageViewModel = viewModel
         executePendingBindings()

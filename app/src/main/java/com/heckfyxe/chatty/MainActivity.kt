@@ -11,7 +11,6 @@ import com.google.firebase.ml.vision.common.FirebaseVisionImage
 import com.google.firebase.ml.vision.common.FirebaseVisionImageMetadata
 import com.google.firebase.ml.vision.face.FirebaseVisionFaceDetector
 import com.google.firebase.ml.vision.face.FirebaseVisionFaceDetectorOptions
-import com.google.firebase.ml.vision.face.FirebaseVisionFaceDetectorOptions.ACCURATE
 import com.heckfyxe.chatty.koin.KOIN_USERS_FIRESTORE_COLLECTION
 import com.heckfyxe.chatty.koin.KOIN_USER_ID
 import kotlinx.android.synthetic.main.activity_main.*
@@ -21,7 +20,6 @@ class MainActivity : AppCompatActivity(), EmotionDetector {
 
     private val settings: FirebaseVisionFaceDetectorOptions by lazy {
         FirebaseVisionFaceDetectorOptions.Builder()
-            .setPerformanceMode(ACCURATE)
             .setClassificationMode(FirebaseVisionFaceDetectorOptions.ALL_CLASSIFICATIONS)
             .build()
     }

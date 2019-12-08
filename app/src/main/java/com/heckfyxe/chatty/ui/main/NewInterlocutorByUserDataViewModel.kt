@@ -57,7 +57,7 @@ class NewInterlocutorByUserDataViewModel(private val userDataName: String) : Vie
     fun createDialog(interlocutorId: String, success: (GroupChannel) -> Unit) {
         viewModelScope.launch {
             try {
-                val channel = sendBirdApi.createChannel(userId, interlocutorId)
+                val channel = sendBirdApi.createChannel(interlocutorId)
                 success(channel)
             } catch (e: Exception) {
                 errors.value = e

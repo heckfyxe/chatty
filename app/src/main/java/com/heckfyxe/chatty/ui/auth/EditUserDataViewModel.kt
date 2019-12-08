@@ -1,133 +1,172 @@
 package com.heckfyxe.chatty.ui.auth
 
-import androidx.lifecycle.MutableLiveData
-import androidx.lifecycle.ViewModel
-import com.google.firebase.auth.FirebaseAuth
-import com.google.firebase.firestore.CollectionReference
-import com.google.firebase.firestore.SetOptions
-import com.heckfyxe.chatty.koin.KOIN_USERS_FIRESTORE_COLLECTION
+import android.app.Application
+import android.util.Log
+import androidx.lifecycle.*
+import com.heckfyxe.chatty.R
 import com.heckfyxe.chatty.koin.KOIN_USER_ID
-import com.sendbird.android.SendBird
-import com.sendbird.android.User
-import kotlinx.coroutines.CoroutineScope
-import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.Job
+import com.heckfyxe.chatty.repository.EditUserDataRepository
 import kotlinx.coroutines.channels.Channel
-import kotlinx.coroutines.channels.SendChannel
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import org.koin.core.KoinComponent
-import org.koin.core.get
 import org.koin.core.inject
+import java.io.File
 
-class EditUserDataViewModel : ViewModel(), KoinComponent {
-    val currentUser = MutableLiveData<User>()
-    val errors = MutableLiveData<Error>()
-    val checkedNicknameLiveData = MutableLiveData<CheckedNickname>()
+enum class ErrorType {
+    UPDATE_USER_DATA, CHECK_NICKNAME
+}
 
-    private val currentUserPhoneNumber = get<FirebaseAuth>().currentUser!!.phoneNumber!!
+sealed class Status
+object Initializing : Status()
+object CheckingNickname : Status()
+data class NicknameReady(val allowed: Boolean) : Status()
+object UpdatingData : Status()
+object DataUpdated : Status()
+object Finish : Status()
+data class Error(val type: ErrorType) : Status()
+
+private const val BROKEN_IMAGE_URL = "error!"
+
+class EditUserDataViewModel(
+    application: Application,
+    private val repository: EditUserDataRepository
+) : AndroidViewModel(application), KoinComponent {
+
+    private val resources = application.resources
     private val userId: String by inject(KOIN_USER_ID)
-    private val usersRef: CollectionReference by inject(KOIN_USERS_FIRESTORE_COLLECTION)
 
-    private val job = Job()
-    private val scope = CoroutineScope(Dispatchers.Default + job)
-    val checkingNicknameChannel = Channel<String>(Channel.CONFLATED)
+    private val _status = MutableLiveData<Status>()
+    val status: LiveData<Status> = _status
+
+    private val _takePhotoEvent = MutableLiveData<Boolean>()
+    val takePhotoEvent: LiveData<Boolean> = _takePhotoEvent
+
+    private val isPhotoTaken = MutableLiveData<Boolean>()
+
+    private val _profileImage = MutableLiveData<Any>()
+    val profileImage: LiveData<Any> = _profileImage
+
+    val helperText = Transformations.map(_status) { status ->
+        when (status) {
+            is NicknameReady -> {
+                if (status.allowed)
+                    resources.getString(R.string.allowed)
+                else
+                    resources.getString(R.string.the_nickname_is_already_taken)
+            }
+            is Error -> {
+                resources.getString(R.string.error)
+            }
+            else -> null
+        }
+    }
+
+    val helperTextColor = Transformations.map(_status) { status ->
+        when (status) {
+            is NicknameReady -> {
+                if (status.allowed)
+                    R.color.green
+                else
+                    R.color.warning
+            }
+            is Error -> {
+                R.color.error
+            }
+            else -> null
+        }
+    }
+
+    val isProgress = Transformations.map(_status) { status ->
+        status is CheckingNickname
+    }
+
+    val nicknameReady = Transformations.map(_status) { status ->
+        status is NicknameReady
+    }
+
+    private val _nickname = MutableLiveData<String>()
+
+    private val checkingNicknameChannel = Channel<String>(Channel.CONFLATED)
 
     fun init() {
-
-        scope.launch {
+        _status.value = Initializing
+        viewModelScope.launch {
+            launch {
+                try {
+                    val avatarUrl = repository.connect().avatarUrl
+                    if (_profileImage.value == null)
+                        _profileImage.value = avatarUrl
+                } catch (e: Exception) {
+                    _profileImage.value = BROKEN_IMAGE_URL
+                }
+            }
             for (nickname in checkingNicknameChannel) {
-                usersRef
-                    .whereEqualTo("nickname", nickname)
-                    .limit(1)
-                    .get()
-                    .addOnCompleteListener {
-                        if (it.isSuccessful) {
-                            val isAllowed =
-                                it.result == null || it.result!!.isEmpty || it.result!!.documents.first().id == userId
-                            checkedNicknameLiveData.postValue(CheckedNickname(nickname, isAllowed))
-                        } else
-                            errors.postValue(Error(ErrorType.CHECK_NICKNAME, mapOf("nickname" to nickname)))
+                delay(300)
+
+                if (_nickname.value != nickname) continue
+
+                launch {
+                    try {
+                        val isAllowed = repository.checkNickname(nickname)
+                        if (_nickname.value == nickname) {
+                            _status.value = NicknameReady(isAllowed)
+                        }
+                    } catch (e: Exception) {
+                        if (_nickname.value == nickname) {
+                            Log.w("EditUserDataViewModel", "error", e)
+                            _status.value = Error(ErrorType.CHECK_NICKNAME)
+                        }
                     }
-            }
-        }
-    }
-
-    fun connectUser() {
-        val userId = FirebaseAuth.getInstance().currentUser!!.uid
-        SendBird.connect(userId) { user, exception ->
-            if (exception != null) {
-                errors.postValue(Error(ErrorType.CONNECT_USER))
-                return@connect
-            }
-
-            currentUser.postValue(user)
-        }
-    }
-
-//    fun updateUserData(nickname: String, avatar: File, onSuccess: () -> Unit) {
-//        usersRef.document(userId).set(mapOf("nickname" to nickname), SetOptions.merge()).addOnCompleteListener {
-//            if (it.isSuccessful) {
-//                SendBird.updateCurrentUserInfoWithProfileImage(nickname, avatar) { e ->
-//                    if (e != null) {
-//                        errors.postValue(Error(ErrorType.UPDATE_USER_DATA))
-//                        return@updateCurrentUserInfoWithProfileImage
-//                    }
-//
-//                    onSuccess()
-//                }
-//            } else {
-//                errors.postValue(Error(ErrorType.UPDATE_USER_DATA))
-//            }
-//        }
-//    }
-
-    fun updateUserData(nickname: String, onSuccess: () -> Unit) {
-        usersRef.document(userId).set(mapOf("nickname" to nickname), SetOptions.merge()).addOnCompleteListener {
-            if (it.isSuccessful) {
-                val currentUser = SendBird.getCurrentUser()
-                val channel = Channel<Boolean>(2)
-                scope.launch {
-                    updatePhoneNumber(currentUser, channel)
-                    updateNickname(currentUser, nickname, channel)
-
-                    var isSuccessful = true
-                    repeat(2) {
-                        isSuccessful = isSuccessful && channel.receive()
-                    }
-                    channel.close()
-
-                    if (isSuccessful)
-                        onSuccess()
                 }
-            } else {
-                errors.postValue(Error(ErrorType.UPDATE_USER_DATA))
             }
         }
     }
 
-    private suspend fun updatePhoneNumber(currentUser: User, channel: SendChannel<Boolean>) {
-        currentUser.createMetaData(mapOf("phoneNumber" to currentUserPhoneNumber)) { _, e ->
-            scope.launch {
-                if (e != null) {
-                    errors.postValue(Error(ErrorType.UPDATE_USER_DATA))
-                    channel.send(false)
-                    return@launch
-                }
-                channel.send(true)
-            }
+    fun checkNickname(nickname: String) {
+        if (_nickname.value == nickname) return
+
+        _nickname.value = nickname
+        _status.value = CheckingNickname
+        viewModelScope.launch {
+            checkingNicknameChannel.send(nickname)
         }
     }
 
-    private suspend fun updateNickname(currentUser: User, nickname: String, channel: SendChannel<Boolean>) {
-        SendBird.updateCurrentUserInfo(nickname, currentUser.profileUrl) { e ->
-            scope.launch {
-                if (e != null) {
-                    errors.postValue(Error(ErrorType.UPDATE_USER_DATA))
-                    channel.send(false)
-                    return@launch
-                }
+    fun onDataUpdated() {
+        _status.value = Finish
+    }
 
-                channel.send(true)
+    fun takePhoto() {
+        _takePhotoEvent.value = true
+    }
+
+    fun onTakePhoto() {
+        _takePhotoEvent.value = false
+    }
+
+    fun onPhotoTaken(photo: File) {
+        isPhotoTaken.value = true
+        _profileImage.value = photo
+    }
+
+    fun updateUserData() {
+        if (_status.value == UpdatingData) return
+        val nickname = _nickname.value ?: return
+        _status.value = UpdatingData
+        viewModelScope.launch {
+            try {
+                when (_profileImage.value) {
+                    is File -> repository.updateUserInfo(
+                        userId,
+                        nickname,
+                        _profileImage.value as File
+                    )
+                    else -> repository.updateUserInfo(userId, nickname)
+                }
+                _status.value = DataUpdated
+            } catch (e: Exception) {
+                _status.value = Error(ErrorType.UPDATE_USER_DATA)
             }
         }
     }
@@ -135,15 +174,6 @@ class EditUserDataViewModel : ViewModel(), KoinComponent {
     override fun onCleared() {
         super.onCleared()
 
-        job.cancel()
         checkingNicknameChannel.close()
-    }
-
-    class CheckedNickname(val nickname: String, val allowed: Boolean)
-
-    class Error(val type: ErrorType, val extra: Map<Any, Any>? = null)
-
-    enum class ErrorType {
-        CONNECT_USER, UPDATE_USER_DATA, CHECK_NICKNAME
     }
 }

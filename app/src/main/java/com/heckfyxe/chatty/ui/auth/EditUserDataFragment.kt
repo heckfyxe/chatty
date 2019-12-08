@@ -1,201 +1,169 @@
 package com.heckfyxe.chatty.ui.auth
 
-import android.content.Context
-import android.content.res.ColorStateList
+import android.app.Activity.RESULT_OK
+import android.content.Intent
+import android.net.Uri
 import android.os.Bundle
-import android.text.Editable
-import android.text.TextWatcher
+import android.os.Environment
+import android.provider.MediaStore
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
 import android.view.inputmethod.EditorInfo
-import androidx.core.content.ContextCompat
-import androidx.core.view.isGone
-import androidx.core.view.isVisible
+import android.widget.Toast
+import androidx.core.content.FileProvider
+import androidx.core.widget.addTextChangedListener
 import androidx.fragment.app.Fragment
 import androidx.lifecycle.Observer
 import androidx.navigation.fragment.findNavController
-import coil.ImageLoader
-import coil.api.load
-import coil.decode.GifDecoder
-import coil.transform.CircleCropTransformation
 import com.google.android.material.snackbar.Snackbar
 import com.heckfyxe.chatty.R
+import com.heckfyxe.chatty.databinding.EditUserDataFragmentBinding
 import com.heckfyxe.chatty.util.setAuthenticated
 import kotlinx.android.synthetic.main.edit_user_data_fragment.*
-import kotlinx.coroutines.CoroutineScope
-import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.launch
 import org.koin.androidx.viewmodel.ext.android.viewModel
+import java.io.File
+import java.io.IOException
+import java.text.SimpleDateFormat
+import java.util.*
+
+private const val EXTRA_NICKNAME = "com.heckfyxe.chatty.EXTRA_NICKNAME"
+private const val EXTRA_PHOTO_FILE = "com.heckfyxe.chatty.EXTRA_PHOTO_FILE"
+
+private const val RC_TAKE_PHOTO = 0
 
 class EditUserDataFragment : Fragment() {
 
-    private val model: EditUserDataViewModel by viewModel()
+    private val editUserDataViewModel: EditUserDataViewModel by viewModel()
 
-    private val scope = CoroutineScope(Dispatchers.Default)
-
-    private lateinit var imageLoader: ImageLoader
-
-    override fun onAttach(context: Context) {
-        super.onAttach(context)
-
-        imageLoader = ImageLoader(context) {
-            componentRegistry {
-                add(GifDecoder())
-            }
-        }
-    }
+    private var avatarImageFile: File? = null
+    private var isPhotoTaken = false
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
 
-        model.init()
+        editUserDataViewModel.init()
         observeViewModel()
-        model.connectUser()
     }
 
     private fun observeViewModel() {
-        model.checkedNicknameLiveData.observe(this, Observer {
-            if (it.nickname == nicknameEditText?.text?.toString()) {
-                hideNicknameChecking()
-                if (it.allowed) {
-                    nicknameInputLayout?.isHelperTextEnabled = true
-                    nicknameInputLayout?.helperText = getString(R.string.allowed)
-                    val greenColor = ContextCompat.getColor(context!!, R.color.green)
-                    nicknameInputLayout?.setHelperTextColor(ColorStateList.valueOf(greenColor))
-                    nicknameOkButton?.isEnabled = true
-                } else {
-                    nicknameInputLayout?.isErrorEnabled = true
-                    nicknameInputLayout?.error = resources.getString(R.string.the_nickname_is_already_taken)
+        editUserDataViewModel.status.observe(this, Observer { status ->
+            when (status) {
+                is DataUpdated -> {
+                    setAuthenticated()
+                    findNavController().navigate(R.id.action_editUserDataFragment_to_contactFragment)
+                    editUserDataViewModel.onDataUpdated()
+                }
+                is Error -> if (status.type == ErrorType.UPDATE_USER_DATA) {
+                    Snackbar.make(
+                        editUserDataFragmentRoot,
+                        R.string.data_updating_error,
+                        Snackbar.LENGTH_SHORT
+                    ).show()
                 }
             }
         })
 
-        model.currentUser.observe(this, Observer {
-            startAvatarLoading(it.profileUrl)
-            nicknameEditText?.setText(it.nickname)
-            nicknameEditText?.isEnabled = true
-        })
+        editUserDataViewModel.takePhotoEvent.observe(this, Observer {
+            if (it != true) return@Observer
+            editUserDataViewModel.onTakePhoto()
 
-        model.errors.observe(this, Observer {
-            when (it.type) {
-                EditUserDataViewModel.ErrorType.CONNECT_USER -> showConnectUserError()
-
-                EditUserDataViewModel.ErrorType.UPDATE_USER_DATA -> {
-                    nicknameOkButton?.revertAnimation {
+            Intent(MediaStore.ACTION_IMAGE_CAPTURE).also { takePictureIntent ->
+                takePictureIntent.resolveActivity(context!!.packageManager)?.also {
+                    val photoFile: File? = try {
+                        createImageFile()
+                    } catch (e: IOException) {
+                        Toast.makeText(context!!, R.string.error, Toast.LENGTH_SHORT).show()
+                        return@Observer
                     }
-                    nicknameOkButton?.isEnabled = true
-                    Snackbar.make(editUserDataFragmentRoot, R.string.data_updating_error, Snackbar.LENGTH_SHORT).show()
-                }
-
-                EditUserDataViewModel.ErrorType.CHECK_NICKNAME -> {
-                    if (it.extra?.get("nickname").toString() == nicknameEditText?.text.toString()) {
-                        showNicknameCheckingError()
+                    photoFile?.also { file ->
+                        val photoURI: Uri = FileProvider.getUriForFile(
+                            context!!,
+                            "com.heckfyxe.chatty.fileprovider",
+                            file
+                        )
+                        avatarImageFile = file
+                        takePictureIntent.putExtra(MediaStore.EXTRA_OUTPUT, photoURI)
+                        startActivityForResult(takePictureIntent, RC_TAKE_PHOTO)
                     }
                 }
             }
         })
+    }
+
+    @Throws(IOException::class)
+    private fun createImageFile(): File {
+        val timeStamp: String = SimpleDateFormat("yyyyMMdd_HHmmss", Locale.US).format(Date())
+        val storageDir: File = context!!.getExternalFilesDir(Environment.DIRECTORY_PICTURES)!!
+        return File.createTempFile(
+            "JPEG_${timeStamp}_",
+            ".jpg",
+            storageDir
+        )
     }
 
     override fun onCreateView(
         inflater: LayoutInflater, container: ViewGroup?,
         savedInstanceState: Bundle?
-    ): View? = inflater.inflate(R.layout.edit_user_data_fragment, container, false)
+    ): View? = EditUserDataFragmentBinding.inflate(inflater).run {
+        lifecycleOwner = this@EditUserDataFragment
+        viewModel = editUserDataViewModel
 
-    override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
-        super.onViewCreated(view, savedInstanceState)
-
-        startAvatarLoadingAnimation()
-
-        nicknameEditText?.addTextChangedListener(object : TextWatcher {
-            override fun afterTextChanged(s: Editable?) {
-                nicknameOkButton?.isEnabled = false
-                hideNicknameChecking()
-                nicknameInputLayout?.apply {
-                    isErrorEnabled = false
-                    isHelperTextEnabled = false
+        nicknameEditText.apply {
+            addTextChangedListener {
+                if (!it.isNullOrBlank()) {
+                    editUserDataViewModel.checkNickname(it.toString())
                 }
-
-                if (s.isNullOrBlank()) return
-
-                showNicknameCheckingProgress()
-                scope.launch { model.checkingNicknameChannel.send(s.toString()) }
             }
-
-            override fun beforeTextChanged(s: CharSequence?, start: Int, count: Int, after: Int) {}
-            override fun onTextChanged(s: CharSequence?, start: Int, before: Int, count: Int) {}
-        })
-
-        nicknameEditText?.setOnEditorActionListener { _, actionId, _ ->
-            if (actionId == EditorInfo.IME_ACTION_DONE && nicknameOkButton?.isEnabled == true) {
-                updateUserData()
-                return@setOnEditorActionListener true
+            setOnEditorActionListener { _, actionId, _ ->
+                if (actionId == EditorInfo.IME_ACTION_DONE &&
+                    editUserDataViewModel.status.value is NicknameReady
+                ) {
+                    editUserDataViewModel.updateUserData()
+                    true
+                } else
+                    false
             }
-            false
         }
 
-        nicknameOkButton?.apply {
+        avatarImageView.setOnClickListener {
+            editUserDataViewModel.takePhoto()
+        }
+
+        nicknameOkButton.apply {
             saveInitialState()
             setOnClickListener {
-                updateUserData()
+                editUserDataViewModel.updateUserData()
             }
         }
+
+        return root
     }
 
-    private fun updateUserData() {
-        if (!nicknameEditText?.text.isNullOrEmpty()) {
-            nicknameOkButton?.startAnimation()
-            model.updateUserData(nicknameEditText.text.toString()) {
-                setAuthenticated()
-                findNavController().navigate(R.id.action_editUserDataFragment_to_contactFragment)
+
+    override fun onActivityResult(requestCode: Int, resultCode: Int, data: Intent?) {
+        when (requestCode) {
+            RC_TAKE_PHOTO -> {
+                if (resultCode != RESULT_OK) return
+
+                isPhotoTaken
+                editUserDataViewModel.onPhotoTaken(avatarImageFile!!)
             }
+            else -> super.onActivityResult(requestCode, resultCode, data)
         }
-    }
-
-    private fun startAvatarLoadingAnimation() {
-        circleImageView?.isVisible = true
-    }
-
-    private fun startAvatarLoading(avatarUrl: String) {
-        circleImageView?.load(avatarUrl, imageLoader) {
-            placeholder(R.drawable.spinner)
-            transformations(CircleCropTransformation())
-        }
-    }
-
-    private fun showNicknameCheckingProgress() {
-        nicknameCheckingProgressBar?.isVisible = true
-        nicknameCheckingErrorTextView?.isGone = true
-    }
-
-    private fun hideNicknameChecking() {
-        nicknameCheckingErrorTextView?.isGone = true
-        nicknameCheckingProgressBar?.isVisible = false
-    }
-
-    private fun avatarLoadingFailed() {
-        circleImageView?.isVisible = false
-    }
-
-    private fun showConnectUserError() {
-        avatarLoadingFailed()
-        Snackbar.make(editUserDataFragmentRoot, R.string.connection_error, Snackbar.LENGTH_INDEFINITE)
-            .setAction(R.string.retry) {
-                startAvatarLoadingAnimation()
-                model.connectUser()
-            }.show()
-    }
-
-    private fun showNicknameCheckingError() {
-        nicknameCheckingErrorTextView?.isVisible = true
-        nicknameCheckingProgressBar?.isVisible = false
     }
 
     override fun onViewStateRestored(savedInstanceState: Bundle?) {
         super.onViewStateRestored(savedInstanceState)
 
         savedInstanceState?.apply {
-            nicknameEditText?.setText(getCharSequence(EXTRA_NICKNAME))
+            val nickname = getCharSequence(EXTRA_NICKNAME)?.toString()
+            if (nickname != null) {
+                nicknameEditText?.setText(nickname)
+                editUserDataViewModel.checkNickname(nickname)
+            }
+            avatarImageFile = getSerializable(EXTRA_PHOTO_FILE) as? File
+            editUserDataViewModel.onPhotoTaken(avatarImageFile ?: return)
         }
     }
 
@@ -204,10 +172,7 @@ class EditUserDataFragment : Fragment() {
 
         outState.apply {
             putCharSequence(EXTRA_NICKNAME, nicknameEditText?.text)
+            putSerializable(EXTRA_PHOTO_FILE, avatarImageFile)
         }
-    }
-
-    companion object {
-        private const val EXTRA_NICKNAME = "com.heckfyxe.chatty.EXTRA_NICKNAME"
     }
 }

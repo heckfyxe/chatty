@@ -4,8 +4,10 @@ import android.widget.ImageView
 import android.widget.TextView
 import androidx.databinding.BindingAdapter
 import androidx.recyclerview.widget.RecyclerView
-import coil.api.load
-import coil.transform.RoundedCornersTransformation
+import com.bumptech.glide.Glide
+import com.bumptech.glide.load.resource.bitmap.RoundedCorners
+import com.bumptech.glide.load.resource.drawable.DrawableTransitionOptions.withCrossFade
+import com.bumptech.glide.request.transition.DrawableCrossFadeFactory
 import com.heckfyxe.chatty.R
 import com.heckfyxe.chatty.model.Dialog
 import com.heckfyxe.chatty.model.Message
@@ -44,11 +46,22 @@ private fun formatTime(time: Long): String {
 }
 
 @BindingAdapter("loadAvatar")
-fun loadAvatar(imageView: ImageView?, url: String?) {
-    imageView?.load(url) {
-        transformations(RoundedCornersTransformation(20f))
-        build()
-    }
+fun loadAvatar(imageView: ImageView?, data: Any?) {
+    imageView ?: return
+    data ?: return
+
+    Glide.with(imageView)
+        .load(data)
+        .transition(
+            withCrossFade(
+                DrawableCrossFadeFactory.Builder()
+                    .setCrossFadeEnabled(true)
+                    .build()
+            )
+        ).transform(RoundedCorners(20))
+        .placeholder(R.drawable.ic_user)
+        .error(R.drawable.ic_broken_image)
+        .into(imageView)
 }
 
 @BindingAdapter("dialogItems")

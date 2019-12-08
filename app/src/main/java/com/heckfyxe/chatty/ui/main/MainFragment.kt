@@ -11,7 +11,6 @@ import androidx.appcompat.app.AppCompatActivity
 import androidx.fragment.app.Fragment
 import androidx.lifecycle.Observer
 import androidx.navigation.fragment.findNavController
-import com.google.firebase.iid.FirebaseInstanceId
 import com.heckfyxe.chatty.EmotionDetector
 import com.heckfyxe.chatty.R
 import com.heckfyxe.chatty.databinding.MainFragmentBinding
@@ -19,7 +18,6 @@ import com.heckfyxe.chatty.model.User
 import com.heckfyxe.chatty.util.OnClickAction
 import com.heckfyxe.chatty.util.clearSharedPreferencesData
 import com.heckfyxe.chatty.util.setAuthenticated
-import com.sendbird.android.SendBird
 import kotlinx.android.synthetic.main.main_fragment.*
 import org.koin.androidx.viewmodel.ext.android.viewModel
 
@@ -37,7 +35,6 @@ class MainFragment : Fragment() {
 
         setAuthenticated()
 
-        viewModel.connectUser()
         adapter = DialogsAdapter(OnClickAction {
             viewModel.launchMessageFragment(it)
         })
@@ -67,7 +64,7 @@ class MainFragment : Fragment() {
             R.id.mi_sign_out -> {
                 viewModel.logOut {
                     clearSharedPreferencesData()
-                    findNavController().navigate(R.id.action_mainFragment_to_authFragment)
+                    findNavController().navigate(R.id.action_global_authFragment)
                 }
                 true
             }
@@ -75,13 +72,9 @@ class MainFragment : Fragment() {
         }
 
     private fun connectToViewModel() {
-        viewModel.currentUser.observe(this, Observer {
-            registerPushNotification()
-        })
-
         viewModel.errors.observe(this, Observer { exception ->
             exception?.let {
-                viewModel.errors.postValue(null)
+                viewModel.onErrorGotten()
                 Log.e("MainFragment", it.message, it.cause)
                 Toast.makeText(context!!, R.string.connection_error, Toast.LENGTH_SHORT).show()
             }
@@ -166,16 +159,6 @@ class MainFragment : Fragment() {
         }
     }
 
-    private fun registerPushNotification() {
-        FirebaseInstanceId.getInstance()
-            .instanceId.addOnSuccessListener(activity!!) { instanceIdResult ->
-            SendBird.registerPushTokenForCurrentUser(instanceIdResult.token) { _, e ->
-                if (e != null)
-                    Log.w("MainFragment", "registerPushNotification", e)
-            }
-        }
-    }
-
     override fun onStart() {
         super.onStart()
 
@@ -184,7 +167,7 @@ class MainFragment : Fragment() {
 
     private fun launchMessageFragment(
         channelId: String,
-        interlocutor: User,
+        interlocutor: User?,
         lastMessageTime: Long = -1
     ) {
         val direction = MainFragmentDirections.actionMainFragmentToMessageFragment(

@@ -11,23 +11,23 @@ import org.koin.core.context.GlobalContext.get
 private val koin = get().koin
 private val userId: String by koin.inject(KOIN_USER_ID)
 
-fun List<Member>.getInterlocutor(): Member {
+fun List<Member>.getInterlocutor(): Member? {
     if (this.size > 2) {
-        throw Exception("Members count must be 2!")
+        throw Exception("Members count must be <= 2!")
     }
-    return this.single { it.userId != userId }
+    return this.singleOrNull { it.userId != userId }
 }
 
-fun GroupChannel.getInterlocutor(): Member = members.getInterlocutor()
+fun GroupChannel.getInterlocutor(): Member? = members.getInterlocutor()
 
 fun GroupChannel.toRoomDialog(): RoomDialog {
     val interlocutor = getInterlocutor()
     return RoomDialog(
         url,
-        interlocutor.nickname,
+        interlocutor?.nickname ?: "Deleted",
         unreadMessageCount,
-        interlocutor.profileUrl,
-        interlocutor.toDomain(),
+        interlocutor?.profileUrl ?: "",
+        interlocutor?.toDomain(),
         lastMessage.toDomain()
     )
 }
@@ -36,9 +36,9 @@ fun GroupChannel.toDomain(): Dialog {
     val interlocutor = getInterlocutor()
     return Dialog(
         url,
-        interlocutor.nickname,
-        interlocutor.profileUrl,
-        interlocutor.toDomain(),
+        interlocutor?.nickname ?: "Deleted",
+        interlocutor?.profileUrl ?: "",
+        interlocutor?.toDomain(),
         lastMessage.toDomain(),
         unreadMessageCount
     )

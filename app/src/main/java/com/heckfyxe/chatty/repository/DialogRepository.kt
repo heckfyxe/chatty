@@ -1,19 +1,19 @@
 package com.heckfyxe.chatty.repository
 
-import androidx.lifecycle.MutableLiveData
+import androidx.lifecycle.LiveData
 import androidx.room.withTransaction
 import com.google.firebase.auth.FirebaseAuth
-import com.heckfyxe.chatty.koin.KOIN_USER_ID
+import com.google.firebase.iid.FirebaseInstanceId
 import com.heckfyxe.chatty.model.Dialog
 import com.heckfyxe.chatty.remote.SendBirdApi
 import com.heckfyxe.chatty.room.*
 import com.heckfyxe.chatty.util.sendbird.getInterlocutor
 import com.heckfyxe.chatty.util.sendbird.toRoomDialog
 import com.heckfyxe.chatty.util.sendbird.toRoomMessage
-import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.withContext
+import kotlinx.coroutines.*
 import org.koin.core.KoinComponent
 import org.koin.core.inject
+import kotlin.coroutines.resume
 
 class DialogRepository : KoinComponent {
 
@@ -24,51 +24,58 @@ class DialogRepository : KoinComponent {
     private val messageDao: MessageDao by inject()
     private val userDao: UserDao by inject()
 
-    private val userId: String by inject(KOIN_USER_ID)
     private val auth: FirebaseAuth by inject()
 
-    val currentUser = MutableLiveData<RoomUser>()
-    val errors = MutableLiveData<Exception?>()
-    val chats = dialogDao.getDialogsLiveData()
-
-    suspend fun connectUser() {
-        try {
-            currentUser.postValue(sendBirdApi.connect(userId))
-        } catch (e: Exception) {
-            errors.postValue(e)
-        }
-    }
+    val chats: LiveData<List<RoomDialog>> by lazy { dialogDao.getDialogsLiveData() }
 
     suspend fun refresh() {
-        try {
-            for (channels in sendBirdApi.getChannels()) {
-                val users = ArrayList<RoomUser>(channels.size)
-                val messages = ArrayList<RoomMessage>(channels.size)
-                val dialogs = ArrayList<RoomDialog>(channels.size)
+        for (channels in sendBirdApi.getChannels()) {
+            val users = ArrayList<RoomUser>(channels.size)
+            val messages = ArrayList<RoomMessage>(channels.size)
+            val dialogs = ArrayList<RoomDialog>(channels.size)
 
-                channels.forEach { channel ->
-                    messages.add(channel.lastMessage.toRoomMessage())
-                    users.add(channel.getInterlocutor().toRoomUser())
-                    dialogs.add(channel.toRoomDialog())
+            channels.forEach { channel ->
+                messages.add(channel.lastMessage.toRoomMessage())
+
+                channel.getInterlocutor()?.let {
+                    users.add(it.toRoomUser())
                 }
-                database.withTransaction {
-                    dialogDao.insert(dialogs)
-                    userDao.insert(users.toList())
-                    messageDao.insert(messages)
-                }
+                dialogs.add(channel.toRoomDialog())
             }
-        } catch (e: Exception) {
-            errors.postValue(e)
+            database.withTransaction {
+                dialogDao.insert(dialogs)
+                userDao.insert(users.toList())
+                messageDao.insert(messages)
+            }
         }
     }
 
     suspend fun insertDialog(dialog: Dialog) = withContext(Dispatchers.IO) {
         database.withTransaction {
-            userDao.insert(dialog.interlocutor.toRoomUser())
-            messageDao.insert(dialog.lastMessage.run {
-                RoomMessage(id, dialog.id, time, sender, text, out, sent, requestId)
-            })
+            dialog.interlocutor?.toRoomUser()?.let {
+                userDao.insert(it)
+            }
+            dialog.lastMessage?.apply {
+                RoomMessage(id, dialog.id, time, sender, text, out, sent, requestId).let {
+                    messageDao.insert(it)
+                }
+            }
             dialogDao.insert(dialog.toRoomDialog())
+        }
+    }
+
+    suspend fun registerPushNotifications() = coroutineScope {
+        suspendCancellableCoroutine<Unit> { cont ->
+            FirebaseInstanceId.getInstance().instanceId.addOnCompleteListener {
+                if (!it.isSuccessful) {
+                    cont.cancel(it.exception)
+                    return@addOnCompleteListener
+                }
+                launch {
+                    sendBirdApi.registerPushNotifications(it.result!!.token)
+                    cont.resume(Unit)
+                }
+            }
         }
     }
 

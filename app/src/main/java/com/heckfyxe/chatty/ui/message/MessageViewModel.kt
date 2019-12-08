@@ -7,12 +7,19 @@ import androidx.lifecycle.viewModelScope
 import com.google.firebase.firestore.CollectionReference
 import com.heckfyxe.chatty.koin.KOIN_USERS_FIRESTORE_COLLECTION
 import com.heckfyxe.chatty.model.Message
+import com.heckfyxe.chatty.repository.DialogRepository
 import com.heckfyxe.chatty.repository.MessageRepository
+import com.heckfyxe.chatty.room.toDomain
 import com.heckfyxe.chatty.util.sendbird.toDomain
 import com.sendbird.android.BaseChannel
 import com.sendbird.android.BaseMessage
 import com.sendbird.android.GroupChannel
 import com.sendbird.android.SendBird
+import kotlinx.coroutines.ExperimentalCoroutinesApi
+import kotlinx.coroutines.channels.awaitClose
+import kotlinx.coroutines.flow.callbackFlow
+import kotlinx.coroutines.flow.collect
+import kotlinx.coroutines.flow.distinctUntilChanged
 import kotlinx.coroutines.launch
 import org.koin.core.KoinComponent
 import org.koin.core.inject
@@ -23,11 +30,12 @@ private const val CHANNEL_HANDLER_IDENTIFIER =
 
 class MessageViewModel(
     channelId: String,
-    private val interlocutorId: String,
+    private val interlocutorId: String?,
     lastMessageTime: Long
 ) : ViewModel(), MessageAdapter.LoadingListener, KoinComponent {
 
-    private val repository: MessageRepository by inject { parametersOf(channelId) }
+    private val dialogRepository: DialogRepository by inject()
+    private val messageRepository: MessageRepository by inject { parametersOf(channelId) }
 
     private val usersRef: CollectionReference by inject(KOIN_USERS_FIRESTORE_COLLECTION)
 
@@ -38,11 +46,11 @@ class MessageViewModel(
             val dialog = channel.toDomain()
 
             viewModelScope.launch {
-                repository.insertDialog(dialog)
+                dialogRepository.insertDialog(dialog)
             }
 
             if (dialog.id == channelId) {
-                adapter.addMessages(listOf(dialog.lastMessage))
+                adapter.addMessages(listOf(baseMessage.toDomain()))
                 scrollDown()
             }
         }
@@ -69,18 +77,21 @@ class MessageViewModel(
     init {
         viewModelScope.launch {
             val lastMessage =
-                repository.getMessageByTime(lastMessageTime) ?: repository.getLastMessage()
-                ?: repository.refreshLastMessage().run {
-                    repository.getLastMessage()!!
-                }
+                messageRepository.getMessageByTime(lastMessageTime)
+                    ?: messageRepository.getLastMessage()
+                    ?: messageRepository.refreshLastMessage().run {
+                        messageRepository.getLastMessage()!!
+                    }
             adapter.addMessages(listOf(lastMessage))
 
             lastMessageLiveData.value = lastMessage
-            repository.refreshLastMessage()
-            lastMessageLiveData.value = repository.getLastMessage()
+            messageRepository.refreshLastMessage()
+            lastMessageLiveData.value = messageRepository.getLastMessage()
+        }
+        viewModelScope.launch {
+            startInterlocutorEmotionTracking()
         }
         SendBird.addChannelHandler(CHANNEL_HANDLER_IDENTIFIER, channelHandler)
-        startInterlocutorEmotionTracking()
     }
 
     override fun prefetchSize(): Int = 35
@@ -90,11 +101,11 @@ class MessageViewModel(
         isPreviousMessagesLoading = true
         viewModelScope.launch {
             try {
-                adapter.addMessages(repository.loadPreviousMessages(time).also {
+                adapter.addMessages(messageRepository.loadPreviousMessages(time).also {
                     isHistoryEmpty = it.isEmpty()
                 })
-                repository.refreshPreviousMessages(time)
-                adapter.addMessages(repository.loadPreviousMessages(time).also {
+                messageRepository.refreshPreviousMessages(time)
+                adapter.addMessages(messageRepository.loadPreviousMessages(time).also {
                     isHistoryEmpty = it.isEmpty()
                 })
             } catch (e: Exception) {
@@ -110,9 +121,9 @@ class MessageViewModel(
         isNextMessagesLoading = true
         viewModelScope.launch {
             try {
-                adapter.addMessages(repository.loadNextMessages(time))
-                repository.refreshNextMessages(time)
-                adapter.addMessages(repository.loadNextMessages(time))
+                adapter.addMessages(messageRepository.loadNextMessages(time))
+                messageRepository.refreshNextMessages(time)
+                adapter.addMessages(messageRepository.loadNextMessages(time))
             } catch (e: Exception) {
                 _errors.value = e
             } finally {
@@ -129,14 +140,21 @@ class MessageViewModel(
         _scrollDown.value = false
     }
 
-    private fun startInterlocutorEmotionTracking() {
-        usersRef.document(interlocutorId).addSnapshotListener { snapshot, e ->
-            if (e != null) {
-                return@addSnapshotListener
-            }
+    @UseExperimental(ExperimentalCoroutinesApi::class)
+    private suspend fun startInterlocutorEmotionTracking() {
+        interlocutorId ?: return
+        callbackFlow {
+            usersRef.document(interlocutorId).addSnapshotListener { snapshot, e ->
+                if (e != null) {
+                    return@addSnapshotListener
+                }
 
-            val emotion = snapshot?.getString("emotion") ?: return@addSnapshotListener
-            _interlocutorEmotions.value = emotion
+                val emotion = snapshot?.getString("emotion") ?: return@addSnapshotListener
+                offer(emotion)
+            }
+            awaitClose()
+        }.distinctUntilChanged().collect {
+            _interlocutorEmotions.value = it
         }
     }
 
@@ -146,7 +164,7 @@ class MessageViewModel(
 
     fun sendTextMessage(text: String) = viewModelScope.launch {
         try {
-            val channel = repository.sendTextMessage(text)
+            val channel = messageRepository.sendTextMessage(text)
             adapter.addMessages(listOf(channel.receive()))
             scrollDown()
             adapter.messageSent(channel.receive())
@@ -156,9 +174,9 @@ class MessageViewModel(
         }
     }
 
-    fun startTyping() = viewModelScope.launch { repository.startTyping() }
+    fun startTyping() = viewModelScope.launch { messageRepository.startTyping() }
 
-    fun endTyping() = viewModelScope.launch { repository.endTyping() }
+    fun endTyping() = viewModelScope.launch { messageRepository.endTyping() }
 
     override fun onCleared() {
         super.onCleared()
