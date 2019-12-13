@@ -24,7 +24,9 @@
         android:name="com.heckfyxe.chatty.ui.main.MainFragment"
         android:label="main_fragment"
         tools:layout="@layout/main_fragment" >
-        <action app:destination="@id/messageFragment" />
+        <action
+            android:id="@+id/action_mainFragment_to_messageFragment"
+            app:destination="@id/messageFragment" />
         <action
             android:id="@+id/action_mainFragment_to_contactFragment"
             app:destination="@id/contactFragment" />
@@ -77,6 +79,7 @@
         android:label="FriendsFragment"
         tools:layout="@layout/friends_fragment">
         <action
+            android:id="@+id/action_friendsFragment_to_messageFragment"
             app:destination="@id/messageFragment"
             app:popUpTo="@id/mainFragment" />
     </fragment>
