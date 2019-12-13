@@ -70,8 +70,7 @@
         <action
             android:id="@+id/action_contactFragment_to_mainFragment"
             app:destination="@id/mainFragment"
-            app:popUpTo="@+id/nav_graph"
-            app:popUpToInclusive="true" />
+            app:popUpTo="@+id/nav_graph" />
     </fragment>
     <fragment
         android:id="@+id/friendsFragment"
