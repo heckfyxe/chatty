@@ -22,6 +22,8 @@
 
 -keep class com.firebase.ui.auth.** { * ; }
 
+-dontwarn com.sendbird.android.shadow.**
+
 -keep class * extends com.stfalcon.chatkit.messages.MessageHolders$OutcomingTextMessageViewHolder {
      public <init>(android.view.View, java.lang.Object);
      public <init>(android.view.View);

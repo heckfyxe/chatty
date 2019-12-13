@@ -25,9 +25,6 @@ import org.koin.core.KoinComponent
 import org.koin.core.inject
 import org.koin.core.parameter.parametersOf
 
-private const val CHANNEL_HANDLER_IDENTIFIER =
-    "com.heckfyxe.chatty.ui.message.CHANNEL_HANDLER_IDENTIFIER"
-
 class MessageViewModel(
     channelId: String,
     private val interlocutorId: String?,
@@ -76,22 +73,30 @@ class MessageViewModel(
 
     init {
         viewModelScope.launch {
-            val lastMessage =
-                messageRepository.getMessageByTime(lastMessageTime)
-                    ?: messageRepository.getLastMessage()
-                    ?: messageRepository.refreshLastMessage().run {
-                        messageRepository.getLastMessage()!!
-                    }
-            adapter.addMessages(listOf(lastMessage))
+            try {
+                val lastMessage =
+                    messageRepository.getMessageByTime(lastMessageTime)
+                        ?: messageRepository.getLastMessage()
+                        ?: messageRepository.refreshLastMessage().run {
+                            messageRepository.getLastMessage()!!
+                        }
+                adapter.addMessages(listOf(lastMessage))
 
-            lastMessageLiveData.value = lastMessage
-            messageRepository.refreshLastMessage()
-            lastMessageLiveData.value = messageRepository.getLastMessage()
+                lastMessageLiveData.value = lastMessage
+                messageRepository.refreshLastMessage()
+                lastMessageLiveData.value = messageRepository.getLastMessage()
+            } catch (e: Exception) {
+                _errors.value = e
+            }
         }
         viewModelScope.launch {
             startInterlocutorEmotionTracking()
         }
-        SendBird.addChannelHandler(CHANNEL_HANDLER_IDENTIFIER, channelHandler)
+        try {
+            messageRepository.launchChannelHandler(channelHandler)
+        } catch (e: Exception) {
+            _errors.value = e
+        }
     }
 
     override fun prefetchSize(): Int = 35
@@ -181,6 +186,6 @@ class MessageViewModel(
     override fun onCleared() {
         super.onCleared()
 
-        SendBird.removeChannelHandler(CHANNEL_HANDLER_IDENTIFIER)
+        messageRepository.stopChannelHandler()
     }
 }

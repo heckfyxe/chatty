@@ -8,10 +8,12 @@ import android.content.Intent
 import android.media.AudioAttributes
 import android.media.RingtoneManager
 import android.os.Build
+import android.util.Log
 import androidx.core.app.NotificationCompat
 import androidx.core.graphics.drawable.toBitmap
 import com.bumptech.glide.Glide
 import com.bumptech.glide.Priority
+import com.google.firebase.auth.FirebaseAuth
 import com.google.firebase.messaging.FirebaseMessagingService
 import com.google.firebase.messaging.RemoteMessage
 import com.heckfyxe.chatty.MainActivity
@@ -30,6 +32,8 @@ import org.koin.core.inject
 
 class AppFirebaseMessagingService : FirebaseMessagingService(), KoinComponent {
 
+    private val firebaseAuth: FirebaseAuth by inject()
+
     private val dialogDao: DialogDao by inject()
     private val sendBirdApi: SendBirdApi by inject()
 
@@ -38,7 +42,12 @@ class AppFirebaseMessagingService : FirebaseMessagingService(), KoinComponent {
 
     override fun onNewToken(token: String) {
         scope.launch {
-            sendBirdApi.registerPushNotifications(token)
+            firebaseAuth.currentUser ?: return@launch
+            try {
+                sendBirdApi.registerPushNotifications(token)
+            } catch (e: Exception) {
+                Log.e("MessagingService", "register push notifications error", e)
+            }
         }
     }
 

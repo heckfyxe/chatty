@@ -16,7 +16,7 @@ import kotlin.coroutines.resume
 private val CHANNELS_CLEAN_DELAY = TimeUnit.MINUTES.toMillis(2)
 
 class SendBirdApi(private val userId: String) {
-    private val scope = CoroutineScope(Dispatchers.IO)
+    private val scope = CoroutineScope(Dispatchers.Unconfined)
 
     private val channelsHashMap = ConcurrentHashMap<String, GroupChannel>()
     private val channelsLastUsageTime = ConcurrentHashMap<String, Long>()
@@ -31,14 +31,12 @@ class SendBirdApi(private val userId: String) {
     }
 
     @UseExperimental(ObsoleteCoroutinesApi::class)
-    private fun startInMemoryChannelsCaching() {
-        scope.launch {
-            for (tick in ticker(CHANNELS_CLEAN_DELAY)) {
-                channelsLastUsageTime.forEach { (id: String, time: Long) ->
-                    if (System.currentTimeMillis() - time >= CHANNELS_CLEAN_DELAY) {
-                        channelsLastUsageTime.remove(id)
-                        channelsHashMap.remove(id)
-                    }
+    private fun startInMemoryChannelsCaching() = scope.launch {
+        for (tick in ticker(CHANNELS_CLEAN_DELAY)) {
+            channelsLastUsageTime.forEach { (id: String, time: Long) ->
+                if (System.currentTimeMillis() - time >= CHANNELS_CLEAN_DELAY) {
+                    channelsLastUsageTime.remove(id)
+                    channelsHashMap.remove(id)
                 }
             }
         }
@@ -216,6 +214,14 @@ class SendBirdApi(private val userId: String) {
                 it.resume(Unit)
             }
         }
+    }
+
+    fun addChannelHandler(identifier: String, handler: SendBird.ChannelHandler) {
+        SendBird.addChannelHandler(identifier, handler)
+    }
+
+    fun removeChannelHandler(identifier: String) {
+        SendBird.removeChannelHandler(identifier)
     }
 
     suspend fun registerPushNotifications(token: String) {

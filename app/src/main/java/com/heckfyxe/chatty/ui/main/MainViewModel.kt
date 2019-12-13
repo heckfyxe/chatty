@@ -5,11 +5,6 @@ import com.heckfyxe.chatty.model.Dialog
 import com.heckfyxe.chatty.model.User
 import com.heckfyxe.chatty.repository.DialogRepository
 import com.heckfyxe.chatty.room.toDomain
-import com.heckfyxe.chatty.util.sendbird.toDomain
-import com.sendbird.android.BaseChannel
-import com.sendbird.android.BaseMessage
-import com.sendbird.android.GroupChannel
-import com.sendbird.android.SendBird
 import kotlinx.coroutines.launch
 
 
@@ -24,29 +19,13 @@ enum class Progress {
     COMPLETED
 }
 
-private const val CHANNEL_HANDLER_IDENTIFIER =
-    "com.heckfyxe.chatty.ui.main.CHANNEL_HANDLER_IDENTIFIER"
-
 class MainViewModel(private val repository: DialogRepository) : ViewModel() {
-
-    private val channelHandler = object : SendBird.ChannelHandler() {
-        override fun onMessageReceived(channel: BaseChannel, baseMessage: BaseMessage) {
-            if (channel !is GroupChannel) return
-
-            val dialog = channel.toDomain()
-
-            viewModelScope.launch {
-                repository.insertDialog(dialog)
-            }
-        }
-    }
 
     private val _errors = MutableLiveData<Exception?>()
     val errors: LiveData<Exception?> = _errors
 
     private val _launchMessagesEvent = MutableLiveData<LaunchMessageEvent?>()
-    val launchMessagesEvent: LiveData<LaunchMessageEvent?>
-        get() = _launchMessagesEvent
+    val launchMessagesEvent: LiveData<LaunchMessageEvent?> = _launchMessagesEvent
 
     val chats: LiveData<List<Dialog>> = Transformations.map(repository.chats) {
         _progress.value = Progress.COMPLETED
@@ -58,10 +37,18 @@ class MainViewModel(private val repository: DialogRepository) : ViewModel() {
 
     init {
         _progress.value = Progress.LOADING
-        SendBird.addChannelHandler(CHANNEL_HANDLER_IDENTIFIER, channelHandler)
+        try {
+            repository.launchChannelHandler(viewModelScope)
+        } catch (e: Exception) {
+            _errors.value = e
+        }
         refreshChats()
         viewModelScope.launch {
-            repository.registerPushNotifications()
+            try {
+                repository.registerPushNotifications()
+            } catch (e: Exception) {
+                _errors.value = e
+            }
         }
     }
 
@@ -97,6 +84,6 @@ class MainViewModel(private val repository: DialogRepository) : ViewModel() {
     override fun onCleared() {
         super.onCleared()
 
-        SendBird.removeChannelHandler(CHANNEL_HANDLER_IDENTIFIER)
+        repository.stopChannelHandler()
     }
 }

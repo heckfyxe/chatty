@@ -8,6 +8,7 @@ import com.heckfyxe.chatty.room.DialogDao
 import com.heckfyxe.chatty.room.MessageDao
 import com.heckfyxe.chatty.room.toDomain
 import com.heckfyxe.chatty.util.sendbird.toRoomMessage
+import com.sendbird.android.SendBird
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.channels.ReceiveChannel
@@ -18,6 +19,9 @@ import org.koin.core.KoinComponent
 import org.koin.core.inject
 
 private const val PAGE_SIZE = 70
+
+private const val CHANNEL_HANDLER_IDENTIFIER =
+    "com.heckfyxe.chatty.ui.message.CHANNEL_HANDLER_IDENTIFIER"
 
 class MessageRepository(val channelId: String) :
     KoinComponent {
@@ -84,6 +88,14 @@ class MessageRepository(val channelId: String) :
             }
         }
         result
+    }
+
+    fun launchChannelHandler(handler: SendBird.ChannelHandler) {
+        sendBirdApi.addChannelHandler(CHANNEL_HANDLER_IDENTIFIER, handler)
+    }
+
+    fun stopChannelHandler() {
+        sendBirdApi.removeChannelHandler(CHANNEL_HANDLER_IDENTIFIER)
     }
 
     suspend fun startTyping() = sendBirdApi.startTyping(channelId)
