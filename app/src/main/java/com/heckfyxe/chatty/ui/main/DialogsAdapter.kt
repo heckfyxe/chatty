@@ -1,15 +1,18 @@
 package com.heckfyxe.chatty.ui.main
 
+import android.os.Build
 import android.view.LayoutInflater
+import android.view.View
 import android.view.ViewGroup
 import androidx.recyclerview.widget.DiffUtil
 import androidx.recyclerview.widget.ListAdapter
 import androidx.recyclerview.widget.RecyclerView
 import com.heckfyxe.chatty.databinding.ItemDialogBinding
 import com.heckfyxe.chatty.model.Dialog
-import com.heckfyxe.chatty.util.OnClickAction
 
-class DialogsAdapter(private val onClick: OnClickAction<Dialog>) :
+typealias DialogClickListener = (Dialog, Array<Pair<View, String>>) -> Unit
+
+class DialogsAdapter(private val clickListener: DialogClickListener) :
     ListAdapter<Dialog, DialogsAdapter.ViewHolder>(DIFF) {
 
     private companion object DIFF : DiffUtil.ItemCallback<Dialog>() {
@@ -27,16 +30,28 @@ class DialogsAdapter(private val onClick: OnClickAction<Dialog>) :
     }
 
     override fun onBindViewHolder(holder: ViewHolder, position: Int) {
-        holder.bind(getItem(position), onClick)
+        holder.bind(getItem(position), clickListener)
     }
 
     class ViewHolder(private val binding: ItemDialogBinding) :
         RecyclerView.ViewHolder(binding.root) {
-        fun bind(dialog: Dialog, onClick: OnClickAction<Dialog>) {
+        fun bind(dialog: Dialog, clickListener: DialogClickListener) {
             binding.dialog = dialog
             binding.executePendingBindings()
             itemView.setOnClickListener {
-                onClick.action(dialog)
+                if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP) {
+                    binding.apply {
+                        clickListener.invoke(
+                            dialog,
+                            arrayOf(
+                                avatarImageView to avatarImageView.transitionName,
+                                dialogName to dialogName.transitionName
+                            )
+                        )
+                    }
+                } else {
+                    clickListener.invoke(dialog, emptyArray())
+                }
             }
         }
     }

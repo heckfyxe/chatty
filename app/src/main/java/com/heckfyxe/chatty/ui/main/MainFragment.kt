@@ -10,12 +10,12 @@ import androidx.appcompat.app.AlertDialog
 import androidx.appcompat.app.AppCompatActivity
 import androidx.fragment.app.Fragment
 import androidx.lifecycle.Observer
+import androidx.navigation.fragment.FragmentNavigatorExtras
 import androidx.navigation.fragment.findNavController
 import com.heckfyxe.chatty.EmotionDetector
 import com.heckfyxe.chatty.R
 import com.heckfyxe.chatty.databinding.MainFragmentBinding
 import com.heckfyxe.chatty.model.User
-import com.heckfyxe.chatty.util.OnClickAction
 import com.heckfyxe.chatty.util.clearSharedPreferencesData
 import com.heckfyxe.chatty.util.setAuthenticated
 import kotlinx.android.synthetic.main.main_fragment.*
@@ -35,9 +35,9 @@ class MainFragment : Fragment() {
 
         setAuthenticated()
 
-        adapter = DialogsAdapter(OnClickAction {
-            viewModel.launchMessageFragment(it)
-        })
+        adapter = DialogsAdapter { dialog, sharedElements ->
+            viewModel.launchMessageFragment(dialog, sharedElements)
+        }
 
         connectToViewModel()
     }
@@ -84,7 +84,12 @@ class MainFragment : Fragment() {
             it ?: return@Observer
 
             viewModel.onMessageFragmentLaunched()
-            launchMessageFragment(it.channelId, it.interlocutor, it.lastMessageTime)
+            launchMessageFragment(
+                it.channelId,
+                it.interlocutor,
+                it.lastMessageTime,
+                it.sharedElements
+            )
         })
     }
 
@@ -132,7 +137,6 @@ class MainFragment : Fragment() {
                 when (position) {
                     0 -> showNewInterlocutorFromFriends() // From friends
                     1 -> showNewInterlocutorByPhoneNumberDialog() // By phone number
-
                     2 -> showNewInterlocutorByNicknameDialog() // By nickname
                 }
             }
@@ -168,14 +172,18 @@ class MainFragment : Fragment() {
     private fun launchMessageFragment(
         channelId: String,
         interlocutor: User?,
-        lastMessageTime: Long = -1
+        lastMessageTime: Long = -1,
+        sharedElements: Array<Pair<View, String>> = emptyArray()
     ) {
         val direction = MainFragmentDirections.actionMainFragmentToMessageFragment(
             channelId,
             interlocutor,
             lastMessageTime
         )
-        findNavController().navigate(direction)
+        findNavController().navigate(
+            direction,
+            FragmentNavigatorExtras(*sharedElements)
+        )
     }
 
     companion object {

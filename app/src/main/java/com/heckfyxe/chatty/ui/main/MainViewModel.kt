@@ -1,5 +1,6 @@
 package com.heckfyxe.chatty.ui.main
 
+import android.view.View
 import androidx.lifecycle.*
 import com.heckfyxe.chatty.model.Dialog
 import com.heckfyxe.chatty.model.User
@@ -8,10 +9,11 @@ import com.heckfyxe.chatty.room.toDomain
 import kotlinx.coroutines.launch
 
 
-data class LaunchMessageEvent(
+class LaunchMessageEvent(
     val channelId: String,
     val interlocutor: User?,
-    val lastMessageTime: Long
+    val lastMessageTime: Long,
+    val sharedElements: Array<Pair<View, String>>
 )
 
 enum class Progress {
@@ -60,11 +62,12 @@ class MainViewModel(private val repository: DialogRepository) : ViewModel() {
         }
     }
 
-    fun launchMessageFragment(dialog: Dialog) {
+    fun launchMessageFragment(dialog: Dialog, sharedElements: Array<Pair<View, String>>) {
         _launchMessagesEvent.value = LaunchMessageEvent(
             dialog.id,
             dialog.interlocutor,
-            dialog.lastMessage!!.time
+            dialog.lastMessage!!.time,
+            sharedElements
         )
     }
 

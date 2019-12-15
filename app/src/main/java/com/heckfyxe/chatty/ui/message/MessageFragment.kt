@@ -1,5 +1,6 @@
 package com.heckfyxe.chatty.ui.message
 
+import android.os.Build
 import android.os.Bundle
 import android.view.LayoutInflater
 import android.view.View
@@ -13,6 +14,7 @@ import androidx.navigation.fragment.navArgs
 import androidx.navigation.ui.NavigationUI
 import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
+import androidx.transition.TransitionInflater
 import com.heckfyxe.chatty.R
 import com.heckfyxe.chatty.databinding.MessageFragmentBinding
 import com.stfalcon.chatkit.messages.MessageInput
@@ -36,6 +38,10 @@ class MessageFragment : Fragment() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
 
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP) {
+            sharedElementEnterTransition = TransitionInflater.from(context!!)
+                .inflateTransition(android.R.transition.move)
+        }
         observeViewModel()
     }
 
@@ -60,6 +66,7 @@ class MessageFragment : Fragment() {
         savedInstanceState: Bundle?
     ): View? = MessageFragmentBinding.inflate(inflater).run {
         lifecycleOwner = this@MessageFragment
+        dialogId = args.channelId
         interlocutor = args.user
         messageViewModel = viewModel
         executePendingBindings()

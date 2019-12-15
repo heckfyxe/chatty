@@ -6,6 +6,10 @@
     <data>
 
         <variable
+            name="dialogId"
+            type="String" />
+
+        <variable
             name="interlocutor"
             type="com.heckfyxe.chatty.model.User" />
 
@@ -49,6 +53,7 @@
                             android:layout_alignParentTop="true"
                             android:layout_alignParentBottom="true"
                             android:padding="1dp"
+                            app:avatarTransitionName="@{dialogId}"
                             app:loadAvatar="@{interlocutor.avatarUrl}"
                             tools:src="@tools:sample/avatars" />
 
@@ -61,6 +66,7 @@
                             android:layout_toEndOf="@+id/dialogUserAvatar"
                             android:text="@{interlocutor.name}"
                             android:textSize="20sp"
+                            app:nicknameTransitionName="@{dialogId}"
                             tools:text="@tools:sample/first_names" />
 
                         <androidx.appcompat.widget.AppCompatTextView

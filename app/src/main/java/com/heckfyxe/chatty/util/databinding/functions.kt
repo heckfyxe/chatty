@@ -1,5 +1,6 @@
 package com.heckfyxe.chatty.util.databinding
 
+import android.os.Build
 import android.widget.ImageView
 import android.widget.TextView
 import androidx.databinding.BindingAdapter
@@ -16,7 +17,7 @@ import java.text.SimpleDateFormat
 import java.util.*
 
 private val formatter: SimpleDateFormat by lazy {
-    SimpleDateFormat("HH:mm", Locale.getDefault())
+    SimpleDateFormat("HH:mm", Locale.US)
 }
 
 private val date: Date by lazy { Date() }
@@ -68,4 +69,16 @@ fun loadAvatar(imageView: ImageView?, data: Any?) {
 fun dialogItems(recyclerView: RecyclerView?, dialogs: List<Dialog>?) {
     dialogs ?: return
     (recyclerView?.adapter as? DialogsAdapter)?.submitList(dialogs)
+}
+
+@BindingAdapter("avatarTransitionName")
+fun avatarTransitionName(imageView: ImageView?, dialogId: String?) {
+    if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP)
+        imageView?.transitionName = "${dialogId}avatar"
+}
+
+@BindingAdapter("nicknameTransitionName")
+fun nicknameTransitionName(textView: TextView?, dialogId: String?) {
+    if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP)
+        textView?.transitionName = "${dialogId}nickname"
 }
