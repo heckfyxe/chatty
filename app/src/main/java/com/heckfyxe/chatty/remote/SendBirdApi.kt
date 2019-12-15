@@ -7,6 +7,8 @@ import kotlinx.coroutines.*
 import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.channels.ReceiveChannel
 import kotlinx.coroutines.channels.ticker
+import kotlinx.coroutines.sync.Mutex
+import kotlinx.coroutines.sync.withLock
 import java.io.File
 import java.util.concurrent.ConcurrentHashMap
 import java.util.concurrent.TimeUnit
@@ -26,6 +28,8 @@ class SendBirdApi(private val userId: String) {
     private val isUserConnected: Boolean
         get() = currentUser != null
 
+    private val mutex = Mutex()
+
     init {
         startInMemoryChannelsCaching()
     }
@@ -42,7 +46,7 @@ class SendBirdApi(private val userId: String) {
         }
     }
 
-    private suspend fun checkConnection() {
+    private suspend fun checkConnection() = mutex.withLock {
         if (!isUserConnected) connect()
     }
 

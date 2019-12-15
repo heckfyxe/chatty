@@ -2,6 +2,8 @@ package com.heckfyxe.chatty.ui.auth
 
 import android.app.Activity.RESULT_OK
 import android.content.Intent
+import android.graphics.Bitmap
+import android.graphics.BitmapFactory
 import android.net.Uri
 import android.os.Bundle
 import android.os.Environment
@@ -11,6 +13,7 @@ import android.view.View
 import android.view.ViewGroup
 import android.view.inputmethod.EditorInfo
 import android.widget.Toast
+import android.widget.Toast.LENGTH_SHORT
 import androidx.core.content.FileProvider
 import androidx.core.widget.addTextChangedListener
 import androidx.fragment.app.Fragment
@@ -20,6 +23,7 @@ import com.google.android.material.snackbar.Snackbar
 import com.heckfyxe.chatty.R
 import com.heckfyxe.chatty.databinding.EditUserDataFragmentBinding
 import com.heckfyxe.chatty.util.setAuthenticated
+import com.soundcloud.android.crop.Crop
 import kotlinx.android.synthetic.main.edit_user_data_fragment.*
 import org.koin.androidx.viewmodel.ext.android.viewModel
 import java.io.File
@@ -29,15 +33,17 @@ import java.util.*
 
 private const val EXTRA_NICKNAME = "com.heckfyxe.chatty.EXTRA_NICKNAME"
 private const val EXTRA_PHOTO_FILE = "com.heckfyxe.chatty.EXTRA_PHOTO_FILE"
+private const val EXTRA_CROPPED_PHOTO_FILE = "com.heckfyxe.chatty.EXTRA_CROPPED_PHOTO_FILE"
 
 private const val RC_TAKE_PHOTO = 0
+private const val RC_CROP_PHOTO = 1
 
 class EditUserDataFragment : Fragment() {
 
     private val editUserDataViewModel: EditUserDataViewModel by viewModel()
 
     private var avatarImageFile: File? = null
-    private var isPhotoTaken = false
+    private var avatarCroppedImageFile: File? = null
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -73,15 +79,11 @@ class EditUserDataFragment : Fragment() {
                     val photoFile: File? = try {
                         createImageFile()
                     } catch (e: IOException) {
-                        Toast.makeText(context!!, R.string.error, Toast.LENGTH_SHORT).show()
+                        Toast.makeText(context!!, R.string.error, LENGTH_SHORT).show()
                         return@Observer
                     }
                     photoFile?.also { file ->
-                        val photoURI: Uri = FileProvider.getUriForFile(
-                            context!!,
-                            "com.heckfyxe.chatty.fileprovider",
-                            file
-                        )
+                        val photoURI: Uri = file.toUri()
                         avatarImageFile = file
                         takePictureIntent.putExtra(MediaStore.EXTRA_OUTPUT, photoURI)
                         startActivityForResult(takePictureIntent, RC_TAKE_PHOTO)
@@ -101,6 +103,12 @@ class EditUserDataFragment : Fragment() {
             storageDir
         )
     }
+
+    private fun File.toUri(): Uri = FileProvider.getUriForFile(
+        context!!,
+        "com.heckfyxe.chatty.fileprovider",
+        this
+    )
 
     override fun onCreateView(
         inflater: LayoutInflater, container: ViewGroup?,
@@ -144,10 +152,29 @@ class EditUserDataFragment : Fragment() {
     override fun onActivityResult(requestCode: Int, resultCode: Int, data: Intent?) {
         when (requestCode) {
             RC_TAKE_PHOTO -> {
-                if (resultCode != RESULT_OK) return
+                if (resultCode != RESULT_OK) {
+                    Toast.makeText(context!!, R.string.error, LENGTH_SHORT).show()
+                    return
+                }
 
-                isPhotoTaken
-                editUserDataViewModel.onPhotoTaken(avatarImageFile!!)
+                avatarCroppedImageFile = createImageFile()
+                Crop.of(avatarImageFile!!.toUri(), avatarCroppedImageFile!!.toUri())
+                    .asSquare()
+                    .start(context!!, this, RC_CROP_PHOTO)
+            }
+            RC_CROP_PHOTO -> {
+                if (resultCode != RESULT_OK) {
+                    Toast.makeText(context!!, R.string.error, LENGTH_SHORT).show()
+                    return
+                }
+
+                val bitmap = avatarCroppedImageFile!!.inputStream().use {
+                    BitmapFactory.decodeStream(it)
+                }
+                avatarCroppedImageFile!!.outputStream().use {
+                    bitmap.compress(Bitmap.CompressFormat.JPEG, 70, it)
+                }
+                editUserDataViewModel.onPhotoTaken(avatarCroppedImageFile!!)
             }
             else -> super.onActivityResult(requestCode, resultCode, data)
         }
@@ -158,12 +185,14 @@ class EditUserDataFragment : Fragment() {
 
         savedInstanceState?.apply {
             val nickname = getCharSequence(EXTRA_NICKNAME)?.toString()
+            avatarImageFile = getSerializable(EXTRA_PHOTO_FILE) as? File
+            avatarCroppedImageFile = getSerializable(EXTRA_CROPPED_PHOTO_FILE) as? File
+
             if (nickname != null) {
                 nicknameEditText?.setText(nickname)
                 editUserDataViewModel.checkNickname(nickname)
             }
-            avatarImageFile = getSerializable(EXTRA_PHOTO_FILE) as? File
-            editUserDataViewModel.onPhotoTaken(avatarImageFile ?: return)
+            editUserDataViewModel.onPhotoTaken(avatarCroppedImageFile ?: return)
         }
     }
 
@@ -173,6 +202,7 @@ class EditUserDataFragment : Fragment() {
         outState.apply {
             putCharSequence(EXTRA_NICKNAME, nicknameEditText?.text)
             putSerializable(EXTRA_PHOTO_FILE, avatarImageFile)
+            putSerializable(EXTRA_CROPPED_PHOTO_FILE, avatarCroppedImageFile)
         }
     }
 }

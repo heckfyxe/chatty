@@ -40,6 +40,8 @@
             </intent-filter>
         </activity>
 
+        <activity android:name="com.soundcloud.android.crop.CropImageActivity" />
+
         <service
             android:name=".service.AppFirebaseMessagingService"
             android:exported="false">
