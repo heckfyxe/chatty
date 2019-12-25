@@ -14,7 +14,7 @@
         android:layout_width="match_parent"
         android:layout_height="wrap_content">
 
-        <androidx.appcompat.widget.LinearLayoutCompat
+        <FrameLayout
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:layout_gravity="end"
@@ -23,24 +23,16 @@
             android:layout_marginEnd="16dp"
             android:layout_marginBottom="8dp"
             android:background="@drawable/shape_out_message"
-            android:gravity="end"
             android:orientation="vertical"
-            android:padding="8dp">
+            android:padding="8dp"
+            tools:ignore="UselessParent">
 
-            <androidx.appcompat.widget.AppCompatTextView
-                android:id="@+id/messageText"
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:text="@{message.text}"
-                tools:text="@tools:sample/lorem" />
+            <androidx.appcompat.widget.AppCompatImageView
+                android:layout_width="200dp"
+                android:layout_height="300dp"
+                app:loadImage="@{message.file}"
+                tools:src="@tools:sample/backgrounds/scenic" />
 
-            <androidx.appcompat.widget.AppCompatTextView
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:textSize="12sp"
-                app:outMessageText="@{message}"
-                tools:text="@tools:sample/date/hhmm" />
-
-        </androidx.appcompat.widget.LinearLayoutCompat>
+        </FrameLayout>
     </FrameLayout>
 </layout>

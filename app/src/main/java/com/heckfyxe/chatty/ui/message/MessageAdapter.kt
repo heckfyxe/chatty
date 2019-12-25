@@ -6,14 +6,19 @@ import androidx.databinding.ViewDataBinding
 import androidx.recyclerview.widget.RecyclerView
 import androidx.recyclerview.widget.SortedList
 import androidx.recyclerview.widget.SortedListAdapterCallback
+import com.heckfyxe.chatty.databinding.ItemInImageMessageBinding
 import com.heckfyxe.chatty.databinding.ItemInMessageBinding
+import com.heckfyxe.chatty.databinding.ItemOutImageMessageBinding
 import com.heckfyxe.chatty.databinding.ItemOutMessageBinding
 import com.heckfyxe.chatty.model.Message
+import com.heckfyxe.chatty.model.MessageType
 import kotlin.math.max
 import kotlin.math.min
 
-private const val TYPE_MESSAGE_IN = 0
-private const val TYPE_MESSAGE_OUT = 1
+private const val TYPE_TEXT_MESSAGE_IN = 0
+private const val TYPE_TEXT_MESSAGE_OUT = 1
+private const val TYPE_IMAGE_MESSAGE_IN = 3
+private const val TYPE_IMAGE_MESSAGE_OUT = 4
 
 fun <T : Any> SortedList<T>.withUpdate(block: SortedList<T>.() -> Unit) {
     beginBatchedUpdates()
@@ -94,21 +99,35 @@ class MessageAdapter : RecyclerView.Adapter<MessageViewHolder>() {
     override fun getItemViewType(position: Int): Int {
         val message = messages[position]
         return if (message.out)
-            TYPE_MESSAGE_OUT
+            if (message.type == MessageType.TEXT)
+                TYPE_TEXT_MESSAGE_OUT
+            else
+                TYPE_IMAGE_MESSAGE_OUT
         else
-            TYPE_MESSAGE_IN
+            if (message.type == MessageType.TEXT)
+                TYPE_TEXT_MESSAGE_IN
+            else
+                TYPE_IMAGE_MESSAGE_IN
     }
 
     override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): MessageViewHolder {
         val inflater = LayoutInflater.from(parent.context)
         return when (viewType) {
-            TYPE_MESSAGE_IN -> {
+            TYPE_TEXT_MESSAGE_IN -> {
                 val binding = ItemInMessageBinding.inflate(inflater, parent, false)
                 MessageInViewHolder(binding)
             }
-            TYPE_MESSAGE_OUT -> {
+            TYPE_TEXT_MESSAGE_OUT -> {
                 val binding = ItemOutMessageBinding.inflate(inflater, parent, false)
                 MessageOutViewHolder(binding)
+            }
+            TYPE_IMAGE_MESSAGE_IN -> {
+                val binding = ItemInImageMessageBinding.inflate(inflater, parent, false)
+                MessageInImageViewHolder(binding)
+            }
+            TYPE_IMAGE_MESSAGE_OUT -> {
+                val binding = ItemOutImageMessageBinding.inflate(inflater, parent, false)
+                MessageOutImageViewHolder(binding)
             }
             else -> throw Exception("Unknown viewType")
         }
@@ -121,6 +140,10 @@ class MessageAdapter : RecyclerView.Adapter<MessageViewHolder>() {
         val message = messages[position]
         holder.bind(message)
 
+        handleMessageLoading(position)
+    }
+
+    private fun handleMessageLoading(position: Int) {
         loadingListener ?: return
         if (messages.size() - position < loadingListener!!.prefetchSize() && previousSize != messages.size()) {
             previousSize = messages.size()
@@ -142,6 +165,7 @@ abstract class MessageViewHolder(binding: ViewDataBinding) : RecyclerView.ViewHo
 class MessageInViewHolder(private val binding: ItemInMessageBinding) : MessageViewHolder(binding) {
     override fun bind(message: Message) {
         binding.message = message
+        binding.executePendingBindings()
     }
 }
 
@@ -149,5 +173,22 @@ class MessageOutViewHolder(private val binding: ItemOutMessageBinding) :
     MessageViewHolder(binding) {
     override fun bind(message: Message) {
         binding.message = message
+        binding.executePendingBindings()
+    }
+}
+
+class MessageInImageViewHolder(private val binding: ItemInImageMessageBinding) :
+    MessageViewHolder(binding) {
+    override fun bind(message: Message) {
+        binding.message = message
+        binding.executePendingBindings()
+    }
+}
+
+class MessageOutImageViewHolder(private val binding: ItemOutImageMessageBinding) :
+    MessageViewHolder(binding) {
+    override fun bind(message: Message) {
+        binding.message = message
+        binding.executePendingBindings()
     }
 }

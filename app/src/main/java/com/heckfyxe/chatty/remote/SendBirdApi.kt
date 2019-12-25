@@ -6,7 +6,9 @@ import com.sendbird.android.*
 import kotlinx.coroutines.*
 import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.channels.ReceiveChannel
+import kotlinx.coroutines.channels.awaitClose
 import kotlinx.coroutines.channels.ticker
+import kotlinx.coroutines.flow.callbackFlow
 import kotlinx.coroutines.sync.Mutex
 import kotlinx.coroutines.sync.withLock
 import java.io.File
@@ -169,26 +171,40 @@ class SendBirdApi(private val userId: String) {
         }
     }
 
-    suspend fun sendMessage(channelId: String, text: String): ReceiveChannel<RoomMessage> {
+    @UseExperimental(ExperimentalCoroutinesApi::class)
+    suspend fun sendMessage(channelId: String, text: String) = callbackFlow {
         checkConnection()
         val channel = getChannel(channelId)
-        val result = Channel<RoomMessage>(1)
         val tempMessage = channel.sendUserMessage(text.trim()) { message, e ->
-            updateMemoryCachedChannel(channel)
-            scope.launch {
-                if (e != null) {
-                    result.close(e)
-                    return@launch
-                }
-
-                result.send(message.toRoomMessage(true))
-                result.close()
+            if (e != null) {
+                close(e)
+                return@sendUserMessage
             }
+
+            offer(message.toRoomMessage())
+            close()
         }
-        updateMemoryCachedChannel(channel)
-        result.send(tempMessage.toRoomMessage(out = true, sent = false))
-        return result
+        offer(tempMessage.toRoomMessage())
+        awaitClose()
     }
+
+    @UseExperimental(ExperimentalCoroutinesApi::class)
+    suspend fun sendMessage(channelId: String, file: File) = callbackFlow {
+        checkConnection()
+        val channel = getChannel(channelId)
+        val tempMessage = channel.sendFileMessage(FileMessageParams(file)) { message, e ->
+            if (e != null) {
+                close(e)
+                return@sendFileMessage
+            }
+
+            offer(message.toRoomMessage())
+            close()
+        }
+        offer(tempMessage.toRoomMessage().copy(file = file.path))
+        awaitClose()
+    }
+
 
     suspend fun startTyping(channelId: String) = getChannel(channelId).startTyping()
 
@@ -238,13 +254,6 @@ class SendBirdApi(private val userId: String) {
                 }
                 it.resume(Unit)
             }
-        }
-    }
-
-    private fun updateMemoryCachedChannel(channel: GroupChannel) {
-        if (channelsHashMap.containsKey(channel.url)) {
-            channelsLastUsageTime[channel.url] = System.currentTimeMillis()
-            channelsHashMap[channel.url] = channel
         }
     }
 

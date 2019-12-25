@@ -10,38 +10,32 @@
             type="com.heckfyxe.chatty.model.Message" />
     </data>
 
-    <FrameLayout
-        android:layout_width="match_parent"
+    <androidx.appcompat.widget.LinearLayoutCompat
+        android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:layout_marginBottom="8dp"
+        android:layout_gravity="start"
         android:layout_marginStart="16dp"
-        android:layout_marginEnd="16dp"
-        android:layout_marginTop="8dp">
+        android:layout_marginTop="8dp"
+        android:layout_marginEnd="40dp"
+        android:layout_marginBottom="8dp"
+        android:background="@drawable/shape_in_message"
+        android:orientation="vertical"
+        android:padding="8dp">
 
-        <androidx.appcompat.widget.LinearLayoutCompat
+        <androidx.appcompat.widget.AppCompatTextView
+            android:id="@+id/messageText"
             android:layout_width="wrap_content"
-            android:layout_height="match_parent"
-            android:orientation="vertical"
-            android:layout_gravity="start"
-            android:layout_marginEnd="40dp"
-            android:background="@drawable/shape_in_message"
-            android:padding="8dp">
+            android:layout_height="wrap_content"
+            android:text="@{message.text}"
+            tools:text="@tools:sample/lorem" />
 
-            <androidx.appcompat.widget.AppCompatTextView
-                android:id="@+id/messageText"
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:text="@{message.text}"
-                tools:text="@tools:sample/lorem" />
+        <androidx.appcompat.widget.AppCompatTextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_gravity="end"
+            android:textSize="12sp"
+            app:hhmm="@{message.time}"
+            tools:text="@tools:sample/date/hhmm" />
 
-            <androidx.appcompat.widget.AppCompatTextView
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:layout_gravity="end"
-                android:textSize="12sp"
-                app:hhmm="@{message.time}"
-                tools:text="@tools:sample/date/hhmm" />
-
-        </androidx.appcompat.widget.LinearLayoutCompat>
-    </FrameLayout>
+    </androidx.appcompat.widget.LinearLayoutCompat>
 </layout>

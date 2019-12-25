@@ -1,16 +1,12 @@
 package com.heckfyxe.chatty.room
 
 import androidx.room.*
-import com.heckfyxe.chatty.koin.KOIN_USER_ID
 import com.heckfyxe.chatty.model.Dialog
 import com.heckfyxe.chatty.model.Message
 import com.heckfyxe.chatty.model.User
-import com.heckfyxe.chatty.util.sendbird.getSender
-import com.heckfyxe.chatty.util.sendbird.getText
-import com.heckfyxe.chatty.util.sendbird.toDomain
+import com.heckfyxe.chatty.util.sendbird.*
 import com.sendbird.android.BaseMessage
 import com.sendbird.android.Member
-import org.koin.core.context.GlobalContext.get
 
 @Entity(
     tableName = "dialog",
@@ -31,9 +27,6 @@ data class RoomDialog(
     @ColumnInfo(name = "notification_id") var notificationId: Int = 0
 )
 
-private val koin = get().koin
-private val currentUserId: String by koin.inject(KOIN_USER_ID)
-
 fun RoomDialog.toDomain(): Dialog =
     Dialog(
         id,
@@ -51,11 +44,13 @@ fun List<RoomDialog>.toDomain(): List<Dialog> = map {
 fun BaseMessage.toDomain() = Message(
     messageId,
     createdAt,
-    getSender().toDomain(),
-    getText(),
-    getSender().userId == currentUserId,
-    true,
-    ""
+    sender.toDomain(),
+    text,
+    file,
+    type,
+    isSentByMe(),
+    isSent(),
+    requestId
 )
 
 fun Member.toDomain() = User(userId, nickname, profileUrl)

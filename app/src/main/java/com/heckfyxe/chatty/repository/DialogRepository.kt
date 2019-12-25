@@ -5,6 +5,7 @@ import androidx.room.withTransaction
 import com.google.firebase.auth.FirebaseAuth
 import com.google.firebase.iid.FirebaseInstanceId
 import com.heckfyxe.chatty.model.Dialog
+import com.heckfyxe.chatty.model.Message
 import com.heckfyxe.chatty.remote.SendBirdApi
 import com.heckfyxe.chatty.room.*
 import com.heckfyxe.chatty.util.sendbird.getInterlocutor
@@ -63,12 +64,17 @@ class DialogRepository : KoinComponent {
             dialog.interlocutor?.toRoomUser()?.let {
                 userDao.insert(it)
             }
-            dialog.lastMessage?.apply {
-                RoomMessage(id, dialog.id, time, sender, text, out, sent, requestId).let {
-                    messageDao.insert(it)
-                }
+            dialog.lastMessage?.toRoomMessage(dialog.id)?.let {
+                messageDao.insert(it)
             }
             dialogDao.insert(dialog.toRoomDialog())
+        }
+    }
+
+    suspend fun insertMessage(dialogId: String, message: Message) = withContext(Dispatchers.IO) {
+        database.withTransaction {
+            val dialog = dialogDao.getDialogById(dialogId) ?: return@withTransaction
+            dialogDao.update(dialog.copy(lastMessage = message))
         }
     }
 
@@ -81,6 +87,7 @@ class DialogRepository : KoinComponent {
 
                     val dialog = channel.toDomain()
 
+                    if (!scope.isActive) return
                     scope.launch {
                         insertDialog(dialog)
                     }

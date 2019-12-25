@@ -15,18 +15,19 @@ import com.sendbird.android.BaseChannel
 import com.sendbird.android.BaseMessage
 import com.sendbird.android.GroupChannel
 import com.sendbird.android.SendBird
-import kotlinx.coroutines.ExperimentalCoroutinesApi
+import kotlinx.coroutines.*
+import kotlinx.coroutines.channels.ReceiveChannel
 import kotlinx.coroutines.channels.awaitClose
 import kotlinx.coroutines.flow.callbackFlow
 import kotlinx.coroutines.flow.collect
 import kotlinx.coroutines.flow.distinctUntilChanged
-import kotlinx.coroutines.launch
 import org.koin.core.KoinComponent
 import org.koin.core.inject
 import org.koin.core.parameter.parametersOf
+import java.io.File
 
 class MessageViewModel(
-    channelId: String,
+    private val channelId: String,
     private val interlocutorId: String?,
     lastMessageTime: Long
 ) : ViewModel(), MessageAdapter.LoadingListener, KoinComponent {
@@ -70,6 +71,9 @@ class MessageViewModel(
 
     private val _scrollDown = MutableLiveData<Boolean>()
     val scrollDown: LiveData<Boolean> = _scrollDown
+
+    private val _deleteImageFile = MutableLiveData<File?>()
+    val deleteImageFile: LiveData<File?> = _deleteImageFile
 
     init {
         viewModelScope.launch {
@@ -167,16 +171,32 @@ class MessageViewModel(
         _errors.value = null
     }
 
-    fun sendTextMessage(text: String) = viewModelScope.launch {
+    fun sendTextMessage(text: String) = GlobalScope.launch(Dispatchers.Main) {
+        handleMessageSending(messageRepository.sendTextMessage(this, text))
+    }
+
+    fun sendImageMessage(file: File) = GlobalScope.launch(Dispatchers.Main) {
+        handleMessageSending(messageRepository.sendImageMessage(this, file))
+        _deleteImageFile.value = file
+    }
+
+    private suspend fun handleMessageSending(channel: ReceiveChannel<Message>) = coroutineScope {
         try {
-            val channel = messageRepository.sendTextMessage(text)
             adapter.addMessages(listOf(channel.receive()))
             scrollDown()
-            adapter.messageSent(channel.receive())
+            val message = channel.receive()
+            launch {
+                dialogRepository.insertMessage(channelId, message)
+            }
+            adapter.messageSent(message)
             scrollDown()
         } catch (e: Exception) {
             _errors.value = e
         }
+    }
+
+    fun onImageFileDeleted() {
+        _deleteImageFile.value = null
     }
 
     fun startTyping() = viewModelScope.launch { messageRepository.startTyping() }

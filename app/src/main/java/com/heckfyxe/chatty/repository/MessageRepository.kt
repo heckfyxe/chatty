@@ -3,20 +3,17 @@ package com.heckfyxe.chatty.repository
 import androidx.room.withTransaction
 import com.heckfyxe.chatty.model.Message
 import com.heckfyxe.chatty.remote.SendBirdApi
-import com.heckfyxe.chatty.room.AppDatabase
-import com.heckfyxe.chatty.room.DialogDao
-import com.heckfyxe.chatty.room.MessageDao
-import com.heckfyxe.chatty.room.toDomain
+import com.heckfyxe.chatty.room.*
 import com.heckfyxe.chatty.util.sendbird.toRoomMessage
 import com.sendbird.android.SendBird
-import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.*
 import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.channels.ReceiveChannel
-import kotlinx.coroutines.coroutineScope
-import kotlinx.coroutines.launch
-import kotlinx.coroutines.withContext
+import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.broadcastIn
 import org.koin.core.KoinComponent
 import org.koin.core.inject
+import java.io.File
 
 private const val PAGE_SIZE = 70
 
@@ -69,11 +66,21 @@ class MessageRepository(val channelId: String) :
         }
     }
 
-    suspend fun sendTextMessage(text: String) = coroutineScope<ReceiveChannel<Message>> {
+    suspend fun sendTextMessage(scope: CoroutineScope, text: String): ReceiveChannel<Message> =
+        sendMessage(scope, sendBirdApi.sendMessage(channelId, text))
+
+    suspend fun sendImageMessage(scope: CoroutineScope, file: File): ReceiveChannel<Message> =
+        sendMessage(scope, sendBirdApi.sendMessage(channelId, file))
+
+    @UseExperimental(ExperimentalCoroutinesApi::class, FlowPreview::class)
+    private suspend fun sendMessage(
+        scope: CoroutineScope,
+        flow: Flow<RoomMessage>
+    ): Channel<Message> {
         val result = Channel<Message>(2)
-        launch {
+        scope.launch {
             try {
-                val channel = sendBirdApi.sendMessage(channelId, text)
+                val channel = flow.broadcastIn(scope).openSubscription()
                 val tempMessage = channel.receive()
                 result.send(tempMessage.toDomain())
                 messageDao.insert(tempMessage)
@@ -87,7 +94,7 @@ class MessageRepository(val channelId: String) :
                 result.close()
             }
         }
-        result
+        return result
     }
 
     fun launchChannelHandler(handler: SendBird.ChannelHandler) {

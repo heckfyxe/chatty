@@ -12,16 +12,20 @@ interface MessageDao {
     @Insert(onConflict = OnConflictStrategy.REPLACE)
     suspend fun insert(messages: List<RoomMessage>)
 
+    @Update
+    suspend fun update(vararg message: RoomMessage)
+
     @Transaction
     @Query(
-        "UPDATE message SET id = :messageId, time = :time, sent = 1, request_id = '' WHERE request_id = :requestId"
+        "UPDATE message SET id = :messageId WHERE request_id = :requestId"
     )
-    suspend fun updateByRequestId(requestId: String, messageId: Long, time: Long)
+    suspend fun updateByRequestId(requestId: String, messageId: Long)
 
     @Transaction
     suspend fun updateByRequestId(message: RoomMessage) {
         message.apply {
-            updateByRequestId(requestId, id, time)
+            updateByRequestId(requestId, id)
+            update(this)
         }
     }
 

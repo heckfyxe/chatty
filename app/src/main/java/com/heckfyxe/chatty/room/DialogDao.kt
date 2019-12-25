@@ -1,10 +1,7 @@
 package com.heckfyxe.chatty.room
 
 import androidx.lifecycle.LiveData
-import androidx.room.Dao
-import androidx.room.Insert
-import androidx.room.OnConflictStrategy
-import androidx.room.Query
+import androidx.room.*
 
 @Dao
 interface DialogDao {
@@ -14,6 +11,12 @@ interface DialogDao {
 
     @Insert(onConflict = OnConflictStrategy.REPLACE)
     suspend fun insert(dialogs: List<RoomDialog>)
+
+    @Update
+    suspend fun update(dialog: RoomDialog)
+
+    @Query("SELECT * FROM dialog WHERE id = :dialogId LIMIT 1")
+    suspend fun getDialogById(dialogId: String): RoomDialog?
 
     @Query("SELECT * FROM dialog ORDER BY last_message_id DESC")
     fun getDialogsLiveData(): LiveData<List<RoomDialog>>
