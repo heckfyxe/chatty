@@ -18,6 +18,7 @@ class EditUserDataRepository(
         sendBirdApi.connect().toDomain()
 
     suspend fun checkNickname(nickname: String): Boolean = suspendCancellableCoroutine { cont ->
+        if (nickname.isBlank()) cont.resume(false)
         usersRef.whereEqualTo("nickname", nickname).limit(1).get(Source.SERVER)
             .addOnCompleteListener {
                 if (!it.isSuccessful) {
@@ -28,25 +29,35 @@ class EditUserDataRepository(
             }
     }
 
-    suspend fun updateUserInfo(userId: String, nickname: String) {
+    suspend fun updateUserInfo(userId: String, nickname: String, phoneNumber: String) {
         sendBirdApi.updateNickname(nickname)
-        updateNicknameFirebase(userId, nickname)
+        updateNicknameFirebase(userId, nickname, phoneNumber)
     }
 
-    suspend fun updateUserInfo(userId: String, nickname: String, avatarImage: File) {
+    suspend fun updateUserInfo(
+        userId: String,
+        nickname: String,
+        phoneNumber: String,
+        avatarImage: File
+    ) {
         sendBirdApi.updateNicknameWithAvatarImage(nickname, avatarImage)
-        updateNicknameFirebase(userId, nickname)
+        updateNicknameFirebase(userId, nickname, phoneNumber)
     }
 
-    private suspend fun updateNicknameFirebase(userId: String, nickname: String) =
-        suspendCancellableCoroutine<Unit> { cont ->
-            usersRef.document(userId).set(mapOf("nickname" to nickname), SetOptions.merge())
-                .addOnCompleteListener {
-                    if (it.isSuccessful) {
-                        cont.resume(Unit)
-                    } else {
-                        cont.cancel(it.exception)
-                    }
-                }
+    private suspend fun updateNicknameFirebase(
+        userId: String,
+        nickname: String,
+        phoneNumber: String
+    ) = suspendCancellableCoroutine<Unit> { cont ->
+        usersRef.document(userId).set(
+            mapOf("nickname" to nickname, "phoneNumber" to phoneNumber),
+            SetOptions.merge()
+        ).addOnCompleteListener {
+            if (it.isSuccessful) {
+                cont.resume(Unit)
+            } else {
+                cont.cancel(it.exception)
+            }
         }
+    }
 }

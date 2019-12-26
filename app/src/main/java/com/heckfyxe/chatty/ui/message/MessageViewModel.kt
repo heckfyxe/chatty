@@ -199,9 +199,19 @@ class MessageViewModel(
         _deleteImageFile.value = null
     }
 
-    fun startTyping() = viewModelScope.launch { messageRepository.startTyping() }
+    fun startTyping() = viewModelScope.launch {
+        try {
+            messageRepository.startTyping()
+        } catch (e: Exception) {
+        }
+    }
 
-    fun endTyping() = viewModelScope.launch { messageRepository.endTyping() }
+    fun endTyping() = viewModelScope.launch {
+        try {
+            messageRepository.endTyping()
+        } catch (e: Exception) {
+        }
+    }
 
     override fun onCleared() {
         super.onCleared()

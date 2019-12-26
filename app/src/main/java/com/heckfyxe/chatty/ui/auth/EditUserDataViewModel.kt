@@ -3,6 +3,7 @@ package com.heckfyxe.chatty.ui.auth
 import android.app.Application
 import android.util.Log
 import androidx.lifecycle.*
+import com.google.firebase.auth.FirebaseAuth
 import com.heckfyxe.chatty.R
 import com.heckfyxe.chatty.koin.KOIN_USER_ID
 import com.heckfyxe.chatty.repository.EditUserDataRepository
@@ -32,6 +33,9 @@ class EditUserDataViewModel(
     application: Application,
     private val repository: EditUserDataRepository
 ) : AndroidViewModel(application), KoinComponent {
+
+    private val firebaseAuth: FirebaseAuth by inject()
+    private val phoneNumber: String by lazy { firebaseAuth.currentUser!!.phoneNumber!! }
 
     private val resources = application.resources
     private val userId: String by inject(KOIN_USER_ID)
@@ -160,9 +164,10 @@ class EditUserDataViewModel(
                     is File -> repository.updateUserInfo(
                         userId,
                         nickname,
+                        phoneNumber,
                         _profileImage.value as File
                     )
-                    else -> repository.updateUserInfo(userId, nickname)
+                    else -> repository.updateUserInfo(userId, nickname, phoneNumber)
                 }
                 _status.value = DataUpdated
             } catch (e: Exception) {

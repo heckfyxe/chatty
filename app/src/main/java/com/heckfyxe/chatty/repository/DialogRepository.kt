@@ -61,13 +61,13 @@ class DialogRepository : KoinComponent {
 
     suspend fun insertDialog(dialog: Dialog) = withContext(Dispatchers.IO) {
         database.withTransaction {
+            dialogDao.insert(dialog.toRoomDialog())
             dialog.interlocutor?.toRoomUser()?.let {
                 userDao.insert(it)
             }
             dialog.lastMessage?.toRoomMessage(dialog.id)?.let {
                 messageDao.insert(it)
             }
-            dialogDao.insert(dialog.toRoomDialog())
         }
     }
 

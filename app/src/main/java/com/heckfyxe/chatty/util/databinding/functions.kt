@@ -1,5 +1,6 @@
 package com.heckfyxe.chatty.util.databinding
 
+import android.graphics.Bitmap
 import android.graphics.drawable.Drawable
 import android.os.Build
 import android.util.TypedValue
@@ -10,6 +11,7 @@ import androidx.databinding.BindingAdapter
 import androidx.recyclerview.widget.RecyclerView
 import com.bumptech.glide.Glide
 import com.bumptech.glide.load.DataSource
+import com.bumptech.glide.load.Transformation
 import com.bumptech.glide.load.engine.GlideException
 import com.bumptech.glide.load.resource.bitmap.RoundedCorners
 import com.bumptech.glide.load.resource.drawable.DrawableTransitionOptions.withCrossFade
@@ -74,8 +76,29 @@ fun loadAvatar(imageView: ImageView?, data: Any?) {
         .into(imageView)
 }
 
-@BindingAdapter("loadImage")
-fun loadImage(imageView: ImageView?, image: Any?) {
+@BindingAdapter("loadOutMessageImage")
+fun loadOutImage(imageView: ImageView?, image: Any?) {
+    loadImage(
+        imageView, image, RoundedCornersTransformation(
+            20,
+            0,
+            RoundedCornersTransformation.CornerType.OTHER_BOTTOM_RIGHT
+        )
+    )
+}
+
+@BindingAdapter("loadInMessageImage")
+fun loadInImage(imageView: ImageView?, image: Any?) {
+    loadImage(
+        imageView, image, RoundedCornersTransformation(
+            20,
+            0,
+            RoundedCornersTransformation.CornerType.OTHER_BOTTOM_LEFT
+        )
+    )
+}
+
+private fun loadImage(imageView: ImageView?, image: Any?, transformation: Transformation<Bitmap>) {
     imageView ?: return
     image ?: return
 
@@ -98,13 +121,7 @@ fun loadImage(imageView: ImageView?, image: Any?) {
             )
         )
         .centerCrop()
-        .transform(
-            RoundedCornersTransformation(
-                20,
-                0,
-                RoundedCornersTransformation.CornerType.OTHER_BOTTOM_RIGHT
-            )
-        )
+        .transform(transformation)
         .error(R.drawable.ic_broken_image)
         .listener(object : RequestListener<Drawable> {
             override fun onLoadFailed(

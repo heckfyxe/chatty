@@ -2,7 +2,6 @@ package com.heckfyxe.chatty.ui.auth
 
 
 import android.app.Activity
-import android.app.Activity.RESULT_CANCELED
 import android.content.Intent
 import android.os.Bundle
 import android.view.LayoutInflater
@@ -58,10 +57,11 @@ class AuthFragment : Fragment() {
     override fun onActivityResult(requestCode: Int, resultCode: Int, data: Intent?) {
         when (requestCode) {
             RC_AUTH -> {
-                if (resultCode == RESULT_CANCELED)
+                val response = IdpResponse.fromResultIntent(data)
+                if (response == null) {
                     activity?.finish()
-
-                val response = IdpResponse.fromResultIntent(data) ?: return
+                    return
+                }
 
                 if (resultCode == Activity.RESULT_OK) {
                     startMainActivity(response.isNewUser)

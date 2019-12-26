@@ -18,14 +18,14 @@
         android:layout_marginTop="8dp"
         android:layout_marginEnd="40dp"
         android:layout_marginBottom="8dp"
-        android:background="@drawable/shape_out_message"
+        android:background="@drawable/shape_in_message"
         android:orientation="vertical"
         android:padding="8dp">
 
         <androidx.appcompat.widget.AppCompatImageView
             android:layout_width="200dp"
             android:layout_height="300dp"
-            app:loadImage="@{message.file}"
+            app:loadInMessageImage="@{message.file}"
             tools:src="@tools:sample/backgrounds/scenic" />
 
     </FrameLayout>
