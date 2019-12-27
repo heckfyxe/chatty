@@ -52,7 +52,7 @@ class SendBirdApi(private val userId: String) {
         if (!isUserConnected) connect()
     }
 
-    suspend fun connect(): User = suspendCancellableCoroutine {
+    private suspend fun connect(): User = suspendCancellableCoroutine {
         SendBird.connect(userId) { user, e ->
             if (e != null) {
                 it.cancel(e)
@@ -60,6 +60,11 @@ class SendBirdApi(private val userId: String) {
                 it.resume(user)
             }
         }
+    }
+
+    suspend fun getCurrentUser(): User {
+        checkConnection()
+        return currentUser!!
     }
 
     suspend fun getChannels(): ReceiveChannel<List<GroupChannel>> {
@@ -236,7 +241,8 @@ class SendBirdApi(private val userId: String) {
         }
     }
 
-    fun addChannelHandler(identifier: String, handler: SendBird.ChannelHandler) {
+    suspend fun addChannelHandler(identifier: String, handler: SendBird.ChannelHandler) {
+        checkConnection()
         SendBird.addChannelHandler(identifier, handler)
     }
 

@@ -8,11 +8,9 @@ import com.heckfyxe.chatty.model.CheckingContact
 import com.heckfyxe.chatty.model.Contact
 import com.heckfyxe.chatty.model.ContactWithId
 import com.heckfyxe.chatty.repository.ContactRepository
-import com.heckfyxe.chatty.repository.UserRepository
 import com.sendbird.android.SendBird
 import com.sendbird.android.User
 import kotlinx.coroutines.CoroutineScope
-import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.launch
@@ -22,7 +20,6 @@ import org.koin.core.inject
 class ContactViewModel : ViewModel(), KoinComponent {
 
     private val contactRepository: ContactRepository by inject()
-    private val userRepository: UserRepository by inject()
 
     private val job = Job()
     private val scope = CoroutineScope(job)
@@ -123,16 +120,6 @@ class ContactViewModel : ViewModel(), KoinComponent {
             }
 
             friends.postValue(friendsList)
-        }
-    }
-
-    fun addUserToDatabase(
-        users: List<com.heckfyxe.chatty.room.RoomUser>,
-        onCompleteAction: () -> Unit
-    ) {
-        scope.launch(Dispatchers.IO) {
-            userRepository.saveUsersInDatabase(users)
-            onCompleteAction()
         }
     }
 

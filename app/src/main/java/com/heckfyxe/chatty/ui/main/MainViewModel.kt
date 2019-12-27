@@ -39,24 +39,30 @@ class MainViewModel(private val repository: DialogRepository) : ViewModel() {
 
     init {
         _progress.value = Progress.LOADING
-        try {
-            repository.launchChannelHandler(viewModelScope)
-        } catch (e: Exception) {
-            _errors.value = e
-        }
+        launchChannelHandler()
         refreshChats()
-        viewModelScope.launch {
-            try {
-                repository.registerPushNotifications()
-            } catch (e: Exception) {
-                _errors.value = e
-            }
-        }
+        registerPushNotifications()
     }
 
     private fun refreshChats() = viewModelScope.launch {
         try {
             repository.refresh()
+        } catch (e: Exception) {
+            _errors.value = e
+        }
+    }
+
+    private fun launchChannelHandler() = viewModelScope.launch {
+        try {
+            repository.launchChannelHandler(viewModelScope)
+        } catch (e: Exception) {
+            _errors.value = e
+        }
+    }
+
+    private fun registerPushNotifications() = viewModelScope.launch {
+        try {
+            repository.registerPushNotifications()
         } catch (e: Exception) {
             _errors.value = e
         }
@@ -81,7 +87,11 @@ class MainViewModel(private val repository: DialogRepository) : ViewModel() {
     }
 
     fun logOut(action: () -> Unit) = viewModelScope.launch {
-        repository.logOut(action)
+        try {
+            repository.logOut(action)
+        } catch (e: Exception) {
+            _errors.value = e
+        }
     }
 
     override fun onCleared() {

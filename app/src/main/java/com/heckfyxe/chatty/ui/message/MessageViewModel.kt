@@ -44,7 +44,10 @@ class MessageViewModel(
             val dialog = channel.toDomain()
 
             viewModelScope.launch {
-                dialogRepository.insertDialog(dialog)
+                try {
+                    dialogRepository.insertDialog(dialog)
+                } catch (e: Exception) {
+                }
             }
 
             if (dialog.id == channelId) {
@@ -93,9 +96,11 @@ class MessageViewModel(
                 _errors.value = e
             }
         }
-        viewModelScope.launch {
-            startInterlocutorEmotionTracking()
-        }
+        startInterlocutorEmotionTracking()
+        launchChannelHandler()
+    }
+
+    private fun launchChannelHandler() = viewModelScope.launch {
         try {
             messageRepository.launchChannelHandler(channelHandler)
         } catch (e: Exception) {
@@ -150,20 +155,23 @@ class MessageViewModel(
     }
 
     @UseExperimental(ExperimentalCoroutinesApi::class)
-    private suspend fun startInterlocutorEmotionTracking() {
-        interlocutorId ?: return
-        callbackFlow {
-            usersRef.document(interlocutorId).addSnapshotListener { snapshot, e ->
-                if (e != null) {
-                    return@addSnapshotListener
-                }
+    private fun startInterlocutorEmotionTracking() = viewModelScope.launch {
+        interlocutorId ?: return@launch
+        try {
+            callbackFlow {
+                usersRef.document(interlocutorId).addSnapshotListener { snapshot, e ->
+                    if (e != null) {
+                        return@addSnapshotListener
+                    }
 
-                val emotion = snapshot?.getString("emotion") ?: return@addSnapshotListener
-                offer(emotion)
+                    val emotion = snapshot?.getString("emotion") ?: return@addSnapshotListener
+                    offer(emotion)
+                }
+                awaitClose()
+            }.distinctUntilChanged().collect {
+                _interlocutorEmotions.value = it
             }
-            awaitClose()
-        }.distinctUntilChanged().collect {
-            _interlocutorEmotions.value = it
+        } catch (e: Exception) {
         }
     }
 

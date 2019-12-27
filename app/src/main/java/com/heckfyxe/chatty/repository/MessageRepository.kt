@@ -97,7 +97,7 @@ class MessageRepository(val channelId: String) :
         return result
     }
 
-    fun launchChannelHandler(handler: SendBird.ChannelHandler) {
+    suspend fun launchChannelHandler(handler: SendBird.ChannelHandler) {
         sendBirdApi.addChannelHandler(CHANNEL_HANDLER_IDENTIFIER, handler)
     }
 

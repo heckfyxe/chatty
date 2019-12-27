@@ -6,10 +6,12 @@ import com.heckfyxe.chatty.room.RoomDialog
 import com.heckfyxe.chatty.room.toDomain
 import com.sendbird.android.GroupChannel
 import com.sendbird.android.Member
+import org.koin.core.Koin
 import org.koin.core.context.GlobalContext.get
 
-private val koin = get().koin
-private val userId: String by koin.inject(KOIN_USER_ID)
+private val koin: Koin by lazy { get().koin }
+private val userId: String
+    get() = koin.get(KOIN_USER_ID)
 
 fun List<Member>.getInterlocutor(): Member? {
     if (this.size > 2) {

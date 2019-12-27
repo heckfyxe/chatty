@@ -14,7 +14,11 @@ import com.firebase.ui.auth.AuthUI
 import com.firebase.ui.auth.IdpResponse
 import com.google.android.material.snackbar.Snackbar
 import com.heckfyxe.chatty.R
+import com.heckfyxe.chatty.koin.remoteApiModule
+import com.heckfyxe.chatty.remote.SendBirdApi
 import com.heckfyxe.chatty.util.isAuthenticated
+import org.koin.core.context.GlobalContext.get
+import org.koin.core.context.loadKoinModules
 
 
 private const val RC_AUTH = 0
@@ -80,6 +84,7 @@ class AuthFragment : Fragment() {
     }
 
     private fun startMainActivity(isNewUser: Boolean = false) {
+        get().koin.getOrNull<SendBirdApi>() ?: loadKoinModules(remoteApiModule)
         if (isNewUser)
             findNavController().navigate(R.id.action_authFragment_to_editUserDataFragment)
         else

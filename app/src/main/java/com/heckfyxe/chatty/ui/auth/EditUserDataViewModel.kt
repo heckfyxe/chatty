@@ -98,7 +98,7 @@ class EditUserDataViewModel(
         viewModelScope.launch {
             launch {
                 try {
-                    val avatarUrl = repository.connect().avatarUrl
+                    val avatarUrl = repository.getAvatarUrl()
                     if (_profileImage.value == null)
                         _profileImage.value = avatarUrl
                 } catch (e: Exception) {

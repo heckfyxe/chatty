@@ -4,7 +4,6 @@ import com.google.firebase.firestore.CollectionReference
 import com.google.firebase.firestore.SetOptions
 import com.google.firebase.firestore.Source
 import com.heckfyxe.chatty.remote.SendBirdApi
-import com.heckfyxe.chatty.util.sendbird.toDomain
 import kotlinx.coroutines.suspendCancellableCoroutine
 import java.io.File
 import kotlin.coroutines.resume
@@ -14,8 +13,7 @@ class EditUserDataRepository(
     private val usersRef: CollectionReference
 ) {
 
-    suspend fun connect() =
-        sendBirdApi.connect().toDomain()
+    suspend fun getAvatarUrl(): String = sendBirdApi.getCurrentUser().profileUrl
 
     suspend fun checkNickname(nickname: String): Boolean = suspendCancellableCoroutine { cont ->
         if (nickname.isBlank()) cont.resume(false)

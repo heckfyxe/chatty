@@ -18,7 +18,7 @@ import org.koin.core.module.Module
 import org.koin.core.qualifier.named
 import org.koin.dsl.module
 
-private val remoteApiModule = module {
+val remoteApiModule = module {
     single { SendBirdApi(get(KOIN_USER_ID)) }
 }
 
@@ -74,4 +74,4 @@ private val firebaseModule = module {
 }
 
 val koinModule: List<Module> =
-    listOf(repositoryModule, roomModule, remoteApiModule, viewModelModule, firebaseModule)
+    listOf(repositoryModule, roomModule, viewModelModule, firebaseModule)

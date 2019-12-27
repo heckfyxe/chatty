@@ -8,10 +8,12 @@ import com.sendbird.android.BaseMessage
 import com.sendbird.android.FileMessage
 import com.sendbird.android.Sender
 import com.sendbird.android.UserMessage
+import org.koin.core.Koin
 import org.koin.core.context.GlobalContext.get
 
-private val koin = get().koin
-private val currentUserId: String by koin.inject(KOIN_USER_ID)
+private val koin: Koin by lazy { get().koin }
+private val currentUserId: String
+    get() = koin.get(KOIN_USER_ID)
 
 val BaseMessage.sender: Sender
     get() = when (this) {

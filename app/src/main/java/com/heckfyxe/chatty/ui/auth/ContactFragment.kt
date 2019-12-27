@@ -15,7 +15,6 @@ import androidx.navigation.fragment.findNavController
 import androidx.recyclerview.widget.LinearLayoutManager
 import com.google.android.material.snackbar.Snackbar
 import com.heckfyxe.chatty.R
-import com.heckfyxe.chatty.util.sendbird.toRoomUser
 import kotlinx.android.synthetic.main.contact_fragment.*
 import org.koin.androidx.viewmodel.ext.android.viewModel
 
@@ -95,14 +94,8 @@ class ContactFragment : Fragment() {
             contactsProgressBar?.progress = it
         })
 
-        viewModel.friends.observe(this, Observer { users ->
-            if (users.isEmpty()) {
-                launchMainFragment()
-            } else {
-                viewModel.addUserToDatabase(users.map { it.toRoomUser() }) {
-                    launchMainFragment()
-                }
-            }
+        viewModel.friends.observe(this, Observer {
+            launchMainFragment()
         })
 
         viewModel.isLoadingLiveData.observe(this, Observer {
