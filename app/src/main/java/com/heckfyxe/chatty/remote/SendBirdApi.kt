@@ -263,9 +263,27 @@ class SendBirdApi(private val userId: String) {
         }
     }
 
-    suspend fun disconnect(): Unit = suspendCancellableCoroutine {
+    private suspend fun unregisterPushNotifications() {
+        checkConnection()
+        suspendCancellableCoroutine<Unit> {
+            SendBird.unregisterPushTokenAllForCurrentUser { e ->
+                if (e != null) {
+                    it.cancel(e)
+                    return@unregisterPushTokenAllForCurrentUser
+                }
+                it.resume(Unit)
+            }
+        }
+    }
+
+    private suspend fun disconnect(): Unit = suspendCancellableCoroutine {
         SendBird.disconnect {
             it.resume(Unit)
         }
+    }
+
+    suspend fun signOut() {
+        unregisterPushNotifications()
+        disconnect()
     }
 }

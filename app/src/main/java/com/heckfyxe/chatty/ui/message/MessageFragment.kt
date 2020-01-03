@@ -92,6 +92,7 @@ class MessageFragment : Fragment() {
         Log.i("State", "OnCreateView")
 
         layoutManager = LinearLayoutManager(activity!!, LinearLayoutManager.VERTICAL, true)
+        messageList.setHasFixedSize(true)
         messageList.layoutManager = layoutManager
         messageList.adapter = viewModel.adapter
         messageTextInput.apply {

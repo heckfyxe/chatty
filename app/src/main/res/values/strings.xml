@@ -23,6 +23,7 @@
     <string name="enter_message">Enter a message</string>
     <string name="sending">Sending…</string>
     <string name="select_image">Select image</string>
+    <string name="today">Today</string>
     <string-array name="new_dialog_methods">
         <item>From friends</item>
         <item>By phone number</item>

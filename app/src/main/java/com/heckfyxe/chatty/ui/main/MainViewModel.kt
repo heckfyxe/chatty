@@ -88,7 +88,7 @@ class MainViewModel(private val repository: DialogRepository) : ViewModel() {
 
     fun logOut(action: () -> Unit) = viewModelScope.launch {
         try {
-            repository.logOut(action)
+            repository.signOut(action)
         } catch (e: Exception) {
             _errors.value = e
         }

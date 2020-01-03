@@ -6,10 +6,7 @@ import androidx.databinding.ViewDataBinding
 import androidx.recyclerview.widget.RecyclerView
 import androidx.recyclerview.widget.SortedList
 import androidx.recyclerview.widget.SortedListAdapterCallback
-import com.heckfyxe.chatty.databinding.ItemInImageMessageBinding
-import com.heckfyxe.chatty.databinding.ItemInMessageBinding
-import com.heckfyxe.chatty.databinding.ItemOutImageMessageBinding
-import com.heckfyxe.chatty.databinding.ItemOutMessageBinding
+import com.heckfyxe.chatty.databinding.*
 import com.heckfyxe.chatty.model.Message
 import com.heckfyxe.chatty.model.MessageType
 import kotlin.math.max
@@ -19,6 +16,7 @@ private const val TYPE_TEXT_MESSAGE_IN = 0
 private const val TYPE_TEXT_MESSAGE_OUT = 1
 private const val TYPE_IMAGE_MESSAGE_IN = 3
 private const val TYPE_IMAGE_MESSAGE_OUT = 4
+private const val TYPE_TIME_HEADER = 5
 
 fun <T : Any> SortedList<T>.withUpdate(block: SortedList<T>.() -> Unit) {
     beginBatchedUpdates()
@@ -34,16 +32,24 @@ class MessageAdapter : RecyclerView.Adapter<MessageViewHolder>() {
         fun loadNextMessages(time: Long)
     }
 
-    private val callback = object : SortedListAdapterCallback<Message>(this) {
-        override fun areItemsTheSame(item1: Message, item2: Message): Boolean =
-            if (item1.id == 0L || item2.id == 0L) {
-                item1.requestId == item2.requestId
-            } else item1.id == item2.id
+    private val callback = object : SortedListAdapterCallback<MessageListItem>(this) {
+        override fun areItemsTheSame(item1: MessageListItem, item2: MessageListItem): Boolean =
+            if (item1 is Message && item2 is Message) {
+                if (item1.id == 0L || item2.id == 0L) {
+                    item1.requestId == item2.requestId
+                } else item1.id == item2.id
+            } else {
+                item1.time == item2.time
+            }
 
-        override fun compare(o1: Message, o2: Message): Int =
+
+        override fun compare(o1: MessageListItem, o2: MessageListItem): Int =
             -o1.time.compareTo(o2.time)
 
-        override fun areContentsTheSame(oldItem: Message, newItem: Message): Boolean =
+        override fun areContentsTheSame(
+            oldItem: MessageListItem,
+            newItem: MessageListItem
+        ): Boolean =
             oldItem == newItem
 
         override fun onMoved(fromPosition: Int, toPosition: Int) {
@@ -62,7 +68,7 @@ class MessageAdapter : RecyclerView.Adapter<MessageViewHolder>() {
             notifyItemChanged(position)
         }
     }
-    private val messages = SortedList<Message>(Message::class.java, callback)
+    private val messages = SortedList<MessageListItem>(MessageListItem::class.java, callback)
 
     private var firstMessageTime = Long.MAX_VALUE
     private var lastMessageTime = 0L
@@ -70,17 +76,19 @@ class MessageAdapter : RecyclerView.Adapter<MessageViewHolder>() {
     private var loadingListener: LoadingListener? = null
 
     fun addMessages(messagesList: List<Message>) {
-        messages.withUpdate {
-            addAll(messagesList)
-        }
         firstMessageTime =
             min(firstMessageTime, messagesList.minBy { it.time }?.time ?: Long.MAX_VALUE)
         lastMessageTime = max(lastMessageTime, messagesList.maxBy { it.time }?.time ?: 0)
+        val headers = getMessageTimeHeaders(messagesList)
+        messages.withUpdate {
+            addAll(messagesList)
+            addAll(headers)
+        }
     }
 
     fun messageSent(sentMessage: Message) {
         for (i in 0 until messages.size()) {
-            if (messages[i].requestId == sentMessage.requestId) {
+            if (messages[i] is Message && (messages[i] as Message).requestId == sentMessage.requestId) {
                 messages.withUpdate {
                     messages.removeItemAt(i)
                     messages.add(sentMessage)
@@ -98,16 +106,19 @@ class MessageAdapter : RecyclerView.Adapter<MessageViewHolder>() {
 
     override fun getItemViewType(position: Int): Int {
         val message = messages[position]
-        return if (message.out)
-            if (message.type == MessageType.TEXT)
-                TYPE_TEXT_MESSAGE_OUT
+        return if (message is Message) {
+            if (message.out)
+                if (message.type == MessageType.TEXT)
+                    TYPE_TEXT_MESSAGE_OUT
+                else
+                    TYPE_IMAGE_MESSAGE_OUT
             else
-                TYPE_IMAGE_MESSAGE_OUT
-        else
-            if (message.type == MessageType.TEXT)
-                TYPE_TEXT_MESSAGE_IN
-            else
-                TYPE_IMAGE_MESSAGE_IN
+                if (message.type == MessageType.TEXT)
+                    TYPE_TEXT_MESSAGE_IN
+                else
+                    TYPE_IMAGE_MESSAGE_IN
+        } else
+            TYPE_TIME_HEADER
     }
 
     override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): MessageViewHolder {
@@ -129,6 +140,10 @@ class MessageAdapter : RecyclerView.Adapter<MessageViewHolder>() {
                 val binding = ItemOutImageMessageBinding.inflate(inflater, parent, false)
                 MessageOutImageViewHolder(binding)
             }
+            TYPE_TIME_HEADER -> {
+                val binding = ItemMessageTimeHeaderBinding.inflate(inflater, parent, false)
+                MessageTimeHeaderViewHolder(binding)
+            }
             else -> throw Exception("Unknown viewType")
         }
     }
@@ -137,8 +152,10 @@ class MessageAdapter : RecyclerView.Adapter<MessageViewHolder>() {
     private var nextSize = 0
 
     override fun onBindViewHolder(holder: MessageViewHolder, position: Int) {
-        val message = messages[position]
-        holder.bind(message)
+        when (val message = messages[position]) {
+            is Message -> holder.bind(message)
+            is MessageTimeHeader -> holder.bind(message)
+        }
 
         handleMessageLoading(position)
     }
@@ -159,7 +176,8 @@ class MessageAdapter : RecyclerView.Adapter<MessageViewHolder>() {
 }
 
 abstract class MessageViewHolder(binding: ViewDataBinding) : RecyclerView.ViewHolder(binding.root) {
-    abstract fun bind(message: Message)
+    open fun bind(message: Message) {}
+    open fun bind(header: MessageTimeHeader) {}
 }
 
 class MessageInViewHolder(private val binding: ItemInMessageBinding) : MessageViewHolder(binding) {
@@ -189,6 +207,14 @@ class MessageOutImageViewHolder(private val binding: ItemOutImageMessageBinding)
     MessageViewHolder(binding) {
     override fun bind(message: Message) {
         binding.message = message
+        binding.executePendingBindings()
+    }
+}
+
+class MessageTimeHeaderViewHolder(private val binding: ItemMessageTimeHeaderBinding) :
+    MessageViewHolder(binding) {
+    override fun bind(header: MessageTimeHeader) {
+        binding.header = header
         binding.executePendingBindings()
     }
 }

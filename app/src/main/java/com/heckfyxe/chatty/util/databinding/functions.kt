@@ -1,5 +1,6 @@
 package com.heckfyxe.chatty.util.databinding
 
+import android.content.Context
 import android.graphics.Bitmap
 import android.graphics.drawable.Drawable
 import android.os.Build
@@ -22,23 +23,58 @@ import com.heckfyxe.chatty.R
 import com.heckfyxe.chatty.model.Dialog
 import com.heckfyxe.chatty.model.Message
 import com.heckfyxe.chatty.ui.main.DialogsAdapter
+import com.heckfyxe.chatty.ui.message.millisToDay
 import jp.wasabeef.glide.transformations.RoundedCornersTransformation
 import java.text.SimpleDateFormat
 import java.util.*
 import kotlin.math.roundToInt
 
-private val formatter: SimpleDateFormat by lazy {
-    SimpleDateFormat("HH:mm", Locale.US)
-}
 
 private val date: Date by lazy { Date() }
 
+private val timeFormatter: SimpleDateFormat by lazy {
+    SimpleDateFormat("HH:mm", Locale.US)
+}
+
+private lateinit var dateFormatter: SimpleDateFormat
+private lateinit var dateFormatterLocale: Locale
+
+private fun getDateFormatter(locale: Locale): SimpleDateFormat {
+    if (!::dateFormatterLocale.isInitialized || dateFormatterLocale != locale) {
+        dateFormatterLocale = locale
+        dateFormatter = SimpleDateFormat("dd MMMM", locale)
+    }
+    return dateFormatter
+}
+
+@Suppress("DEPRECATION")
+private fun formatDate(context: Context, time: Long): String = synchronized(date) {
+    if (millisToDay(time) == millisToDay(System.currentTimeMillis())) {
+        return context.getString(R.string.today)
+    }
+    date.time = time
+    val locale = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.N)
+        context.resources.configuration.locales[0]
+    else
+        context.resources.configuration.locale
+    return getDateFormatter(locale).format(time)
+}
+
+private fun formatTime(time: Long): String = synchronized(date) {
+    date.time = time
+    return timeFormatter.format(date)
+}
+
 @BindingAdapter("hhmm")
 fun hhmm(textView: TextView, time: Long?) {
-    if (time == null)
-        return
-
+    time ?: return
     textView.text = formatTime(time)
+}
+
+@BindingAdapter("date")
+fun date(textView: TextView, time: Long?) {
+    time ?: return
+    textView.text = formatDate(textView.context, time)
 }
 
 @BindingAdapter("outMessageText")
@@ -50,11 +86,6 @@ fun outMessageText(textView: TextView, message: Message?) {
         textView.text = formatTime(message.time)
     else
         textView.setText(R.string.sending)
-}
-
-private fun formatTime(time: Long): String {
-    date.time = time
-    return formatter.format(date)
 }
 
 @BindingAdapter("loadAvatar")

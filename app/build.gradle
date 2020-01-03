@@ -102,6 +102,8 @@ dependencies {
     kapt "androidx.lifecycle:lifecycle-common-java8:$lifecycle_version"
     // Testing
     testImplementation 'junit:junit:4.12'
+    testImplementation 'io.mockk:mockk:1.9.3'
+    testImplementation 'org.hamcrest:hamcrest:2.2'
     androidTestImplementation 'androidx.test:runner:1.2.0'
     androidTestImplementation 'androidx.test.espresso:espresso-core:3.2.0'
     // Layout

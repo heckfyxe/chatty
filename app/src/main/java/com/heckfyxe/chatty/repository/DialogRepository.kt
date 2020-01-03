@@ -120,9 +120,9 @@ class DialogRepository : KoinComponent {
         }
     }
 
-    suspend fun logOut(action: () -> Unit) = withContext(Dispatchers.IO) {
+    suspend fun signOut(action: () -> Unit) = withContext(Dispatchers.IO) {
         stopChannelHandler()
-        sendBirdApi.disconnect()
+        sendBirdApi.signOut()
         unloadKoinModules(remoteApiModule)
         auth.signOut()
         database.clearAllTables()
