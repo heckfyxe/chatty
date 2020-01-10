@@ -1,6 +1,5 @@
 package com.heckfyxe.chatty.util.sendbird
 
-import com.heckfyxe.chatty.koin.KOIN_USER_ID
 import com.heckfyxe.chatty.model.MessageType
 import com.heckfyxe.chatty.model.RequestState
 import com.heckfyxe.chatty.room.RoomMessage
@@ -8,12 +7,6 @@ import com.sendbird.android.BaseMessage
 import com.sendbird.android.FileMessage
 import com.sendbird.android.Sender
 import com.sendbird.android.UserMessage
-import org.koin.core.Koin
-import org.koin.core.context.GlobalContext.get
-
-private val koin: Koin by lazy { get().koin }
-private val currentUserId: String
-    get() = koin.get(KOIN_USER_ID)
 
 val BaseMessage.sender: Sender
     get() = when (this) {

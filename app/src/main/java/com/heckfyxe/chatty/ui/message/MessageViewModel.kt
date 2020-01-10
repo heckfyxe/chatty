@@ -5,6 +5,7 @@ import androidx.lifecycle.MutableLiveData
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.google.firebase.firestore.CollectionReference
+import com.google.firebase.firestore.ListenerRegistration
 import com.heckfyxe.chatty.koin.KOIN_USERS_FIRESTORE_COLLECTION
 import com.heckfyxe.chatty.model.Message
 import com.heckfyxe.chatty.repository.DialogRepository
@@ -57,9 +58,12 @@ class MessageViewModel(
         }
     }
 
+    private var emotionTrackerRegistration: ListenerRegistration? = null
+
     val adapter = MessageAdapter().apply {
         setLoadingListener(this@MessageViewModel)
     }
+
     private var isPreviousMessagesLoading = false
     private var isNextMessagesLoading = false
 
@@ -69,6 +73,7 @@ class MessageViewModel(
 
     private val _errors = MutableLiveData<Exception?>()
     val errors: LiveData<Exception?> = _errors
+
     private val _interlocutorEmotions = MutableLiveData<String>()
     val interlocutorEmotions: LiveData<String> = _interlocutorEmotions
 
@@ -157,9 +162,9 @@ class MessageViewModel(
     @UseExperimental(ExperimentalCoroutinesApi::class)
     private fun startInterlocutorEmotionTracking() = viewModelScope.launch {
         interlocutorId ?: return@launch
-        try {
-            callbackFlow {
-                usersRef.document(interlocutorId).addSnapshotListener { snapshot, e ->
+        callbackFlow {
+            emotionTrackerRegistration = usersRef.document(interlocutorId)
+                .addSnapshotListener { snapshot, e ->
                     if (e != null) {
                         return@addSnapshotListener
                     }
@@ -167,11 +172,9 @@ class MessageViewModel(
                     val emotion = snapshot?.getString("emotion") ?: return@addSnapshotListener
                     offer(emotion)
                 }
-                awaitClose()
-            }.distinctUntilChanged().collect {
-                _interlocutorEmotions.value = it
-            }
-        } catch (e: Exception) {
+            awaitClose()
+        }.distinctUntilChanged().collect {
+            _interlocutorEmotions.value = it
         }
     }
 
@@ -222,8 +225,7 @@ class MessageViewModel(
     }
 
     override fun onCleared() {
-        super.onCleared()
-
+        emotionTrackerRegistration?.remove()
         messageRepository.stopChannelHandler()
     }
 }

@@ -18,8 +18,16 @@ import org.koin.core.module.Module
 import org.koin.core.qualifier.named
 import org.koin.dsl.module
 
-val remoteApiModule = module {
-    single { SendBirdApi(get(KOIN_USER_ID)) }
+val KOIN_USERS_FIRESTORE_COLLECTION = named("users")
+val KOIN_USER_ID = named("uid")
+
+val KOIN_SCOPE_USER = named("user_logged")
+
+private val remoteApiModule = module {
+    scope(KOIN_SCOPE_USER) {
+        scoped { SendBirdApi(get(KOIN_USER_ID)) }
+        scoped(KOIN_USER_ID) { get<FirebaseAuth>().currentUser!!.uid }
+    }
 }
 
 private val repositoryModule = module {
@@ -56,9 +64,6 @@ private val viewModelModule = module {
     viewModel { FriendsViewModel() }
 }
 
-val KOIN_USERS_FIRESTORE_COLLECTION = named("users")
-val KOIN_USER_ID = named("uid")
-
 private val firebaseModule = module {
     single { FirebaseAuth.getInstance() }
     single {
@@ -70,8 +75,7 @@ private val firebaseModule = module {
         }
     }
     factory(KOIN_USERS_FIRESTORE_COLLECTION) { get<FirebaseFirestore>().collection("users") }
-    factory(KOIN_USER_ID) { get<FirebaseAuth>().currentUser!!.uid }
 }
 
 val koinModule: List<Module> =
-    listOf(repositoryModule, roomModule, viewModelModule, firebaseModule)
+    listOf(repositoryModule, roomModule, viewModelModule, firebaseModule, remoteApiModule)

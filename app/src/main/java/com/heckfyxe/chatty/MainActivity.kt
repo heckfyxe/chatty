@@ -11,10 +11,13 @@ import com.google.firebase.ml.vision.common.FirebaseVisionImage
 import com.google.firebase.ml.vision.common.FirebaseVisionImageMetadata
 import com.google.firebase.ml.vision.face.FirebaseVisionFaceDetector
 import com.google.firebase.ml.vision.face.FirebaseVisionFaceDetectorOptions
+import com.heckfyxe.chatty.koin.KOIN_SCOPE_USER
 import com.heckfyxe.chatty.koin.KOIN_USERS_FIRESTORE_COLLECTION
 import com.heckfyxe.chatty.koin.KOIN_USER_ID
 import kotlinx.android.synthetic.main.activity_main.*
+import org.koin.android.ext.android.getKoin
 import org.koin.android.ext.android.inject
+import org.koin.core.scope.Scope
 
 class MainActivity : AppCompatActivity(), EmotionDetector {
 
@@ -28,8 +31,10 @@ class MainActivity : AppCompatActivity(), EmotionDetector {
         FirebaseVision.getInstance().getVisionFaceDetector(settings)
     }
 
+    private lateinit var userScope: Scope
+
     private val usersRef: CollectionReference by inject(KOIN_USERS_FIRESTORE_COLLECTION)
-    private val uid: String by inject(KOIN_USER_ID)
+    private val uid: String by lazy { userScope.get<String>(KOIN_USER_ID) }
 
     private var emotion = ""
 
@@ -43,6 +48,10 @@ class MainActivity : AppCompatActivity(), EmotionDetector {
         var isLoading = false
         cameraView?.addFrameProcessor {
             if (isLoading) return@addFrameProcessor
+            if (!::userScope.isInitialized)
+                userScope =
+                    getKoin().getScopeOrNull(KOIN_SCOPE_USER.value) ?: return@addFrameProcessor
+            isLoading = true
 
             val metadata = FirebaseVisionImageMetadata.Builder()
                 .setFormat(ImageFormat.NV21)
@@ -51,7 +60,7 @@ class MainActivity : AppCompatActivity(), EmotionDetector {
                 .build()
 
             val image = FirebaseVisionImage.fromByteArray(it.data, metadata)
-            isLoading = true
+
             detector.detectInImage(image).addOnCompleteListener { task ->
                 isLoading = false
                 if (!task.isSuccessful) {

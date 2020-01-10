@@ -1,6 +1,7 @@
 package com.heckfyxe.chatty.repository
 
 import androidx.room.withTransaction
+import com.heckfyxe.chatty.koin.KOIN_SCOPE_USER
 import com.heckfyxe.chatty.model.Message
 import com.heckfyxe.chatty.remote.SendBirdApi
 import com.heckfyxe.chatty.room.*
@@ -23,7 +24,9 @@ private const val CHANNEL_HANDLER_IDENTIFIER =
 class MessageRepository(val channelId: String) :
     KoinComponent {
 
-    private val sendBirdApi: SendBirdApi by inject()
+    private val userScope = getKoin().getScope(KOIN_SCOPE_USER.value)
+
+    private val sendBirdApi: SendBirdApi by userScope.inject()
 
     private val database: AppDatabase by inject()
     private val dialogDao: DialogDao by inject()

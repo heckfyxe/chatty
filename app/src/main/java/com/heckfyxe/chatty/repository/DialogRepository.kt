@@ -4,7 +4,7 @@ import androidx.lifecycle.LiveData
 import androidx.room.withTransaction
 import com.google.firebase.auth.FirebaseAuth
 import com.google.firebase.iid.FirebaseInstanceId
-import com.heckfyxe.chatty.koin.remoteApiModule
+import com.heckfyxe.chatty.koin.KOIN_SCOPE_USER
 import com.heckfyxe.chatty.model.Dialog
 import com.heckfyxe.chatty.model.Message
 import com.heckfyxe.chatty.remote.SendBirdApi
@@ -19,7 +19,6 @@ import com.sendbird.android.GroupChannel
 import com.sendbird.android.SendBird
 import kotlinx.coroutines.*
 import org.koin.core.KoinComponent
-import org.koin.core.context.unloadKoinModules
 import org.koin.core.inject
 import kotlin.coroutines.resume
 
@@ -28,7 +27,9 @@ private const val CHANNEL_HANDLER_IDENTIFIER =
 
 class DialogRepository : KoinComponent {
 
-    private val sendBirdApi: SendBirdApi by inject()
+    private val userScope = getKoin().getScope(KOIN_SCOPE_USER.value)
+
+    private val sendBirdApi: SendBirdApi by userScope.inject()
 
     private val database: AppDatabase by inject()
     private val dialogDao: DialogDao by inject()
@@ -123,7 +124,8 @@ class DialogRepository : KoinComponent {
     suspend fun signOut(action: () -> Unit) = withContext(Dispatchers.IO) {
         stopChannelHandler()
         sendBirdApi.signOut()
-        unloadKoinModules(remoteApiModule)
+        userScope.close()
+        getKoin().deleteScope(KOIN_SCOPE_USER.value)
         auth.signOut()
         database.clearAllTables()
         withContext(Dispatchers.Main) {
