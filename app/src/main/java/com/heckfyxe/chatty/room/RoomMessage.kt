@@ -25,10 +25,10 @@ data class RoomMessage(
     var id: Long,
     @ColumnInfo(name = "dialog_id") var dialogId: String,
     var time: Long,
-    @Embedded(prefix = "sender_") var sender: User,
+    @Embedded(prefix = "sender_") var sender: User?,
     var text: String?,
     var file: String?,
-    var type: MessageType,
+    var type: MessageType?,
     var out: Boolean,
     var sent: Boolean,
     @ColumnInfo(name = "request_id") var requestId: String
@@ -51,5 +51,5 @@ fun Message.toRoomMessage(dialogId: String): RoomMessage = RoomMessage(
     type,
     out,
     sent,
-    requestId
+    requestId ?: ""
 )

@@ -6,6 +6,11 @@ import com.heckfyxe.chatty.model.Dialog
 import com.heckfyxe.chatty.model.User
 import com.heckfyxe.chatty.repository.DialogRepository
 import com.heckfyxe.chatty.room.toDomain
+import com.heckfyxe.chatty.util.sendbird.toDomain
+import com.sendbird.android.BaseChannel
+import com.sendbird.android.BaseMessage
+import com.sendbird.android.GroupChannel
+import com.sendbird.android.SendBird
 import kotlinx.coroutines.launch
 
 
@@ -30,21 +35,37 @@ class MainViewModel(private val repository: DialogRepository) : ViewModel() {
     val launchMessagesEvent: LiveData<LaunchMessageEvent?> = _launchMessagesEvent
 
     val chats: LiveData<List<Dialog>> = Transformations.map(repository.chats) {
-        _progress.value = Progress.COMPLETED
+        if (it != null)
+            _progress.value = Progress.COMPLETED
         it.toDomain()
     }
 
     private val _progress = MutableLiveData<Progress>()
     val progress: LiveData<Progress> = _progress
 
+    private val _isFABExpanded = MutableLiveData<Boolean>()
+    val isFABExpanded: LiveData<Boolean> = _isFABExpanded
+
+    private val channelHandler = object : SendBird.ChannelHandler() {
+        override fun onMessageReceived(channel: BaseChannel, baseMessage: BaseMessage) {
+            if (channel !is GroupChannel) return
+
+            val dialog = channel.toDomain()
+
+            viewModelScope.launch {
+                repository.insertDialog(dialog)
+            }
+        }
+    }
+
     init {
         _progress.value = Progress.LOADING
+        _isFABExpanded.value = false
         launchChannelHandler()
-        refreshChats()
         registerPushNotifications()
     }
 
-    private fun refreshChats() = viewModelScope.launch {
+    fun refreshChats() = viewModelScope.launch {
         try {
             repository.refresh()
         } catch (e: Exception) {
@@ -54,7 +75,7 @@ class MainViewModel(private val repository: DialogRepository) : ViewModel() {
 
     private fun launchChannelHandler() = viewModelScope.launch {
         try {
-            repository.launchChannelHandler(viewModelScope)
+            repository.launchChannelHandler(channelHandler)
         } catch (e: Exception) {
             _errors.value = e
         }
@@ -77,6 +98,10 @@ class MainViewModel(private val repository: DialogRepository) : ViewModel() {
         )
     }
 
+    fun addMessageFABClicked() {
+        _isFABExpanded.value = !_isFABExpanded.value!!
+    }
+
     fun onErrorGotten() {
         _errors.value = null
     }
@@ -95,8 +120,6 @@ class MainViewModel(private val repository: DialogRepository) : ViewModel() {
     }
 
     override fun onCleared() {
-        super.onCleared()
-
         repository.stopChannelHandler()
     }
 }

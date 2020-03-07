@@ -57,7 +57,7 @@ class EditUserDataFragment : Fragment() {
             when (status) {
                 is DataUpdated -> {
                     setAuthenticated()
-                    findNavController().navigate(R.id.action_editUserDataFragment_to_contactFragment)
+                    findNavController().navigate(R.id.action_editUserDataFragment_to_mainFragment)
                     editUserDataViewModel.onDataUpdated()
                 }
                 is Error -> if (status.type == ErrorType.UPDATE_USER_DATA) {

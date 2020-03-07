@@ -25,7 +25,7 @@
                 android:layout_width="match_parent"
                 android:layout_height="?attr/actionBarSize"
                 app:layout_scrollFlags="scroll|enterAlways|snap"
-                app:title="@string/add_friends" />
+                app:title="@string/start_conversation_with" />
 
         </com.google.android.material.appbar.AppBarLayout>
 
@@ -33,21 +33,9 @@
             android:id="@+id/contactsRecyclerView"
             android:layout_width="match_parent"
             android:layout_height="match_parent"
+            tools:listitem="@layout/item_contact"
             app:layout_behavior="@string/appbar_scrolling_view_behavior" />
 
-        <com.google.android.material.floatingactionbutton.FloatingActionButton
-            android:id="@+id/contactNextFAB"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:layout_gravity="bottom|end"
-            android:layout_marginEnd="16dp"
-            android:layout_marginBottom="16dp"
-            app:layout_anchor="@id/contactsRecyclerView"
-            app:layout_anchorGravity="bottom|end"
-            app:layout_behavior=".ui.behavior.ScrollAwareFABBehavior"
-            android:src="@drawable/ic_next"
-            android:visibility="invisible"
-            style="@style/FABStyle" />
     </androidx.coordinatorlayout.widget.CoordinatorLayout>
 
     <ProgressBar

@@ -6,21 +6,26 @@ import android.os.Bundle
 import android.util.Log
 import android.view.*
 import android.widget.Toast
-import androidx.appcompat.app.AlertDialog
 import androidx.appcompat.app.AppCompatActivity
+import androidx.core.view.isGone
+import androidx.core.view.isVisible
 import androidx.fragment.app.Fragment
 import androidx.lifecycle.Observer
 import androidx.navigation.fragment.FragmentNavigatorExtras
 import androidx.navigation.fragment.findNavController
+import com.google.android.material.floatingactionbutton.FloatingActionButton
 import com.heckfyxe.chatty.EmotionDetector
 import com.heckfyxe.chatty.R
 import com.heckfyxe.chatty.databinding.MainFragmentBinding
 import com.heckfyxe.chatty.model.User
 import com.heckfyxe.chatty.util.clearSharedPreferencesData
+import com.heckfyxe.chatty.util.dp
 import com.heckfyxe.chatty.util.setAuthenticated
 import kotlinx.android.synthetic.main.main_fragment.*
 import org.koin.androidx.viewmodel.ext.android.viewModel
+import kotlin.math.sqrt
 
+private val FAB_EXPANDING_RADIUS = 100f.dp
 
 class MainFragment : Fragment() {
 
@@ -30,10 +35,17 @@ class MainFragment : Fragment() {
 
     private lateinit var emotionDetector: EmotionDetector
 
+    private lateinit var newMessageFAB: FloatingActionButton
+    private lateinit var phoneFAB: FloatingActionButton
+    private lateinit var contactsFAB: FloatingActionButton
+    private lateinit var nicknameFAB: FloatingActionButton
+
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
 
         setAuthenticated()
+
+        viewModel.refreshChats()
 
         adapter = DialogsAdapter { dialog, sharedElements ->
             viewModel.launchMessageFragment(dialog, sharedElements)
@@ -80,6 +92,13 @@ class MainFragment : Fragment() {
             }
         })
 
+        viewModel.isFABExpanded.observe(this, Observer {
+            it ?: return@Observer
+
+            if (it) expandFAB()
+            else resetFAB()
+        })
+
         viewModel.launchMessagesEvent.observe(this, Observer {
             it ?: return@Observer
 
@@ -93,18 +112,74 @@ class MainFragment : Fragment() {
         })
     }
 
+    private fun expandFAB() {
+        newMessageFAB.animate().rotation(45f)
+
+        // Translating
+        phoneFAB.animate().translationX(-FAB_EXPANDING_RADIUS)
+        contactsFAB.animate().translationX(-sqrt(2f) / 2f * FAB_EXPANDING_RADIUS)
+        contactsFAB.animate().translationY(-sqrt(2f) / 2f * FAB_EXPANDING_RADIUS)
+        nicknameFAB.animate().translationY(-FAB_EXPANDING_RADIUS)
+
+        // Visibility
+        phoneFAB.isVisible = true
+        contactsFAB.isVisible = true
+        nicknameFAB.isVisible = true
+
+        // Alpha
+        phoneFAB.animate().alpha(1f)
+        contactsFAB.animate().alpha(1f)
+        nicknameFAB.animate().alpha(1f)
+    }
+
+    private fun resetFAB() {
+        newMessageFAB.animate().rotation(0f)
+
+        // Translating
+        phoneFAB.animate().translationX(0f)
+        contactsFAB.animate().translationX(0f)
+        contactsFAB.animate().translationY(0f)
+        nicknameFAB.animate().translationY(0f)
+
+        // Alpha
+        val goneAction: (View) -> Runnable = {
+            Runnable { it.isGone = true }
+        }
+        phoneFAB.animate().alpha(0f).withEndAction(goneAction(phoneFAB))
+        contactsFAB.animate().alpha(0f).withEndAction(goneAction(contactsFAB))
+        nicknameFAB.animate().alpha(0f).withEndAction(goneAction(nicknameFAB))
+    }
+
     override fun onCreateView(
         inflater: LayoutInflater, container: ViewGroup?,
         savedInstanceState: Bundle?
-    ): View = MainFragmentBinding.inflate(inflater).run {
-        lifecycleOwner = this@MainFragment
-        viewModel = this@MainFragment.viewModel
+    ): View = MainFragmentBinding.inflate(inflater).let {
+        it.lifecycleOwner = this
+        it.viewModel = viewModel
 
-        (activity as? AppCompatActivity)?.setSupportActionBar(mainToolbar)
-        dialogList.adapter = adapter
-        newMessageFAB.setOnClickListener { showNewInterlocutorDialog() }
+        newMessageFAB = it.newMessageFAB
+        phoneFAB = it.phoneFAB
+        contactsFAB = it.contactsFAB
+        nicknameFAB = it.nicknameFAB
 
-        return root
+        phoneFAB.setOnClickListener {
+            showNewInterlocutorByPhoneNumberDialog()
+            resetFAB()
+        }
+        contactsFAB.setOnClickListener {
+            findNavController().navigate(MainFragmentDirections.actionMainFragmentToContactFragment())
+            resetFAB()
+        }
+        nicknameFAB.setOnClickListener {
+            showNewInterlocutorByNicknameDialog()
+            resetFAB()
+        }
+
+        (activity as? AppCompatActivity)?.setSupportActionBar(it.mainToolbar)
+        it.dialogList.adapter = adapter
+        it.newMessageFAB.setOnClickListener { viewModel.addMessageFABClicked() }
+
+        return it.root
     }
 
     override fun onActivityResult(requestCode: Int, resultCode: Int, data: Intent?) {
@@ -129,23 +204,6 @@ class MainFragment : Fragment() {
             }
             else -> super.onActivityResult(requestCode, resultCode, data)
         }
-    }
-
-    private fun showNewInterlocutorDialog() {
-        AlertDialog.Builder(context!!)
-            .setItems(R.array.new_dialog_methods) { _, position ->
-                when (position) {
-                    0 -> showNewInterlocutorFromFriends() // From friends
-                    1 -> showNewInterlocutorByPhoneNumberDialog() // By phone number
-                    2 -> showNewInterlocutorByNicknameDialog() // By nickname
-                }
-            }
-            .create()
-            .show()
-    }
-
-    private fun showNewInterlocutorFromFriends() {
-        findNavController().navigate(R.id.action_mainFragment_to_friendsFragment)
     }
 
     private fun showNewInterlocutorByPhoneNumberDialog() =
@@ -178,7 +236,8 @@ class MainFragment : Fragment() {
         val direction = MainFragmentDirections.actionMainFragmentToMessageFragment(
             channelId,
             interlocutor,
-            lastMessageTime
+            lastMessageTime,
+            null
         )
         findNavController().navigate(
             direction,

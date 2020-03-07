@@ -3,15 +3,19 @@ package com.heckfyxe.chatty.repository
 import com.google.firebase.firestore.CollectionReference
 import com.google.firebase.firestore.SetOptions
 import com.google.firebase.firestore.Source
+import com.heckfyxe.chatty.koin.KOIN_USERS_FIRESTORE_COLLECTION
+import com.heckfyxe.chatty.koin.userScope
 import com.heckfyxe.chatty.remote.SendBirdApi
 import kotlinx.coroutines.suspendCancellableCoroutine
+import org.koin.core.KoinComponent
+import org.koin.core.inject
 import java.io.File
 import kotlin.coroutines.resume
 
-class EditUserDataRepository(
-    private val sendBirdApi: SendBirdApi,
-    private val usersRef: CollectionReference
-) {
+class EditUserDataRepository : KoinComponent {
+
+    private val sendBirdApi: SendBirdApi by userScope.inject()
+    private val usersRef: CollectionReference by inject(KOIN_USERS_FIRESTORE_COLLECTION)
 
     suspend fun getAvatarUrl(): String = sendBirdApi.getCurrentUser().profileUrl
 

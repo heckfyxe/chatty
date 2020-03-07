@@ -5,8 +5,11 @@ import com.heckfyxe.chatty.model.MessageType
 
 class Converters {
     @TypeConverter
-    fun fromMessageType(type: MessageType): String = type.toString()
+    fun fromMessageType(type: MessageType?): String? = type?.toString()
 
     @TypeConverter
-    fun toMessageType(type: String): MessageType = MessageType.valueOf(type)
+    fun toMessageType(type: String?): MessageType? {
+        type ?: return null
+        return MessageType.valueOf(type)
+    }
 }

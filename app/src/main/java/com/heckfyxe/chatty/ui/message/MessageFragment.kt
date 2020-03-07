@@ -6,7 +6,6 @@ import android.graphics.BitmapFactory
 import android.net.Uri
 import android.os.Build
 import android.os.Bundle
-import android.util.Log
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
@@ -28,7 +27,6 @@ import java.io.File
 import java.io.IOException
 import java.text.SimpleDateFormat
 import java.util.*
-import kotlin.system.measureTimeMillis
 
 private const val RC_GET_IMAGE = 0
 
@@ -37,7 +35,7 @@ class MessageFragment : Fragment() {
     private val viewModel: MessageViewModel by viewModel {
         parametersOf(
             args.channelId,
-            args.user?.id,
+            args.user?.id ?: args.interlocutorId,
             args.lastMessageTime
         )
     }
@@ -88,8 +86,6 @@ class MessageFragment : Fragment() {
         interlocutor = args.user
         messageViewModel = viewModel
         executePendingBindings()
-
-        Log.i("State", "OnCreateView")
 
         layoutManager = LinearLayoutManager(activity!!, LinearLayoutManager.VERTICAL, true)
         messageList.setHasFixedSize(true)
@@ -150,12 +146,9 @@ class MessageFragment : Fragment() {
         val bitmap = context!!.contentResolver.openInputStream(this)?.use {
             BitmapFactory.decodeStream(it)
         }
-        val time = measureTimeMillis {
-            file.outputStream().use {
-                bitmap?.compress(Bitmap.CompressFormat.JPEG, 70, it)
-            }
+        file.outputStream().use {
+            bitmap?.compress(Bitmap.CompressFormat.JPEG, 70, it)
         }
-        Log.i("ImageDecoding", "$time ms")
         return file
     }
 }

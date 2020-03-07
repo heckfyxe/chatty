@@ -6,6 +6,7 @@ import androidx.lifecycle.*
 import com.google.firebase.auth.FirebaseAuth
 import com.heckfyxe.chatty.R
 import com.heckfyxe.chatty.koin.KOIN_USER_ID
+import com.heckfyxe.chatty.koin.userScope
 import com.heckfyxe.chatty.repository.EditUserDataRepository
 import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.delay
@@ -38,7 +39,7 @@ class EditUserDataViewModel(
     private val phoneNumber: String by lazy { firebaseAuth.currentUser!!.phoneNumber!! }
 
     private val resources = application.resources
-    private val userId: String by inject(KOIN_USER_ID)
+    private val userId: String by userScope.inject(KOIN_USER_ID)
 
     private val _status = MutableLiveData<Status>()
     val status: LiveData<Status> = _status

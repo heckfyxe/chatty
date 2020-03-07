@@ -55,6 +55,13 @@ fun BaseMessage.toDomain() = Message(
 
 fun Member.toDomain() = User(userId, nickname, profileUrl)
 
-fun Dialog.toRoomDialog() = RoomDialog(id, name, unreadCount, image, interlocutor, lastMessage)
+fun Dialog.toRoomDialog() = RoomDialog(
+    id,
+    name,
+    unreadCount,
+    image,
+    interlocutor,
+    lastMessage
+)
 
 

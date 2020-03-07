@@ -2,6 +2,7 @@ package com.heckfyxe.chatty.room
 
 import androidx.lifecycle.LiveData
 import androidx.room.*
+import com.heckfyxe.chatty.model.Message
 
 @Dao
 interface DialogDao {
@@ -17,6 +18,12 @@ interface DialogDao {
 
     @Query("SELECT * FROM dialog WHERE id = :dialogId LIMIT 1")
     suspend fun getDialogById(dialogId: String): RoomDialog?
+
+    @Transaction
+    suspend fun updateLastMessage(dialogId: String, lastMessage: Message) {
+        val dialog = getDialogById(dialogId) ?: return
+        insert(dialog.also { it.lastMessage = lastMessage })
+    }
 
     @Query("SELECT * FROM dialog ORDER BY last_message_id DESC")
     fun getDialogsLiveData(): LiveData<List<RoomDialog>>

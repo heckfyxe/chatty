@@ -23,7 +23,7 @@ fun GroupChannel.toRoomDialog(): RoomDialog {
         unreadMessageCount,
         interlocutor?.profileUrl ?: "",
         interlocutor?.toDomain(),
-        lastMessage.toDomain()
+        lastMessage?.toDomain()
     )
 }
 
@@ -34,7 +34,13 @@ fun GroupChannel.toDomain(): Dialog {
         interlocutor?.nickname ?: "Deleted",
         interlocutor?.profileUrl ?: "",
         interlocutor?.toDomain(),
-        lastMessage.toDomain(),
+        lastMessage?.toDomain(),
         unreadMessageCount
     )
 }
+
+val GroupChannel.interlocutorLastReadTimestamp: Long
+    get() = getReadStatus(false).values.first().timestamp
+
+val GroupChannel.currentUserLastReadTimestamp: Long
+    get() = getReadStatus(true)[currentUserId]!!.timestamp

@@ -52,14 +52,58 @@
             android:visibility="@{viewModel.progress == Progress.LOADING ? View.VISIBLE : View.INVISIBLE}"
             tools:visibility="invisible" />
 
-        <com.google.android.material.floatingactionbutton.FloatingActionButton
-            android:id="@+id/newMessageFAB"
-            style="@style/FABStyle"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:layout_gravity="bottom|end"
-            android:layout_margin="16dp"
-            android:src="@drawable/ic_message" />
+        <androidx.constraintlayout.widget.ConstraintLayout
+            android:layout_width="200dp"
+            android:layout_height="200dp"
+            android:layout_gravity="bottom|end">
+
+            <com.google.android.material.floatingactionbutton.FloatingActionButton
+                android:id="@+id/phoneFAB"
+                style="@style/FABStyle"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:src="@drawable/ic_phone"
+                app:fabSize="mini"
+                app:layout_constraintBottom_toBottomOf="@+id/newMessageFAB"
+                app:layout_constraintEnd_toEndOf="@+id/newMessageFAB"
+                app:layout_constraintStart_toStartOf="@+id/newMessageFAB"
+                app:layout_constraintTop_toTopOf="@+id/newMessageFAB" />
+
+            <com.google.android.material.floatingactionbutton.FloatingActionButton
+                android:id="@+id/contactsFAB"
+                style="@style/FABStyle"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:src="@drawable/ic_contacts"
+                app:fabSize="mini"
+                app:layout_constraintBottom_toBottomOf="@+id/newMessageFAB"
+                app:layout_constraintEnd_toEndOf="@+id/newMessageFAB"
+                app:layout_constraintStart_toStartOf="@+id/newMessageFAB"
+                app:layout_constraintTop_toTopOf="@+id/newMessageFAB" />
+
+            <com.google.android.material.floatingactionbutton.FloatingActionButton
+                android:id="@+id/nicknameFAB"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:src="@drawable/ic_person"
+                app:fabSize="mini"
+                app:layout_constraintBottom_toBottomOf="@+id/newMessageFAB"
+                app:layout_constraintEnd_toEndOf="@+id/newMessageFAB"
+                app:layout_constraintStart_toStartOf="@+id/newMessageFAB"
+                app:layout_constraintTop_toTopOf="@+id/newMessageFAB" />
+
+            <com.google.android.material.floatingactionbutton.FloatingActionButton
+                android:id="@+id/newMessageFAB"
+                style="@style/FABStyle"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_gravity="center"
+                android:layout_marginEnd="16dp"
+                android:layout_marginBottom="16dp"
+                android:src="@drawable/ic_add"
+                app:layout_constraintBottom_toBottomOf="parent"
+                app:layout_constraintEnd_toEndOf="parent" />
+        </androidx.constraintlayout.widget.ConstraintLayout>
 
     </androidx.coordinatorlayout.widget.CoordinatorLayout>
 </layout>

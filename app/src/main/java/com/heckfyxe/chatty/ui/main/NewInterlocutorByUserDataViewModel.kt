@@ -6,7 +6,10 @@ import androidx.lifecycle.viewModelScope
 import com.google.firebase.firestore.CollectionReference
 import com.heckfyxe.chatty.koin.KOIN_USERS_FIRESTORE_COLLECTION
 import com.heckfyxe.chatty.koin.KOIN_USER_ID
+import com.heckfyxe.chatty.koin.userScope
 import com.heckfyxe.chatty.remote.SendBirdApi
+import com.heckfyxe.chatty.repository.DialogRepository
+import com.heckfyxe.chatty.util.sendbird.toDomain
 import com.sendbird.android.GroupChannel
 import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.launch
@@ -18,9 +21,11 @@ class NewInterlocutorByUserDataViewModel(private val userDataName: String) : Vie
 
     private val userDataCheckingChannel = Channel<String>(Channel.CONFLATED)
 
-    val userId: String by inject(KOIN_USER_ID)
+    val userId: String by userScope.inject(KOIN_USER_ID)
 
-    private val sendBirdApi: SendBirdApi by inject()
+    private val sendBirdApi: SendBirdApi by userScope.inject()
+
+    private val dialogRepository: DialogRepository by inject()
 
     val errors = MutableLiveData<Exception>()
     val result = MutableLiveData<Result>()
@@ -58,6 +63,7 @@ class NewInterlocutorByUserDataViewModel(private val userDataName: String) : Vie
         viewModelScope.launch {
             try {
                 val channel = sendBirdApi.createChannel(interlocutorId)
+                dialogRepository.insertDialog(channel.toDomain())
                 success(channel)
             } catch (e: Exception) {
                 errors.value = e

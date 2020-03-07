@@ -5,7 +5,6 @@ import androidx.lifecycle.MutableLiveData
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.google.firebase.firestore.CollectionReference
-import com.google.firebase.firestore.ListenerRegistration
 import com.heckfyxe.chatty.koin.KOIN_USERS_FIRESTORE_COLLECTION
 import com.heckfyxe.chatty.model.Message
 import com.heckfyxe.chatty.repository.DialogRepository
@@ -28,7 +27,7 @@ import org.koin.core.parameter.parametersOf
 import java.io.File
 
 class MessageViewModel(
-    private val channelId: String,
+    private var channelId: String?,
     private val interlocutorId: String?,
     lastMessageTime: Long
 ) : ViewModel(), MessageAdapter.LoadingListener, KoinComponent {
@@ -53,12 +52,11 @@ class MessageViewModel(
 
             if (dialog.id == channelId) {
                 adapter.addMessages(listOf(baseMessage.toDomain()))
+                markReceivedMessagesAsRead()
                 scrollDown()
             }
         }
     }
-
-    private var emotionTrackerRegistration: ListenerRegistration? = null
 
     val adapter = MessageAdapter().apply {
         setLoadingListener(this@MessageViewModel)
@@ -86,8 +84,13 @@ class MessageViewModel(
     init {
         viewModelScope.launch {
             try {
+                if (channelId == null) {
+                    channelId = dialogRepository.createChannel(interlocutorId!!)
+                }
                 val lastMessage =
-                    messageRepository.getMessageByTime(lastMessageTime)
+                    (if (lastMessageTime != -1L)
+                        messageRepository.getMessageByTime(lastMessageTime)
+                    else null)
                         ?: messageRepository.getLastMessage()
                         ?: messageRepository.refreshLastMessage().run {
                             messageRepository.getLastMessage()!!
@@ -101,6 +104,7 @@ class MessageViewModel(
                 _errors.value = e
             }
         }
+        markReceivedMessagesAsRead()
         startInterlocutorEmotionTracking()
         launchChannelHandler()
     }
@@ -163,7 +167,7 @@ class MessageViewModel(
     private fun startInterlocutorEmotionTracking() = viewModelScope.launch {
         interlocutorId ?: return@launch
         callbackFlow {
-            emotionTrackerRegistration = usersRef.document(interlocutorId)
+            val emotionTrackerRegistration = usersRef.document(interlocutorId)
                 .addSnapshotListener { snapshot, e ->
                     if (e != null) {
                         return@addSnapshotListener
@@ -172,7 +176,7 @@ class MessageViewModel(
                     val emotion = snapshot?.getString("emotion") ?: return@addSnapshotListener
                     offer(emotion)
                 }
-            awaitClose()
+            awaitClose { emotionTrackerRegistration.remove() }
         }.distinctUntilChanged().collect {
             _interlocutorEmotions.value = it
         }
@@ -197,7 +201,10 @@ class MessageViewModel(
             scrollDown()
             val message = channel.receive()
             launch {
-                dialogRepository.insertMessage(channelId, message)
+                dialogRepository.insertMessage(
+                    channelId!!,
+                    message
+                )
             }
             adapter.messageSent(message)
             scrollDown()
@@ -208,6 +215,16 @@ class MessageViewModel(
 
     fun onImageFileDeleted() {
         _deleteImageFile.value = null
+    }
+
+    fun markReceivedMessagesAsRead() = viewModelScope.launch(Dispatchers.IO) {
+        try {
+            messageRepository.markAsRead()
+            val dialog = dialogRepository.getDialogById(channelId!!)
+            if ((dialog?.unreadCount ?: 0) > 0)
+                dialogRepository.insertDialog(dialog!!.copy(unreadCount = 0))
+        } catch (e: Exception) {
+        }
     }
 
     fun startTyping() = viewModelScope.launch {
@@ -225,7 +242,6 @@ class MessageViewModel(
     }
 
     override fun onCleared() {
-        emotionTrackerRegistration?.remove()
         messageRepository.stopChannelHandler()
     }
 }

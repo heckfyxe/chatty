@@ -4,10 +4,9 @@ import com.heckfyxe.chatty.room.RoomMessage
 import com.heckfyxe.chatty.util.sendbird.toRoomMessage
 import com.sendbird.android.*
 import kotlinx.coroutines.*
-import kotlinx.coroutines.channels.Channel
-import kotlinx.coroutines.channels.ReceiveChannel
 import kotlinx.coroutines.channels.awaitClose
 import kotlinx.coroutines.channels.ticker
+import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.callbackFlow
 import kotlinx.coroutines.sync.Mutex
 import kotlinx.coroutines.sync.withLock
@@ -15,6 +14,7 @@ import java.io.File
 import java.util.concurrent.ConcurrentHashMap
 import java.util.concurrent.TimeUnit
 import kotlin.coroutines.resume
+import kotlin.coroutines.resumeWithException
 
 
 private val CHANNELS_CLEAN_DELAY = TimeUnit.MINUTES.toMillis(2)
@@ -67,23 +67,28 @@ class SendBirdApi(private val userId: String) {
         return currentUser!!
     }
 
-    suspend fun getChannels(): ReceiveChannel<List<GroupChannel>> {
+    @UseExperimental(ExperimentalCoroutinesApi::class)
+    suspend fun getChannels(): Flow<List<GroupChannel>> {
         checkConnection()
-        val result = Channel<List<GroupChannel>>()
-        GroupChannel.createMyGroupChannelListQuery().next { channels, e ->
-            scope.launch {
-                if (e != null) {
-                    result.close(e)
-                    return@launch
+        return callbackFlow<List<GroupChannel>> {
+            val query = GroupChannel.createMyGroupChannelListQuery()
+            val handler = object : GroupChannelListQuery.GroupChannelListQueryResultHandler {
+                override fun onResult(channels: List<GroupChannel>?, e: SendBirdException?) {
+                    if (e != null) {
+                        close(e)
+                        return
+                    }
+                    if (channels.isNullOrEmpty()) {
+                        close()
+                        return
+                    }
+                    offer(channels)
+                    query.next(this)
                 }
-                if (channels.isEmpty()) {
-                    result.close()
-                    return@launch
-                }
-                result.send(channels)
             }
+            query.next(handler)
+            awaitClose()
         }
-        return result
     }
 
     private suspend fun getChannel(channelUrl: String): GroupChannel {
@@ -241,6 +246,27 @@ class SendBirdApi(private val userId: String) {
         }
     }
 
+    suspend fun getUserById(userId: String): User? {
+        checkConnection()
+        return suspendCancellableCoroutine { cont ->
+            val query = SendBird.createApplicationUserListQuery().apply {
+                setUserIdsFilter(listOf(userId))
+                setLimit(1)
+            }
+            query.next { userList, exception ->
+                if (exception != null) {
+                    cont.resumeWithException(exception)
+                    return@next
+                }
+                if (!userList.isNullOrEmpty()) {
+                    cont.resume(userList.first())
+                } else {
+                    cont.resume(null)
+                }
+            }
+        }
+    }
+
     suspend fun addChannelHandler(identifier: String, handler: SendBird.ChannelHandler) {
         checkConnection()
         SendBird.addChannelHandler(identifier, handler)
@@ -248,6 +274,11 @@ class SendBirdApi(private val userId: String) {
 
     fun removeChannelHandler(identifier: String) {
         SendBird.removeChannelHandler(identifier)
+    }
+
+    suspend fun markMessagesAsRead(channelUrl: String) {
+        checkConnection()
+        getChannel(channelUrl).markAsRead()
     }
 
     suspend fun registerPushNotifications(token: String) {

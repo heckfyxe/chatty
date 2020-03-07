@@ -15,38 +15,69 @@
     <androidx.constraintlayout.widget.ConstraintLayout
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:padding="16dp">
+        android:padding="8dp">
 
         <androidx.appcompat.widget.AppCompatImageView
             android:id="@+id/avatarImageView"
             android:layout_width="@dimen/avatar_size"
             android:layout_height="@dimen/avatar_size"
+            android:layout_marginStart="8dp"
+            android:layout_marginTop="8dp"
+            android:layout_marginBottom="8dp"
+            app:avatarTransitionName="@{dialog.id}"
             app:layout_constraintStart_toStartOf="parent"
             app:layout_constraintTop_toTopOf="parent"
             app:loadAvatar="@{dialog.image}"
-            app:avatarTransitionName="@{dialog.id}"
             tools:src="@tools:sample/avatars" />
+
+        <androidx.appcompat.widget.AppCompatImageView
+            android:layout_width="0dp"
+            android:layout_height="0dp"
+            android:src="@drawable/ic_unread"
+            android:visibility="@{dialog.unreadCount != 0 ? View.VISIBLE : View.INVISIBLE}"
+            app:layout_constraintBottom_toBottomOf="@+id/appCompatTextView"
+            app:layout_constraintDimensionRatio="1:1"
+            app:layout_constraintEnd_toEndOf="@+id/appCompatTextView"
+            app:layout_constraintStart_toStartOf="@+id/appCompatTextView"
+            app:layout_constraintTop_toTopOf="@+id/appCompatTextView" />
+
+        <androidx.appcompat.widget.AppCompatTextView
+            android:id="@+id/appCompatTextView"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:padding="4dp"
+            android:text="@{Integer.toString(dialog.unreadCount)}"
+            android:textColor="@android:color/white"
+            android:textSize="18sp"
+            android:textStyle="bold"
+            android:visibility="@{dialog.unreadCount != 0 ? View.VISIBLE : View.INVISIBLE}"
+            app:layout_constraintEnd_toStartOf="@+id/dialogName"
+            app:layout_constraintTop_toTopOf="parent"
+            tools:text="50" />
 
         <androidx.appcompat.widget.AppCompatTextView
             android:id="@+id/dialogName"
             android:layout_width="0dp"
             android:layout_height="wrap_content"
             android:layout_marginStart="8dp"
+            android:layout_marginTop="8dp"
             android:layout_marginEnd="8dp"
             android:ellipsize="end"
             android:singleLine="true"
             android:text="@{dialog.name}"
             android:textAppearance="?android:textAppearanceLarge"
-            app:layout_constraintStart_toEndOf="@+id/avatarImageView"
             app:layout_constraintEnd_toStartOf="@+id/time"
-            app:nicknameTransitionName="@{dialog.id}"
+            app:layout_constraintStart_toEndOf="@+id/avatarImageView"
             app:layout_constraintTop_toTopOf="parent"
+            app:nicknameTransitionName="@{dialog.id}"
             tools:text="A dialog name" />
 
         <androidx.appcompat.widget.AppCompatTextView
             android:id="@+id/time"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
+            android:layout_marginTop="8dp"
+            android:layout_marginEnd="8dp"
             android:textAppearance="?android:textAppearanceSmall"
             app:hhmm="@{dialog.lastMessage.time}"
             app:layout_constraintEnd_toEndOf="parent"
@@ -59,6 +90,7 @@
             android:layout_height="wrap_content"
             android:layout_marginStart="8dp"
             android:layout_marginTop="8dp"
+            android:layout_marginBottom="8dp"
             android:ellipsize="end"
             android:maxLines="2"
             android:text="@{dialog.lastMessage.text}"
@@ -72,9 +104,10 @@
             android:id="@+id/appCompatImageView2"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
+            android:layout_marginEnd="8dp"
             android:padding="8dp"
             android:src="@drawable/unread_message_bubble"
-            android:visibility="@{dialog.unreadCount != 0 ? View.VISIBLE : View.GONE}"
+            android:visibility="invisible"
             app:layout_constraintBottom_toBottomOf="@+id/lastMessageText"
             app:layout_constraintEnd_toEndOf="parent"
             app:layout_constraintTop_toBottomOf="@+id/barrier3"

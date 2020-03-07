@@ -1,4 +1,4 @@
-package com.heckfyxe.chatty.ui.auth
+package com.heckfyxe.chatty.ui.contacts
 
 import android.Manifest
 import android.content.pm.PackageManager
@@ -13,8 +13,9 @@ import androidx.fragment.app.Fragment
 import androidx.lifecycle.Observer
 import androidx.navigation.fragment.findNavController
 import androidx.recyclerview.widget.LinearLayoutManager
-import com.google.android.material.snackbar.Snackbar
 import com.heckfyxe.chatty.R
+import com.heckfyxe.chatty.model.User
+import com.heckfyxe.chatty.util.snackbar
 import kotlinx.android.synthetic.main.contact_fragment.*
 import org.koin.androidx.viewmodel.ext.android.viewModel
 
@@ -31,8 +32,8 @@ class ContactFragment : Fragment() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
 
-        contactsAdapter = ContactsAdapter { checkingContact ->
-            viewModel.addCheckingContact(checkingContact)
+        contactsAdapter = ContactsAdapter {
+            goToMessageFragment(it)
         }
 
         connectViewModel()
@@ -45,7 +46,10 @@ class ContactFragment : Fragment() {
             if (savedInstanceState == null)
                 startProcess()
         } else {
-            requestPermissions(arrayOf(Manifest.permission.READ_CONTACTS), RC_READ_CONTACTS_PERMISSION)
+            requestPermissions(
+                arrayOf(Manifest.permission.READ_CONTACTS),
+                RC_READ_CONTACTS_PERMISSION
+            )
         }
     }
 
@@ -63,15 +67,6 @@ class ContactFragment : Fragment() {
             setSupportActionBar(contactToolbar)
         }
 
-        contactNextFAB?.setOnClickListener {
-            val ids = viewModel.getCheckedContactsIds()
-            if (ids.isEmpty()) {
-                launchMainFragment()
-            } else {
-                viewModel.addFriendsToSendBird(ids)
-            }
-        }
-
         contactsRecyclerView?.apply {
             layoutManager = LinearLayoutManager(context!!)
             adapter = contactsAdapter
@@ -83,60 +78,65 @@ class ContactFragment : Fragment() {
             contactsAdapter.update(it)
         })
 
-        viewModel.contactsCountLiveData.observe(this, Observer {
+        viewModel.contactsCount.observe(this, Observer {
             contactsProgressBar?.max = it
             if (it == 0) {
-                launchMainFragment()
+                // TODO("Display no contacts")
             }
         })
 
-        viewModel.contactsProgress.observe(this, Observer {
+        viewModel.progress.observe(this, Observer {
             contactsProgressBar?.progress = it
         })
 
-        viewModel.friends.observe(this, Observer {
-            launchMainFragment()
-        })
-
-        viewModel.isLoadingLiveData.observe(this, Observer {
+        viewModel.isLoading.observe(this, Observer {
             contactsProgressBar?.isVisible = it
-            contactNextFAB?.isVisible = !it
+            contactsRecyclerView?.isVisible = !it
         })
 
         viewModel.errors.observe(this, Observer {
-            when (it!!) {
-                ContactViewModel.Error.ADD_FRIENDS_ERROR -> {
-                    Snackbar.make(contactParentView, R.string.data_updating_error, Snackbar.LENGTH_LONG).show()
-                }
-                ContactViewModel.Error.CHECK_OF_NUMBER_ERROR -> {
-                    Snackbar.make(contactParentView, R.string.data_updating_error, Snackbar.LENGTH_INDEFINITE)
-                        .setAction(R.string.retry) {
-                            viewModel.getUsers()
-                        }.show()
+            it ?: return@Observer
+            when (it) {
+                Error.CHECK_OF_NUMBER_ERROR -> {
+                    snackbar(R.string.data_updating_error, R.string.retry) {
+                        viewModel.loadUsersAgain()
+                    }
                 }
             }
+            viewModel.onErrorsCaught()
         })
     }
 
-    override fun onRequestPermissionsResult(requestCode: Int, permissions: Array<out String>, grantResults: IntArray) {
+    override fun onRequestPermissionsResult(
+        requestCode: Int,
+        permissions: Array<out String>,
+        grantResults: IntArray
+    ) {
         when (requestCode) {
             RC_READ_CONTACTS_PERMISSION -> {
                 val index = permissions.indexOf(Manifest.permission.READ_CONTACTS)
                 if (grantResults[index] == PackageManager.PERMISSION_GRANTED) {
                     startProcess()
                 } else {
-                    launchMainFragment()
+                    findNavController().popBackStack()
                 }
             }
         }
     }
 
     private fun startProcess() {
-        viewModel.getUsers()
+        viewModel.loadUsers()
     }
 
-    private fun launchMainFragment() {
-        findNavController().navigate(R.id.action_contactFragment_to_mainFragment)
+    private fun goToMessageFragment(interlocutor: User) {
+        findNavController().navigate(
+            ContactFragmentDirections.actionContactFragmentToMessageFragment(
+                null,
+                interlocutor,
+                -1,
+                null
+            )
+        )
     }
 
 }

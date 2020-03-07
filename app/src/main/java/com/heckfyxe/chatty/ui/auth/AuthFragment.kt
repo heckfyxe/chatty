@@ -14,9 +14,7 @@ import com.firebase.ui.auth.AuthUI
 import com.firebase.ui.auth.IdpResponse
 import com.google.android.material.snackbar.Snackbar
 import com.heckfyxe.chatty.R
-import com.heckfyxe.chatty.koin.KOIN_SCOPE_USER
 import com.heckfyxe.chatty.util.isAuthenticated
-import org.koin.android.ext.android.getKoin
 
 
 private const val RC_AUTH = 0
@@ -82,7 +80,6 @@ class AuthFragment : Fragment() {
     }
 
     private fun startMainActivity(isNewUser: Boolean = false) {
-        getKoin().createScope(KOIN_SCOPE_USER.value, KOIN_SCOPE_USER)
         if (isNewUser)
             findNavController().navigate(R.id.action_authFragment_to_editUserDataFragment)
         else

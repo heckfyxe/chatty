@@ -27,16 +27,13 @@
         <action
             android:id="@+id/action_mainFragment_to_messageFragment"
             app:destination="@id/messageFragment"
-            app:enterAnim="@anim/fui_slide_in_right"
-            app:exitAnim="@anim/fui_slide_out_left"
-            app:popEnterAnim="@anim/nav_default_pop_enter_anim"
-            app:popExitAnim="@anim/nav_default_pop_exit_anim" />
+            app:enterAnim="@anim/slide_in_right"
+            app:exitAnim="@anim/slide_out_left"
+            app:popEnterAnim="@anim/fade_in"
+            app:popExitAnim="@anim/fade_out" />
         <action
             android:id="@+id/action_mainFragment_to_contactFragment"
             app:destination="@id/contactFragment" />
-        <action
-            android:id="@+id/action_mainFragment_to_friendsFragment"
-            app:destination="@id/friendsFragment" />
     </fragment>
     <fragment
         android:id="@+id/editUserDataFragment"
@@ -44,10 +41,8 @@
         android:label="edit_user_data_fragment"
         tools:layout="@layout/edit_user_data_fragment" >
         <action
-            android:id="@+id/action_editUserDataFragment_to_contactFragment"
-            app:destination="@id/contactFragment"
-            app:enterAnim="@anim/nav_default_enter_anim"
-            app:popUpTo="@+id/nav_graph" />
+            android:id="@+id/action_editUserDataFragment_to_mainFragment"
+            app:destination="@id/mainFragment" />
     </fragment>
     <fragment
         android:id="@+id/messageFragment"
@@ -56,7 +51,8 @@
         tools:layout="@layout/message_fragment">
         <argument
             android:name="channelId"
-            app:argType="string" />
+            app:argType="string"
+            app:nullable="true" />
         <argument
             android:name="user"
             app:argType="com.heckfyxe.chatty.model.User"
@@ -65,26 +61,19 @@
             android:name="lastMessageTime"
             android:defaultValue="-1L"
             app:argType="long" />
+        <argument
+            android:name="interlocutorId"
+            app:argType="string"
+            app:nullable="true" />
     </fragment>
     <fragment
         android:id="@+id/contactFragment"
-        android:name="com.heckfyxe.chatty.ui.auth.ContactFragment"
+        android:name="com.heckfyxe.chatty.ui.contacts.ContactFragment"
         android:label="contact_fragment"
         tools:layout="@layout/contact_fragment">
         <action
-            android:id="@+id/action_contactFragment_to_mainFragment"
-            app:destination="@id/mainFragment"
-            app:popUpTo="@+id/nav_graph" />
-    </fragment>
-    <fragment
-        android:id="@+id/friendsFragment"
-        android:name="com.heckfyxe.chatty.ui.friends.FriendsFragment"
-        android:label="FriendsFragment"
-        tools:layout="@layout/friends_fragment">
-        <action
-            android:id="@+id/action_friendsFragment_to_messageFragment"
-            app:destination="@id/messageFragment"
-            app:popUpTo="@id/mainFragment" />
+            android:id="@+id/action_contactFragment_to_messageFragment"
+            app:destination="@id/messageFragment" />
     </fragment>
     <action
         android:id="@+id/action_global_authFragment"

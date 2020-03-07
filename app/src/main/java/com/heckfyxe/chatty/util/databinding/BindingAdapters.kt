@@ -186,12 +186,12 @@ fun dialogItems(recyclerView: RecyclerView?, dialogs: List<Dialog>?) {
 
 @BindingAdapter("avatarTransitionName")
 fun avatarTransitionName(imageView: ImageView?, dialogId: String?) {
-    if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP)
+    if (dialogId != null && Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP)
         imageView?.transitionName = "${dialogId}avatar"
 }
 
 @BindingAdapter("nicknameTransitionName")
 fun nicknameTransitionName(textView: TextView?, dialogId: String?) {
-    if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP)
+    if (dialogId != null && Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP)
         textView?.transitionName = "${dialogId}nickname"
 }

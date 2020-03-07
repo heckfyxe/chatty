@@ -4,20 +4,19 @@ import androidx.lifecycle.LiveData
 import androidx.room.withTransaction
 import com.google.firebase.auth.FirebaseAuth
 import com.google.firebase.iid.FirebaseInstanceId
-import com.heckfyxe.chatty.koin.KOIN_SCOPE_USER
+import com.heckfyxe.chatty.koin.deleteUserScope
+import com.heckfyxe.chatty.koin.userScope
 import com.heckfyxe.chatty.model.Dialog
 import com.heckfyxe.chatty.model.Message
 import com.heckfyxe.chatty.remote.SendBirdApi
 import com.heckfyxe.chatty.room.*
 import com.heckfyxe.chatty.util.sendbird.getInterlocutor
-import com.heckfyxe.chatty.util.sendbird.toDomain
 import com.heckfyxe.chatty.util.sendbird.toRoomDialog
 import com.heckfyxe.chatty.util.sendbird.toRoomMessage
-import com.sendbird.android.BaseChannel
-import com.sendbird.android.BaseMessage
 import com.sendbird.android.GroupChannel
 import com.sendbird.android.SendBird
 import kotlinx.coroutines.*
+import kotlinx.coroutines.flow.collect
 import org.koin.core.KoinComponent
 import org.koin.core.inject
 import kotlin.coroutines.resume
@@ -26,8 +25,6 @@ private const val CHANNEL_HANDLER_IDENTIFIER =
     "com.heckfyxe.chatty.ui.main.CHANNEL_HANDLER_IDENTIFIER"
 
 class DialogRepository : KoinComponent {
-
-    private val userScope = getKoin().getScope(KOIN_SCOPE_USER.value)
 
     private val sendBirdApi: SendBirdApi by userScope.inject()
 
@@ -40,8 +37,9 @@ class DialogRepository : KoinComponent {
 
     val chats: LiveData<List<RoomDialog>> by lazy { dialogDao.getDialogsLiveData() }
 
+    @UseExperimental(InternalCoroutinesApi::class)
     suspend fun refresh() {
-        for (channels in sendBirdApi.getChannels()) {
+        sendBirdApi.getChannels().collect { channels: List<GroupChannel> ->
             val users = ArrayList<RoomUser>(channels.size)
             val messages = ArrayList<RoomMessage>(channels.size)
             val dialogs = ArrayList<RoomDialog>(channels.size)
@@ -74,28 +72,22 @@ class DialogRepository : KoinComponent {
         }
     }
 
-    suspend fun insertMessage(dialogId: String, message: Message) = withContext(Dispatchers.IO) {
-        database.withTransaction {
-            val dialog = dialogDao.getDialogById(dialogId) ?: return@withTransaction
-            dialogDao.update(dialog.copy(lastMessage = message))
-        }
+    suspend fun createChannel(interlocutorId: String): String = withContext(Dispatchers.IO) {
+        val channel = sendBirdApi.createChannel(interlocutorId)
+        dialogDao.insert(channel.toRoomDialog())
+        channel.url
     }
 
-    suspend fun launchChannelHandler(scope: CoroutineScope) {
-        sendBirdApi.addChannelHandler(
-            CHANNEL_HANDLER_IDENTIFIER,
-            object : SendBird.ChannelHandler() {
-                override fun onMessageReceived(channel: BaseChannel, baseMessage: BaseMessage) {
-                    if (channel !is GroupChannel) return
+    suspend fun insertMessage(dialogId: String, message: Message) = withContext(Dispatchers.IO) {
+        dialogDao.updateLastMessage(dialogId, message)
+    }
 
-                    val dialog = channel.toDomain()
+    suspend fun getDialogById(id: String): Dialog? = withContext(Dispatchers.IO) {
+        dialogDao.getDialogById(id)?.toDomain()
+    }
 
-                    if (!scope.isActive) return
-                    scope.launch {
-                        insertDialog(dialog)
-                    }
-                }
-            })
+    suspend fun launchChannelHandler(handler: SendBird.ChannelHandler) {
+        sendBirdApi.addChannelHandler(CHANNEL_HANDLER_IDENTIFIER, handler)
     }
 
     fun stopChannelHandler() {
@@ -124,8 +116,7 @@ class DialogRepository : KoinComponent {
     suspend fun signOut(action: () -> Unit) = withContext(Dispatchers.IO) {
         stopChannelHandler()
         sendBirdApi.signOut()
-        userScope.close()
-        getKoin().deleteScope(KOIN_SCOPE_USER.value)
+        deleteUserScope()
         auth.signOut()
         database.clearAllTables()
         withContext(Dispatchers.Main) {

@@ -18,15 +18,9 @@
     <string name="default_notification_channel_id">com.heckfyxe.chatty.NOTIFICATION_CHANNEL_ID</string>
     <string name="add_friends">Add friends</string>
     <string name="message">Message</string>
-    <string name="choose_interlocutor">Choose interlocutor</string>
-    <string name="you_dont_have_friends">You don\'t have friends</string>
     <string name="enter_message">Enter a message</string>
     <string name="sending">Sending…</string>
     <string name="select_image">Select image</string>
     <string name="today">Today</string>
-    <string-array name="new_dialog_methods">
-        <item>From friends</item>
-        <item>By phone number</item>
-        <item>By nickname</item>
-    </string-array>
+    <string name="start_conversation_with">Start conversation with…</string>
 </resources>
