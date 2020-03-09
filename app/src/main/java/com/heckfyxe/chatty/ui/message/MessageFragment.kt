@@ -20,6 +20,7 @@ import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.transition.TransitionInflater
 import com.heckfyxe.chatty.R
 import com.heckfyxe.chatty.databinding.MessageFragmentBinding
+import com.heckfyxe.chatty.model.User
 import com.stfalcon.chatkit.messages.MessageInput
 import org.koin.androidx.viewmodel.ext.android.viewModel
 import org.koin.core.parameter.parametersOf
@@ -35,7 +36,7 @@ class MessageFragment : Fragment() {
     private val viewModel: MessageViewModel by viewModel {
         parametersOf(
             args.channelId,
-            args.user?.id ?: args.interlocutorId,
+            if (args.user != User.DELETED) args.user.id else null,
             args.lastMessageTime
         )
     }
@@ -83,7 +84,7 @@ class MessageFragment : Fragment() {
     ): View? = MessageFragmentBinding.inflate(inflater).run {
         lifecycleOwner = this@MessageFragment
         dialogId = args.channelId
-        interlocutor = args.user
+        interlocutor = if (args.user != User.DELETED) args.user else User("", "DELETED", "")
         messageViewModel = viewModel
         executePendingBindings()
 

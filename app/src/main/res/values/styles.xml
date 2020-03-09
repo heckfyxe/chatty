@@ -20,7 +20,8 @@
     </style>
 
     <style name="FABStyle" parent="Widget.MaterialComponents.FloatingActionButton">
-        <item name="backgroundTint">@color/fab_color</item>
+        <item name="backgroundTint">@color/fab_background_color</item>
+        <item name="tint">@color/fab_image_color</item>
     </style>
 
     <style name="ProgressBarStyle" parent="Widget.AppCompat.ProgressBar" />

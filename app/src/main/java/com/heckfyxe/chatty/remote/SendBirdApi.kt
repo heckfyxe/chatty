@@ -36,7 +36,7 @@ class SendBirdApi(private val userId: String) {
         startInMemoryChannelsCaching()
     }
 
-    @UseExperimental(ObsoleteCoroutinesApi::class)
+    @OptIn(ObsoleteCoroutinesApi::class)
     private fun startInMemoryChannelsCaching() = scope.launch {
         for (tick in ticker(CHANNELS_CLEAN_DELAY)) {
             channelsLastUsageTime.forEach { (id: String, time: Long) ->
@@ -67,7 +67,7 @@ class SendBirdApi(private val userId: String) {
         return currentUser!!
     }
 
-    @UseExperimental(ExperimentalCoroutinesApi::class)
+    @OptIn(ExperimentalCoroutinesApi::class)
     suspend fun getChannels(): Flow<List<GroupChannel>> {
         checkConnection()
         return callbackFlow<List<GroupChannel>> {
@@ -181,7 +181,7 @@ class SendBirdApi(private val userId: String) {
         }
     }
 
-    @UseExperimental(ExperimentalCoroutinesApi::class)
+    @OptIn(ExperimentalCoroutinesApi::class)
     suspend fun sendMessage(channelId: String, text: String) = callbackFlow {
         checkConnection()
         val channel = getChannel(channelId)
@@ -198,7 +198,7 @@ class SendBirdApi(private val userId: String) {
         awaitClose()
     }
 
-    @UseExperimental(ExperimentalCoroutinesApi::class)
+    @OptIn(ExperimentalCoroutinesApi::class)
     suspend fun sendMessage(channelId: String, file: File) = callbackFlow {
         checkConnection()
         val channel = getChannel(channelId)

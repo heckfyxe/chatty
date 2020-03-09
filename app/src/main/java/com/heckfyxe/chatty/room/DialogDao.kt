@@ -19,6 +19,9 @@ interface DialogDao {
     @Query("SELECT * FROM dialog WHERE id = :dialogId LIMIT 1")
     suspend fun getDialogById(dialogId: String): RoomDialog?
 
+    @Query("SELECT id FROM dialog WHERE interlocutor_id = :interlocutorId LIMIT 1")
+    suspend fun getDialogIdByInterlocutorId(interlocutorId: String): String?
+
     @Transaction
     suspend fun updateLastMessage(dialogId: String, lastMessage: Message) {
         val dialog = getDialogById(dialogId) ?: return

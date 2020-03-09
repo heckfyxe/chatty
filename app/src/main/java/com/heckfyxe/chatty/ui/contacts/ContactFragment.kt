@@ -133,8 +133,7 @@ class ContactFragment : Fragment() {
             ContactFragmentDirections.actionContactFragmentToMessageFragment(
                 null,
                 interlocutor,
-                -1,
-                null
+                -1
             )
         )
     }

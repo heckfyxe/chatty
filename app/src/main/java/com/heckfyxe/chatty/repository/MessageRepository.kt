@@ -73,13 +73,15 @@ class MessageRepository(val channelId: String) :
     suspend fun sendImageMessage(scope: CoroutineScope, file: File): ReceiveChannel<Message> =
         sendMessage(scope, sendBirdApi.sendMessage(channelId, file))
 
-    @UseExperimental(ExperimentalCoroutinesApi::class, FlowPreview::class)
+    @OptIn(
+        ExperimentalCoroutinesApi::class, FlowPreview::class
+    )
     private suspend fun sendMessage(
         scope: CoroutineScope,
         flow: Flow<RoomMessage>
     ): Channel<Message> {
         val result = Channel<Message>(2)
-        scope.launch {
+        scope.launch(Dispatchers.IO) {
             try {
                 val channel = flow.broadcastIn(scope).openSubscription()
                 val tempMessage = channel.receive()
@@ -98,13 +100,14 @@ class MessageRepository(val channelId: String) :
         return result
     }
 
-    suspend fun markAsRead() {
+    suspend fun markAsRead() = withContext(Dispatchers.IO) {
         sendBirdApi.markMessagesAsRead(channelId)
     }
 
-    suspend fun launchChannelHandler(handler: SendBird.ChannelHandler) {
-        sendBirdApi.addChannelHandler(CHANNEL_HANDLER_IDENTIFIER, handler)
-    }
+    suspend fun launchChannelHandler(handler: SendBird.ChannelHandler) =
+        withContext(Dispatchers.IO) {
+            sendBirdApi.addChannelHandler(CHANNEL_HANDLER_IDENTIFIER, handler)
+        }
 
     fun stopChannelHandler() {
         sendBirdApi.removeChannelHandler(CHANNEL_HANDLER_IDENTIFIER)

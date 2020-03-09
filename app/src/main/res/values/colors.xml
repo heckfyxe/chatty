@@ -9,6 +9,7 @@
     <color name="grey">#aaa</color>
     <color name="error">#FF0000</color>
     <color name="warning">#FF5722</color>
-    <color name="fab_color">#FF9100</color>
+    <color name="fab_background_color">#FF9100</color>
+    <color name="fab_image_color">#FFFFFF</color>
     <color name="progress_bar_color">#EF5350</color>
 </resources>

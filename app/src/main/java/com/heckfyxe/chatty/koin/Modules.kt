@@ -69,7 +69,7 @@ private val viewModelModule = module {
     viewModel { MainViewModel(get()) }
     viewModel { EditUserDataViewModel(androidApplication(), get()) }
     viewModel { (userDataName: String) -> NewInterlocutorByUserDataViewModel(userDataName) }
-    viewModel { (channelId: String, interlocutorId: String, lastMessageTime: Long) ->
+    viewModel { (channelId: String?, interlocutorId: String?, lastMessageTime: Long) ->
         MessageViewModel(
             channelId,
             interlocutorId,

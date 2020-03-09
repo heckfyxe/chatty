@@ -11,7 +11,6 @@ import androidx.core.view.isGone
 import androidx.core.view.isVisible
 import androidx.fragment.app.Fragment
 import androidx.lifecycle.Observer
-import androidx.navigation.fragment.FragmentNavigatorExtras
 import androidx.navigation.fragment.findNavController
 import com.google.android.material.floatingactionbutton.FloatingActionButton
 import com.heckfyxe.chatty.EmotionDetector
@@ -47,8 +46,8 @@ class MainFragment : Fragment() {
 
         viewModel.refreshChats()
 
-        adapter = DialogsAdapter { dialog, sharedElements ->
-            viewModel.launchMessageFragment(dialog, sharedElements)
+        adapter = DialogsAdapter { dialog ->
+            viewModel.launchMessageFragment(dialog)
         }
 
         connectToViewModel()
@@ -106,8 +105,7 @@ class MainFragment : Fragment() {
             launchMessageFragment(
                 it.channelId,
                 it.interlocutor,
-                it.lastMessageTime,
-                it.sharedElements
+                it.lastMessageTime
             )
         })
     }
@@ -176,6 +174,7 @@ class MainFragment : Fragment() {
         }
 
         (activity as? AppCompatActivity)?.setSupportActionBar(it.mainToolbar)
+        it.dialogList.setHasFixedSize(true)
         it.dialogList.adapter = adapter
         it.newMessageFAB.setOnClickListener { viewModel.addMessageFABClicked() }
 
@@ -217,7 +216,7 @@ class MainFragment : Fragment() {
     private fun showNewInterlocutorByUserData(userDataType: NewInterlocutorByUserDataDialog.UserDataType) {
         NewInterlocutorByUserDataDialog.newInstance(userDataType).let {
             it.setTargetFragment(this@MainFragment, RC_CREATE_DIALOG)
-            it.show(fragmentManager!!, null)
+            it.show(childFragmentManager, null)
         }
     }
 
@@ -229,20 +228,16 @@ class MainFragment : Fragment() {
 
     private fun launchMessageFragment(
         channelId: String,
-        interlocutor: User?,
-        lastMessageTime: Long = -1,
-        sharedElements: Array<Pair<View, String>> = emptyArray()
+        interlocutor: User,
+        lastMessageTime: Long = -1
     ) {
+
         val direction = MainFragmentDirections.actionMainFragmentToMessageFragment(
             channelId,
             interlocutor,
-            lastMessageTime,
-            null
+            lastMessageTime
         )
-        findNavController().navigate(
-            direction,
-            FragmentNavigatorExtras(*sharedElements)
-        )
+        findNavController().navigate(direction)
     }
 
     companion object {

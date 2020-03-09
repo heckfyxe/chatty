@@ -53,7 +53,6 @@
                             android:layout_alignParentTop="true"
                             android:layout_alignParentBottom="true"
                             android:padding="1dp"
-                            app:avatarTransitionName="@{dialogId}"
                             app:loadAvatar="@{interlocutor.avatarUrl}"
                             tools:src="@tools:sample/avatars" />
 
@@ -66,7 +65,6 @@
                             android:layout_toEndOf="@+id/dialogUserAvatar"
                             android:text="@{interlocutor.name}"
                             android:textSize="20sp"
-                            app:nicknameTransitionName="@{dialogId}"
                             tools:text="@tools:sample/first_names" />
 
                         <androidx.appcompat.widget.AppCompatTextView
@@ -86,6 +84,7 @@
                 android:id="@+id/messageList"
                 android:layout_width="match_parent"
                 android:layout_height="match_parent"
+                android:scrollbars="vertical"
                 android:background="@drawable/messages_background"
                 app:layoutManager="androidx.recyclerview.widget.LinearLayoutManager"
                 app:layout_behavior="@string/appbar_scrolling_view_behavior"

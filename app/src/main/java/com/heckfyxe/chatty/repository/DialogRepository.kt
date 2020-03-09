@@ -37,7 +37,7 @@ class DialogRepository : KoinComponent {
 
     val chats: LiveData<List<RoomDialog>> by lazy { dialogDao.getDialogsLiveData() }
 
-    @UseExperimental(InternalCoroutinesApi::class)
+    @OptIn(InternalCoroutinesApi::class)
     suspend fun refresh() {
         sendBirdApi.getChannels().collect { channels: List<GroupChannel> ->
             val users = ArrayList<RoomUser>(channels.size)
@@ -77,6 +77,16 @@ class DialogRepository : KoinComponent {
         dialogDao.insert(channel.toRoomDialog())
         channel.url
     }
+
+    suspend fun getDialogIdByInterlocutorId(interlocutorId: String): String? =
+        withContext(Dispatchers.IO) {
+            var id = dialogDao.getDialogIdByInterlocutorId(interlocutorId)
+            if (id != null) {
+                return@withContext id
+            }
+            id = createChannel(interlocutorId)
+            return@withContext id
+        }
 
     suspend fun insertMessage(dialogId: String, message: Message) = withContext(Dispatchers.IO) {
         dialogDao.updateLastMessage(dialogId, message)

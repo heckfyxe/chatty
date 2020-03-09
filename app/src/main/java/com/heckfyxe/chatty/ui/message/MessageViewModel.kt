@@ -52,7 +52,9 @@ class MessageViewModel(
 
             if (dialog.id == channelId) {
                 adapter.addMessages(listOf(baseMessage.toDomain()))
-                markReceivedMessagesAsRead()
+                viewModelScope.launch {
+                    markReceivedMessagesAsRead()
+                }
                 scrollDown()
             }
         }
@@ -82,10 +84,19 @@ class MessageViewModel(
     val deleteImageFile: LiveData<File?> = _deleteImageFile
 
     init {
-        viewModelScope.launch {
+        viewModelScope.launch(SupervisorJob()) {
             try {
                 if (channelId == null) {
-                    channelId = dialogRepository.createChannel(interlocutorId!!)
+                    channelId = dialogRepository.getDialogIdByInterlocutorId(interlocutorId!!)
+                }
+                launch {
+                    markReceivedMessagesAsRead()
+                }
+                launch {
+                    startInterlocutorEmotionTracking()
+                }
+                launch {
+                    launchChannelHandler()
                 }
                 val lastMessage =
                     (if (lastMessageTime != -1L)
@@ -104,16 +115,12 @@ class MessageViewModel(
                 _errors.value = e
             }
         }
-        markReceivedMessagesAsRead()
-        startInterlocutorEmotionTracking()
-        launchChannelHandler()
     }
 
-    private fun launchChannelHandler() = viewModelScope.launch {
+    private suspend fun launchChannelHandler() {
         try {
             messageRepository.launchChannelHandler(channelHandler)
         } catch (e: Exception) {
-            _errors.value = e
         }
     }
 
@@ -163,9 +170,9 @@ class MessageViewModel(
         _scrollDown.value = false
     }
 
-    @UseExperimental(ExperimentalCoroutinesApi::class)
-    private fun startInterlocutorEmotionTracking() = viewModelScope.launch {
-        interlocutorId ?: return@launch
+    @OptIn(ExperimentalCoroutinesApi::class)
+    private suspend fun startInterlocutorEmotionTracking() {
+        interlocutorId ?: return
         callbackFlow {
             val emotionTrackerRegistration = usersRef.document(interlocutorId)
                 .addSnapshotListener { snapshot, e ->
@@ -217,7 +224,7 @@ class MessageViewModel(
         _deleteImageFile.value = null
     }
 
-    fun markReceivedMessagesAsRead() = viewModelScope.launch(Dispatchers.IO) {
+    suspend fun markReceivedMessagesAsRead() {
         try {
             messageRepository.markAsRead()
             val dialog = dialogRepository.getDialogById(channelId!!)

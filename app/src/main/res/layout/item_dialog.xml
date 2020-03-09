@@ -34,7 +34,7 @@
             android:layout_width="0dp"
             android:layout_height="0dp"
             android:src="@drawable/ic_unread"
-            android:visibility="@{dialog.unreadCount != 0 ? View.VISIBLE : View.INVISIBLE}"
+            android:visibility="invisible"
             app:layout_constraintBottom_toBottomOf="@+id/appCompatTextView"
             app:layout_constraintDimensionRatio="1:1"
             app:layout_constraintEnd_toEndOf="@+id/appCompatTextView"
@@ -50,7 +50,7 @@
             android:textColor="@android:color/white"
             android:textSize="18sp"
             android:textStyle="bold"
-            android:visibility="@{dialog.unreadCount != 0 ? View.VISIBLE : View.INVISIBLE}"
+            android:visibility="invisible"
             app:layout_constraintEnd_toStartOf="@+id/dialogName"
             app:layout_constraintTop_toTopOf="parent"
             tools:text="50" />
